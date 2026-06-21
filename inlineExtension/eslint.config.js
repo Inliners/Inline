@@ -19,5 +19,13 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // React Compiler strictness rules flag mount-time restore patterns
+      // (loading saved annotations into state) that are intentional here.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/immutability': 'warn',
+    },
   },
 ])

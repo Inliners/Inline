@@ -5,14 +5,17 @@ import { useState } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
 import { createFolderDocument, loadFolderDocuments } from '@/lib/workspace-library'
 import { loadWorkspaceFolders, getRootFolders } from '@/lib/workspace-folders'
+import { prettyNotePreview } from '@/lib/note-preview'
+import type { Note } from '@/lib/types'
 
 interface Props {
   workspaceId: string
   noteTitle:   string
   noteContent: string
+  note?: Pick<Note, 'content' | 'type' | 'tags' | 'domain'>
 }
 
-export default function CreateDocFromNoteCTA({ workspaceId, noteTitle, noteContent }: Props) {
+export default function CreateDocFromNoteCTA({ workspaceId, noteTitle, noteContent, note }: Props) {
   const router   = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -26,7 +29,8 @@ export default function CreateDocFromNoteCTA({ workspaceId, noteTitle, noteConte
       const all = loadFolderDocuments()
       const idx = all.findIndex(d => d.id === doc.id)
       if (idx >= 0) {
-        all[idx].content = noteContent
+        const readable = note ? prettyNotePreview(note) : noteContent
+        all[idx].content = `<p>${readable.replace(/\n/g, '</p><p>')}</p>`
         localStorage.setItem('inline-folder-documents', JSON.stringify(all))
       }
       router.push(`/app/${workspaceId}/doc/${doc.id}`)

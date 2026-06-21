@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { fetchNoteById, fetchExtractionsForNote } from '@/lib/data'
 import { ArrowLeft, Globe, Calendar, Tag, MapPin, FileText } from 'lucide-react'
 import CreateDocFromNoteCTA from './CreateDocFromNoteCTA'
+import { prettyNotePreview } from '@/lib/note-preview'
 
 export default async function NoteDetailPage({
   params,
@@ -64,7 +65,7 @@ export default async function NoteDetailPage({
           </h2>
           <div className="rounded-xl border border-border bg-slate-50 p-4">
             <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-              {note.content || '(no content)'}
+              {prettyNotePreview(note) || '(no content)'}
             </p>
           </div>
         </section>
@@ -87,11 +88,9 @@ export default async function NoteDetailPage({
                       {fmtDate(ext.createdAt)}
                     </span>
                   </div>
-                  <pre className="text-sm text-foreground whitespace-pre-wrap break-words">
-                    {typeof ext.data === 'string'
-                      ? ext.data
-                      : JSON.stringify(ext.data, null, 2)}
-                  </pre>
+                  <div className="text-sm text-foreground">
+                    <ReadableExtraction data={ext.data} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -104,6 +103,7 @@ export default async function NoteDetailPage({
             workspaceId={workspaceId}
             noteContent={note.content}
             noteTitle={note.pageTitle || 'Note from ' + note.domain}
+            note={note}
           />
         </div>
       </div>
@@ -121,4 +121,55 @@ function MetaCard({ icon: Icon, label, value }: { icon: React.ElementType; label
       <p className="text-sm font-medium text-foreground truncate">{value}</p>
     </div>
   )
+}
+
+function humanizeKey(key: string) {
+  return key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function formatValue(value: unknown): string {
+  if (value == null) return 'Not provided'
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) return value.map(formatValue).join(', ')
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, nested]) => `${humanizeKey(key)}: ${formatValue(nested)}`)
+      .join(' | ')
+  }
+  return String(value)
+}
+
+function ReadableExtraction({ data }: { data: unknown }) {
+  if (typeof data === 'string') {
+    return <p className="whitespace-pre-wrap leading-relaxed">{data}</p>
+  }
+
+  if (Array.isArray(data)) {
+    return (
+      <ul className="list-disc space-y-1 pl-5">
+        {data.map((item, index) => (
+          <li key={index}>{formatValue(item)}</li>
+        ))}
+      </ul>
+    )
+  }
+
+  if (data && typeof data === 'object') {
+    return (
+      <dl className="grid gap-2">
+        {Object.entries(data as Record<string, unknown>).map(([key, value]) => (
+          <div key={key} className="grid gap-1 sm:grid-cols-[9rem_1fr] sm:gap-3">
+            <dt className="text-xs font-medium text-muted-foreground">{humanizeKey(key)}</dt>
+            <dd className="leading-relaxed">{formatValue(value)}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+
+  return <p>{formatValue(data)}</p>
 }

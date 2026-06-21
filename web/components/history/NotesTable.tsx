@@ -25,17 +25,34 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { deleteNote } from '@/lib/actions/notes'
+import { prettyNotePreview } from '@/lib/note-preview'
 
 const TYPE_COLORS: Record<NoteType, string> = {
   text: 'bg-primary/15 text-primary border-primary/20',
   canvas: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
   'ai-summary': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+  sticky: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/20',
+  anchor: 'bg-amber-500/15 text-amber-600 border-amber-500/20',
+  drawing: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
+  handwriting: 'bg-fuchsia-500/15 text-fuchsia-500 border-fuchsia-500/20',
+  highlight: 'bg-lime-500/15 text-lime-600 border-lime-500/20',
+  clip: 'bg-sky-500/15 text-sky-500 border-sky-500/20',
+  stamp: 'bg-rose-500/15 text-rose-500 border-rose-500/20',
+  'paper-note': 'bg-orange-500/15 text-orange-500 border-orange-500/20',
 }
 
 const TYPE_LABELS: Record<NoteType, string> = {
   text: 'Text',
   canvas: 'Drawing',
   'ai-summary': 'AI Summary',
+  sticky: 'Sticky',
+  anchor: 'Anchor',
+  drawing: 'Drawing',
+  handwriting: 'Handwriting',
+  highlight: 'Highlight',
+  clip: 'Clip',
+  stamp: 'Stamp',
+  'paper-note': 'Paper note',
 }
 
 const col = createColumnHelper<Note>()
@@ -70,7 +87,7 @@ export default function NotesTable({ notes, workspaceId, highlightNoteId: _ }: N
               />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate max-w-[280px] text-foreground group-hover:text-primary transition-colors">
-                  {note.content}
+                  {prettyNotePreview(note)}
                 </p>
                 <p className="text-xs text-muted-foreground truncate max-w-[280px] mt-0.5">
                   {note.pageContext}

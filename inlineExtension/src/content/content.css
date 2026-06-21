@@ -2,18 +2,18 @@
 .sticky-note {
   display: flex;
   flex-direction: column;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1.5px solid rgba(226,232,240,0.8);
+  border: 1px solid rgba(17, 24, 39, 0.12);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
   user-select: none;
-  transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+  transition: border-color 0.15s, transform 0.1s;
+  box-shadow: none;
 }
 
 .sticky-note:hover {
-  border-color: rgba(148,163,184,0.7);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  border-color: rgba(17, 24, 39, 0.20);
+  box-shadow: none;
 }
 
 /* ─── Header drag bar ─── */
@@ -22,14 +22,14 @@
   align-items: center;
   gap: 6px;
   padding: 8px 10px 7px;
-  border-bottom: 1px solid rgba(226,232,240,0.5);
+  border-bottom: 1px solid rgba(17,24,39,0.08);
   touch-action: none;
   flex-shrink: 0;
 }
 
 .sticky-drag-handle {
   font-size: 11px;
-  color: rgba(100,116,139,0.35);
+  color: rgba(120,113,108,0.4);
   letter-spacing: 1px;
   pointer-events: none;
   flex-shrink: 0;
@@ -39,7 +39,7 @@
   flex: 1;
   font-size: 12px;
   font-weight: 700;
-  color: #1e293b;
+  color: #111318;
   pointer-events: auto;
   cursor: pointer;
   user-select: none;
@@ -57,7 +57,7 @@
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  color: rgba(100,116,139,0.55);
+  color: rgba(120,113,108,0.55);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.1s, color 0.1s;
@@ -65,7 +65,7 @@
 
 .sticky-palette-btn:hover {
   background: rgba(0,0,0,0.06);
-  color: rgba(71,85,105,0.9);
+  color: #57534e;
 }
 
 /* ─── Colored status dot ─── */
@@ -78,7 +78,7 @@
   border-radius: 50%;
   font-size: 14px;
   font-weight: 300;
-  color: rgba(100,116,139,0.45);
+  color: rgba(120,113,108,0.45);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.1s, color 0.1s;
@@ -95,7 +95,7 @@
   border-radius: 50%;
   font-size: 16px;
   font-weight: 400;
-  color: rgba(100,116,139,0.5);
+  color: rgba(120,113,108,0.5);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.1s, color 0.1s;
@@ -112,7 +112,7 @@
   padding: 10px 12px;
   font-size: 12.5px;
   line-height: 1.7;
-  color: #334155;
+  color: #1C1E26;
   overflow-y: auto;
   cursor: text;
   user-select: text;
@@ -183,18 +183,19 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #ffffff;
-  color: #64748b;
-  border: 1.5px solid #e2e8f0;
+  background: #FFFFFF;
+  color: #5d6470;
+  border: 1px solid rgba(17,24,39,0.12);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: none;
 }
 
 .launcher-eye:hover {
-  background: #f8fafc;
-  color: #334155;
-  border-color: #cbd5e1;
+  background: #FAFAFA;
+  color: #111318;
+  border-color: rgba(17,24,39,0.20);
+  box-shadow: none;
 }
 
 .launcher-add {
@@ -202,25 +203,49 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
+  box-sizing: border-box;
+  min-width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background: #6A8EBE;
+  border-radius: 9999px;
+  background: #111318;
   color: #ffffff;
   cursor: pointer;
-  transition: background 0.15s;
-  box-shadow: 0 2px 10px rgba(106,142,190,0.3);
+  transition: background 0.15s, width 0.2s ease;
+  box-shadow: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
 }
 
 .launcher-add:hover {
-  background: #5a7eae;
+  background: #13244d;
+  box-shadow: none;
 }
 
 .launcher-add:active {
-  background: #4a6e9e;
+  background: #111318;
 }
 
 /* ─── SmartOverlay pointer events ─── */
 .inline-toolbar { pointer-events: auto; }
 .inline-anchor { pointer-events: auto; }
 .inline-modal-backdrop { pointer-events: auto; }
+
+/* ─── Context menu pointer events ─── */
+.inline-context-menu { pointer-events: auto; }
+
+/* ─── Citation / Quote Cards ─── */
+[data-inline-citation] {
+  border-left: 4px solid #1C1E26;
+  padding: 8px 16px;
+  margin: 8px 0;
+  background: rgba(253, 251, 247, 0.95);
+  border-radius: 0 8px 8px 0;
+  font-style: normal;
+  line-height: 1.6;
+}
+[data-inline-citation] .inline-cite-attr {
+  display: block;
+  font-size: 10px;
+  color: #78716c;
+  margin-top: 6px;
+  font-style: italic;
+}

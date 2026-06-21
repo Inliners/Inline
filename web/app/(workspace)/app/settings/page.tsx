@@ -1,64 +1,56 @@
 'use client'
 
-import { useState, useEffect, useTransition, useRef } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, useTransition, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import PageHeader from '@/components/shell/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
+import { createClient } from '@/lib/supabase/client'
+import { useConfirm, useToast } from '@/components/ui/notifications'
 import {
-  User, Paintbrush, Zap, Puzzle, Check, Eye, EyeOff,
+  DEFAULT_INLINE_VOICE_ID,
+  INLINE_VOICE_PRESETS,
+  normalizeInlineVoiceId,
+} from '@/lib/inlineVoicePresets'
+import {
+  Check, Mail,
   Play, Loader2, Plus, X, Globe, Shield,
-  FileText, Calendar, Bell, GripVertical, ArrowRight,
-  HelpCircle, LogOut,
+  AlertTriangle, LogOut,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
-// Types & navigation groups
+// Types & navigation (same shell pattern as workspace settings)
 // ---------------------------------------------------------------------------
-type Tab = 'account' | 'appearance' | 'ai-voice' | 'extension' | 'integrations' | 'notifications'
+type Tab = 'general' | 'security' | 'notifications' | 'appearance' | 'ai-voice' | 'extension' | 'danger'
 
-const NAV_GROUPS: { label: string; items: { id: Tab; label: string; icon: React.ElementType }[] }[] = [
-  {
-    label: 'Profile',
-    items: [
-      { id: 'account',      label: 'General',            icon: User     },
-      { id: 'notifications',label: 'Notifications',      icon: Bell     },
-    ],
-  },
-  {
-    label: 'Preferences',
-    items: [
-      { id: 'appearance',   label: 'Themes',             icon: Paintbrush },
-    ],
-  },
-  {
-    label: 'Apps',
-    items: [
-      { id: 'integrations', label: 'Apps & integrations', icon: Puzzle },
-      { id: 'ai-voice',     label: 'AI & Voice',          icon: Zap    },
-      { id: 'extension',    label: 'Extension',           icon: Globe  },
-    ],
-  },
+const PROFILE_TABS: { id: Tab; label: string; danger?: boolean }[] = [
+  { id: 'general', label: 'General' },
+  { id: 'security', label: 'Security' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'appearance', label: 'Themes' },
+  { id: 'ai-voice', label: 'AI & Voice' },
+  { id: 'extension', label: 'Extension' },
+  { id: 'danger', label: 'Delete account', danger: true },
 ]
 
 // ---------------------------------------------------------------------------
-// Shared helpers
+// Layout helpers (match workspace settings page)
 // ---------------------------------------------------------------------------
 function SectionCard({ title, description, children, action }: {
   title: string; description?: string; children: React.ReactNode; action?: React.ReactNode
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {description && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed max-w-xl">{description}</p>}
+          <h3 className="text-base font-semibold text-foreground tracking-tight">{title}</h3>
+          {description && <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">{description}</p>}
         </div>
         {action}
       </div>
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
         {children}
       </div>
     </div>
@@ -77,27 +69,19 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
   )
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cn('relative shrink-0 w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer', checked ? 'bg-primary' : 'bg-muted-foreground/30')}
-    >
-      <span className={cn('absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background ring-1 ring-border/60 transition-transform duration-200', checked && 'translate-x-4')} />
-    </button>
-  )
-}
-
-function MaskedInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
-  const [show, setShow] = useState(false)
-  return (
-    <div className="relative">
-      <Input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
-        placeholder={placeholder} className="pr-9 font-mono text-sm" />
-      <button type="button" onClick={() => setShow(p => !p)}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">
-        {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={cn('relative shrink-0 w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer', checked ? 'bg-primary' : 'bg-muted-foreground/30')}
+      >
+        <span className={cn('absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background ring-1 ring-border/60 transition-transform duration-200', checked && 'translate-x-4')} />
       </button>
     </div>
   )
@@ -112,29 +96,36 @@ function SaveBadge({ saved }: { saved: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// Account
+// General (identity only — mirrors workspace “General” → Workspace Identity)
 // ---------------------------------------------------------------------------
-function AccountTab() {
-  const [name, setName] = useState('John Doe')
-  const [email, setEmail] = useState('john@example.com')
+const PROFILE_ACCENT = '#6C91C2'
+
+function GeneralTab() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [saved, setSaved] = useState(false)
   const [pending, start] = useTransition()
   const fileRef = useRef<HTMLInputElement>(null)
   const [avatar, setAvatar] = useState<string | null>(null)
 
   useEffect(() => {
-    setName(localStorage.getItem('inline_profile_name') || 'John Doe')
-    setEmail(localStorage.getItem('inline_profile_email') || 'john@example.com')
-    const av = localStorage.getItem('inline_profile_avatar')
-    if (av) setAvatar(av)
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
+    const supabase = createClient()
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      setName(user.user_metadata?.full_name || user.user_metadata?.name || '')
+      setEmail(user.email ?? '')
+      setAvatar(user.user_metadata?.avatar_url ?? null)
+    })
   }, [])
 
   function handleSave() {
     start(async () => {
-      localStorage.setItem('inline_profile_name', name)
-      localStorage.setItem('inline_profile_email', email)
-      if (avatar) localStorage.setItem('inline_profile_avatar', avatar)
-      await new Promise(r => setTimeout(r, 400))
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
+      const supabase = createClient()
+      await supabase.auth.updateUser({
+        data: { full_name: name, avatar_url: avatar },
+      })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     })
@@ -148,61 +139,194 @@ function AccountTab() {
     reader.readAsDataURL(file)
   }
 
+  const initial = (name || email || 'U').charAt(0).toUpperCase()
+
   return (
-    <div className="space-y-6">
-      <SectionCard title="Profile" description="Your display name and email address.">
-        <Row label="Avatar">
+    <div className="space-y-8">
+      <SectionCard title="Profile Identity" description="Customize your name and icon.">
+        <Row label="Icon / Logo">
           <div className="flex items-center gap-4">
             <div
-              className="w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => fileRef.current?.click()}
+              className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white transition-opacity hover:opacity-80"
+              style={{ backgroundColor: PROFILE_ACCENT }}
             >
               {avatar
-                ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
-                : <span className="text-primary font-bold text-lg">{name.charAt(0).toUpperCase()}</span>
-              }
+                ? <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
+                : initial}
             </div>
             <div>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => fileRef.current?.click()}>Upload Photo</Button>
-              <p className="text-xs text-muted-foreground mt-1.5">PNG, JPG up to 4 MB</p>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => fileRef.current?.click()}>
+                Upload Icon
+              </Button>
+              <p className="mt-1.5 text-xs text-muted-foreground">PNG, SVG, JPG</p>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
           </div>
         </Row>
-        <Row label="Full name"><Input value={name} onChange={e => setName(e.target.value)} /></Row>
-        <Row label="Email"><Input value={email} onChange={e => setEmail(e.target.value)} type="email" /></Row>
+
+        <Row label="Name" hint="How your name appears across Inline.">
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+        </Row>
+
+        <Row label="Email" hint="Your login email address. Managed by your auth provider.">
+          <div className="flex items-center gap-2 pt-1.5">
+            <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{email || 'Not set'}</span>
+          </div>
+        </Row>
+
         <div className="flex items-center justify-between pt-1">
           <SaveBadge saved={saved} />
-          <Button size="sm" onClick={handleSave} disabled={pending} className="cursor-pointer ml-auto">
-            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}Save changes
+          <Button size="sm" onClick={handleSave} disabled={pending} className="ml-auto cursor-pointer">
+            {pending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+            Save Changes
+          </Button>
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Security (password + session)
+// ---------------------------------------------------------------------------
+function SecurityTab() {
+  return (
+    <div className="space-y-8">
+      <SectionCard title="Password" description="Update your password to keep your account secure.">
+        <Row label="Password">
+          <a
+            href="/auth/reset-password"
+            className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent/30"
+          >
+            Change password
+          </a>
+        </Row>
+      </SectionCard>
+
+      <SectionCard title="Session" description="Sign out of Inline on this device.">
+        <div className="flex items-center justify-between gap-4 py-0.5">
+          <div>
+            <p className="text-sm font-medium text-foreground">Sign out</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">You will need to sign in again to access your workspace.</p>
+          </div>
+          <form action={signOut}>
+            <Button type="submit" variant="outline" size="sm" className="cursor-pointer gap-1.5">
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </Button>
+          </form>
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Danger zone (mirrors workspace Delete workspace tab)
+// ---------------------------------------------------------------------------
+function AccountDangerTab() {
+  const router = useRouter()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    if (confirmText !== 'DELETE') return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? 'Failed to delete account.')
+      }
+      router.push('/')
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <SectionCard title="Danger Zone" description="These actions are permanent and cannot be undone.">
+        <div className="flex items-center justify-between py-1">
+          <div>
+            <p className="text-sm font-medium text-destructive">Delete account</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Permanently deletes your account and all personal data.</p>
+          </div>
+          <Button size="sm" variant="destructive" className="cursor-pointer" onClick={() => setShowDeleteModal(true)}>
+            Delete
           </Button>
         </div>
       </SectionCard>
 
-      <SectionCard title="Connected accounts" description="OAuth providers for single sign-on.">
-        {[{ name: 'Google', icon: '🔵', connected: false }, { name: 'Microsoft', icon: '🟦', connected: true }].map(a => (
-          <div key={a.name} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-lg">{a.icon}</span>
-              <span className="text-sm font-medium">{a.name}</span>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-card-foreground"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold">Delete your account?</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This action is irreversible. All workspaces you own and all personal data will be deleted.
+                </p>
+              </div>
             </div>
-            <Button variant={a.connected ? 'outline' : 'default'} size="sm" className="cursor-pointer">
-              {a.connected ? 'Disconnect' : 'Connect'}
-            </Button>
-          </div>
-        ))}
-      </SectionCard>
 
-      <SectionCard title="Security">
-        <Row label="Password">
-          <a href="/auth/reset-password" className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-sm font-medium rounded-md border border-border bg-background hover:bg-accent/30 transition-colors cursor-pointer">
-            Change password
-          </a>
-        </Row>
-        <Row label="Two-factor auth" hint="Adds an extra security layer.">
-          <Button variant="outline" size="sm" className="cursor-pointer">Enable 2FA</Button>
-        </Row>
-      </SectionCard>
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">
+                Type <strong className="font-mono text-foreground">DELETE</strong> to confirm:
+              </p>
+              <Input
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="font-mono text-sm"
+                autoFocus
+              />
+            </div>
+
+            {deleteError && (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 cursor-pointer"
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setConfirmText('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1 cursor-pointer"
+                disabled={confirmText !== 'DELETE' || deleting}
+                onClick={handleDelete}
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Delete account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -213,18 +337,26 @@ function AccountTab() {
 function AppearanceTab() {
   const [textSize, setTextSize] = useState(14)
   const [saved, setSaved] = useState(false)
-  const [uiTheme, setUiTheme] = useState<'light' | 'dark' | 'cosmic'>('light')
+  const [uiTheme, setUiTheme] = useState<'light' | 'dark'>('light')
 
   useEffect(() => {
     const sz = parseInt(localStorage.getItem('inline_text_size') || '14')
     setTextSize(sz)
     document.documentElement.style.setProperty('--font-size-base', `${sz}px`)
-    setUiTheme((localStorage.getItem('inline_ui_theme') as 'light' | 'dark' | 'cosmic') || 'light')
+
+    // Source of truth is the same `inline-theme` key the ThemeScript reads
+    // before first paint, so the picker stays in sync with the instant toggle.
+    const stored = (localStorage.getItem('inline-theme') as 'light' | 'dark' | null) ?? 'light'
+    setUiTheme(stored)
   }, [])
 
-  function pickTheme(id: 'light' | 'dark' | 'cosmic') {
+  function pickTheme(id: 'light' | 'dark') {
     setUiTheme(id)
-    localStorage.setItem('inline_ui_theme', id)
+    localStorage.setItem('inline-theme', id)
+    if (id === 'dark') document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+    // Notify other components (e.g. the sidebar toggle) listening for theme changes.
+    window.dispatchEvent(new CustomEvent('inline-theme-changed', { detail: id }))
     setSaved(true)
     setTimeout(() => setSaved(false), 1800)
   }
@@ -238,15 +370,14 @@ function AppearanceTab() {
   }
 
   const THEMES = [
-    { id: 'light' as const,  name: 'Light',       desc: 'Clean workspace',      cls: 'bg-slate-50 border-slate-200' },
-    { id: 'dark' as const,   name: 'Dark',         desc: 'Easier on the eyes',  cls: 'bg-[#191919] border-slate-700' },
-    { id: 'cosmic' as const, name: 'Cosmic blue',  desc: 'Soft blue highlights', cls: 'bg-sky-50 border-sky-200' },
+    { id: 'light' as const, name: 'Light', desc: 'Warm cream workspace', cls: 'bg-[#FDFBF7] border-stone-200' },
+    { id: 'dark' as const,  name: 'Dark',  desc: 'Deep navy, easier on the eyes', cls: 'bg-[#0B1735] border-[#1C3666]' },
   ]
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="Select theme" description="Applies accent surfaces across the dashboard." action={<SaveBadge saved={saved} />}>
-        <div className="grid grid-cols-3 gap-3">
+    <div className="space-y-8">
+      <SectionCard title="Select theme" description="Switches the dashboard between warm-cream light and deep-navy dark." action={<SaveBadge saved={saved} />}>
+        <div className="grid grid-cols-2 gap-3">
           {THEMES.map(t => (
             <button key={t.id} type="button" onClick={() => pickTheme(t.id)}
               className={cn('flex flex-col rounded-xl border-2 p-3 text-left transition-all cursor-pointer',
@@ -290,134 +421,182 @@ function AppearanceTab() {
 // Notifications
 // ---------------------------------------------------------------------------
 function NotificationsTab() {
-  const [prefs, setPrefs] = useState({ product: true, weekly: false, push: true })
-
-  useEffect(() => {
-    setPrefs({
-      product: localStorage.getItem('inline_notif_product') !== 'false',
-      weekly:  localStorage.getItem('inline_notif_weekly') === 'true',
-      push:    localStorage.getItem('inline_notif_push') !== 'false',
-    })
-  }, [])
-
-  function flip(k: keyof typeof prefs) {
-    const next = { ...prefs, [k]: !prefs[k] }
-    setPrefs(next)
-    localStorage.setItem(`inline_notif_${k}`, String(next[k]))
-  }
-
-  const rows = [
-    { key: 'product' as const, label: 'Product updates',     desc: 'New features and improvements.' },
-    { key: 'weekly' as const,  label: 'Weekly digest',       desc: 'Summary of workspace activity.' },
-    { key: 'push' as const,    label: 'Browser notifications',desc: 'Toasts for captures and invites.' },
-  ]
-
   return (
-    <SectionCard title="Notifications" description="Choose how Inline communicates with you.">
-      <div className="space-y-4">
-        {rows.map((r, i) => (
-          <div key={r.key}>
-            {i > 0 && <div className="h-px bg-border" />}
-            <div className="flex items-center justify-between pt-2 gap-4">
-              <div>
-                <p className="text-sm font-medium">{r.label}</p>
-                <p className="text-xs text-muted-foreground">{r.desc}</p>
-              </div>
-              <Toggle checked={prefs[r.key]} onChange={() => flip(r.key)} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </SectionCard>
+    <div className="space-y-8">
+      <SectionCard
+        title="Notifications"
+        description="Email notifications aren't available yet."
+      >
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Inline doesn&apos;t send emails today. When notifications ship, you&apos;ll be
+          able to opt into product updates, weekly digests, and security alerts
+          from this page.
+        </p>
+      </SectionCard>
+    </div>
   )
 }
 
 // ---------------------------------------------------------------------------
 // AI & Voice
 // ---------------------------------------------------------------------------
-const VOICE_OPTIONS = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel — Calm, Professional' },
-  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi — Confident, Clear'     },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella — Warm, Friendly'      },
-  { id: 'ErXwobaYiN019PkySvjV',  name: 'Antoni — Deep, Authoritative'},
-]
+function syncVoiceToChromeExtension(payload: {
+  voiceId: string
+  stability: string
+  similarity: string
+}) {
+  const extId = process.env.NEXT_PUBLIC_CHROME_EXTENSION_ID
+  if (!extId || typeof window === 'undefined') return
+  const w = window as unknown as {
+    chrome?: { runtime?: { sendMessage: (extensionId: string, message: unknown, responseCallback?: () => void) => void } }
+  }
+  try {
+    w.chrome?.runtime?.sendMessage(extId, {
+      type: 'INLINE_SYNC_VOICE_SETTINGS',
+      payload,
+    }, () => { /* optional: ignore lastError */ })
+  } catch {
+    /* not Chrome or extension unavailable */
+  }
+}
 
 function AIVoiceTab() {
-  const [openaiKey, setOpenaiKey] = useState('')
-  const [elevenKey, setElevenKey] = useState('')
-  const [voiceId,   setVoiceId]   = useState('21m00Tcm4TlvDq8ikWAM')
+  const [voiceId,   setVoiceId]   = useState(DEFAULT_INLINE_VOICE_ID)
   const [saved,     setSaved]     = useState(false)
-  const [pending,   start]        = useTransition()
+  const [, start]                 = useTransition()
   const [testState, setTest]      = useState<'idle' | 'playing'>('idle')
   const [autocomp,  setAutocomp]  = useState(true)
+  const [voiceChat, setVoiceChat] = useState(false)
+  const [screenReader, setScreenReader] = useState(false)
+  const [stability, setStability] = useState(0.5)
+  const [similarity, setSimilarity] = useState(0.75)
 
   useEffect(() => {
-    setOpenaiKey(localStorage.getItem('inline_openai_key') || '')
-    setElevenKey(localStorage.getItem('inline_elevenlabs_key') || '')
-    setVoiceId(localStorage.getItem('inline_voice_id') || '21m00Tcm4TlvDq8ikWAM')
+    // Legacy cleanup: API keys are server-managed now and must never live in
+    // browser storage.
+    localStorage.removeItem('inline_openai_key')
+    localStorage.removeItem('inline_elevenlabs_key')
+    const rawVoice = localStorage.getItem('inline_voice_id')
+    const normVoice = normalizeInlineVoiceId(rawVoice)
+    setVoiceId(normVoice)
+    if (rawVoice !== normVoice) localStorage.setItem('inline_voice_id', normVoice)
     setAutocomp(localStorage.getItem('inline_autocomplete') !== 'false')
+    setVoiceChat(localStorage.getItem('inline_voice_chat') === 'true')
+    setScreenReader(localStorage.getItem('inline_screen_reader') === 'true')
+    setStability(parseFloat(localStorage.getItem('inline_voice_stability') || '0.5'))
+    setSimilarity(parseFloat(localStorage.getItem('inline_voice_similarity') || '0.75'))
   }, [])
 
   function handleSave() {
     start(async () => {
-      localStorage.setItem('inline_openai_key', openaiKey)
-      localStorage.setItem('inline_elevenlabs_key', elevenKey)
-      localStorage.setItem('inline_voice_id', voiceId)
+      const vid = normalizeInlineVoiceId(voiceId)
+      setVoiceId(vid)
+      localStorage.setItem('inline_voice_id', vid)
       localStorage.setItem('inline_autocomplete', String(autocomp))
+      localStorage.setItem('inline_voice_chat', String(voiceChat))
+      localStorage.setItem('inline_screen_reader', String(screenReader))
+      localStorage.setItem('inline_voice_stability', String(stability))
+      localStorage.setItem('inline_voice_similarity', String(similarity))
       const _chrome = (typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>).chrome : undefined) as (undefined | { storage?: { local?: { set: (v: Record<string, unknown>) => void } } })
       if (_chrome?.storage?.local) {
-        _chrome.storage.local.set({ inlineOpenAIKey: openaiKey, inlineElevenLabsKey: elevenKey, inlineVoiceId: voiceId })
+        _chrome.storage.local.set({
+          inlineVoiceId: vid,
+          inlineScreenReader: String(screenReader),
+          inlineVoiceStability: String(stability),
+          inlineVoiceSimilarity: String(similarity),
+        })
       }
+      syncVoiceToChromeExtension({
+        voiceId: vid,
+        stability: String(stability),
+        similarity: String(similarity),
+      })
       await new Promise(r => setTimeout(r, 400))
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     })
   }
 
+  /** Play a preview of the selected voice.
+   *
+   * Resolution order — identical philosophy to the extension's
+   * `speakWithElevenLabs`:
+   *
+   *   1. POST `/api/tts` — the authenticated server proxy holds the only
+   *      ElevenLabs key (server env). No keys ever pass through the browser.
+   *   2. `window.speechSynthesis` — always-available browser voice, no
+   *      keys, no network. Guarantees the "Test voice" button never goes
+   *      silent.
+   */
   async function testVoice() {
-    if (!elevenKey) { window.speechSynthesis?.speak(new SpeechSynthesisUtterance('Voice preview: Inline AI ready.')); return }
     setTest('playing')
+    const sampleText = 'Hello, this is your Inline voice assistant.'
+
     try {
-      const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      const res = await fetch('/api/tts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'xi-api-key': elevenKey },
-        body: JSON.stringify({ text: 'Hello, this is your Inline voice assistant.', model_id: 'eleven_monolingual_v1', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: sampleText,
+          voiceId,
+          stability,
+          similarityBoost: similarity,
+        }),
       })
-      if (resp.ok) {
-        const blob = await resp.blob()
-        const url  = URL.createObjectURL(blob)
+
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
         const audio = new Audio(url)
-        audio.play()
         audio.onended = () => { URL.revokeObjectURL(url); setTest('idle') }
-      } else setTest('idle')
-    } catch { setTest('idle') }
+        audio.onerror = () => { URL.revokeObjectURL(url); setTest('idle') }
+        void audio.play()
+        return
+      }
+
+      // Proxy failed (ElevenLabs rejected the key, server unreachable,
+      // etc.). Fall back to the browser's built-in voice so the user
+      // still hears a sample.
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const utter = new SpeechSynthesisUtterance(sampleText)
+        utter.onend = () => setTest('idle')
+        utter.onerror = () => setTest('idle')
+        window.speechSynthesis.cancel()
+        window.speechSynthesis.speak(utter)
+        return
+      }
+
+      setTest('idle')
+    } catch {
+      // Network or parse error — try browser synth as a last resort.
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const utter = new SpeechSynthesisUtterance(sampleText)
+        utter.onend = () => setTest('idle')
+        utter.onerror = () => setTest('idle')
+        window.speechSynthesis.cancel()
+        window.speechSynthesis.speak(utter)
+      } else {
+        setTest('idle')
+      }
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="API keys" description="Stored locally and synced to the extension. Never sent to Inline servers." action={<SaveBadge saved={saved} />}>
-        <Row label="OpenAI API key" hint="Used for AI Copilot features.">
-          <MaskedInput value={openaiKey} onChange={setOpenaiKey} placeholder="sk-…" />
-        </Row>
-        <Row label="ElevenLabs API key" hint="Used for AI voice read-aloud.">
-          <MaskedInput value={elevenKey} onChange={setElevenKey} placeholder="…" />
-        </Row>
-        <div className="flex justify-end">
-          <Button size="sm" onClick={handleSave} disabled={pending} className="cursor-pointer">
-            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}Save keys
-          </Button>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Voice selection" description="The voice used for AI read-aloud.">
+    <div className="space-y-8">
+      <SectionCard title="Voice selection" description="The voice used for AI read-aloud across the dashboard and extension." action={<SaveBadge saved={saved} />}>
         <div className="space-y-2">
-          {VOICE_OPTIONS.map(v => (
+          {INLINE_VOICE_PRESETS.map(v => (
             <button key={v.id} type="button" onClick={() => setVoiceId(v.id)}
               className={cn('w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors cursor-pointer',
                 voiceId === v.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
               )}>
-              <span>{v.name}</span>
-              {voiceId === v.id && <Check className="w-3.5 h-3.5 text-primary" />}
+              <span className="text-left">
+                <span className="font-medium text-foreground">{v.name}</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  {v.gender === 'female' ? 'Female' : 'Male'} · {v.subtitle}
+                </span>
+              </span>
+              {voiceId === v.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
             </button>
           ))}
         </div>
@@ -429,14 +608,52 @@ function AIVoiceTab() {
         </div>
       </SectionCard>
 
-      <SectionCard title="AI Copilot">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium">Context autocomplete</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Ghost-text suggestions in sticky notes.</p>
+      <SectionCard title="Voice tuning" description="Adjust voice characteristics for ElevenLabs TTS.">
+        <Row label="Stability" hint="Higher = more consistent, lower = more expressive.">
+          <div className="flex items-center gap-3">
+            <input type="range" min="0" max="1" step="0.05" value={stability}
+              onChange={e => { const v = parseFloat(e.target.value); setStability(v); localStorage.setItem('inline_voice_stability', String(v)) }}
+              className="flex-1 accent-primary cursor-pointer" />
+            <span className="w-8 text-right text-xs font-mono text-muted-foreground">{stability.toFixed(2)}</span>
           </div>
-          <Toggle checked={autocomp} onChange={v => { setAutocomp(v); localStorage.setItem('inline_autocomplete', String(v)) }} />
-        </div>
+        </Row>
+        <Row label="Similarity boost" hint="Higher = closer to original voice, lower = more variation.">
+          <div className="flex items-center gap-3">
+            <input type="range" min="0" max="1" step="0.05" value={similarity}
+              onChange={e => { const v = parseFloat(e.target.value); setSimilarity(v); localStorage.setItem('inline_voice_similarity', String(v)) }}
+              className="flex-1 accent-primary cursor-pointer" />
+            <span className="w-8 text-right text-xs font-mono text-muted-foreground">{similarity.toFixed(2)}</span>
+          </div>
+        </Row>
+      </SectionCard>
+
+      <SectionCard title="Voice behavior">
+        <ToggleRow
+          label="Voice replies in chat"
+          description="Automatically speak AI responses in the workspace chat panel."
+          checked={voiceChat}
+          onChange={v => { setVoiceChat(v); localStorage.setItem('inline_voice_chat', String(v)) }}
+        />
+        <ToggleRow
+          label="Extension screen reader"
+          description="Auto-read AI results aloud in the browser extension."
+          checked={screenReader}
+          onChange={v => {
+            setScreenReader(v)
+            localStorage.setItem('inline_screen_reader', String(v))
+            const _chrome = (typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>).chrome : undefined) as (undefined | { storage?: { local?: { set: (v: Record<string, unknown>) => void } } })
+            if (_chrome?.storage?.local) _chrome.storage.local.set({ inlineScreenReader: String(v) })
+          }}
+        />
+      </SectionCard>
+
+      <SectionCard title="AI Copilot">
+        <ToggleRow
+          label="Context autocomplete"
+          description="Ghost-text suggestions in sticky notes."
+          checked={autocomp}
+          onChange={v => { setAutocomp(v); localStorage.setItem('inline_autocomplete', String(v)) }}
+        />
       </SectionCard>
     </div>
   )
@@ -445,10 +662,30 @@ function AIVoiceTab() {
 // ---------------------------------------------------------------------------
 // Extension Config
 // ---------------------------------------------------------------------------
+function syncBlocklistToChromeExtension(blockedDomains: string[]): void {
+  const extId = process.env.NEXT_PUBLIC_CHROME_EXTENSION_ID
+  if (!extId || typeof window === 'undefined') return
+  const w = window as unknown as {
+    chrome?: { runtime?: { sendMessage: (extensionId: string, message: unknown, responseCallback?: () => void) => void } }
+  }
+  try {
+    w.chrome?.runtime?.sendMessage(extId, {
+      type: 'INLINE_SYNC_BLOCKLIST',
+      payload: { blockedDomains },
+    }, () => { /* ignore lastError */ })
+  } catch {
+    /* not Chrome or extension unavailable */
+  }
+}
+
 function ExtensionTab() {
   const [blocklist, setBlocklist] = useState<string[]>([])
   const [newDomain, setNewDomain] = useState('')
   const [saved, setSaved] = useState(false)
+  const [cleared, setCleared] = useState(false)
+  const confirm = useConfirm()
+  const toast = useToast()
+  const extensionConfigured = Boolean(process.env.NEXT_PUBLIC_CHROME_EXTENSION_ID)
 
   useEffect(() => {
     try {
@@ -459,22 +696,47 @@ function ExtensionTab() {
 
   function persist(list: string[]) {
     localStorage.setItem('inline_blocklist', JSON.stringify(list))
-    const _chrome = (typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>).chrome : undefined) as (undefined | { storage?: { local?: { set: (v: Record<string, unknown>) => void } } })
-    if (_chrome?.storage?.local) _chrome.storage.local.set({ inlineBlocklist: list })
+    syncBlocklistToChromeExtension(list)
     setSaved(true)
     setTimeout(() => setSaved(false), 1800)
   }
 
   function add() {
-    const d = newDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+    const d = newDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
     if (!d || blocklist.includes(d)) return
     const next = [...blocklist, d]
     setBlocklist(next); setNewDomain(''); persist(next)
   }
 
+  async function clearLocalData() {
+    const ok = await confirm({
+      title: 'Clear local Inline preferences?',
+      description: 'This clears theme, voice, blocklist, and pins stored in this browser. Your captures on the server are not affected.',
+      confirmLabel: 'Clear preferences',
+      destructive: true,
+    })
+    if (!ok) return
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && (k.startsWith('inline_') || k.startsWith('inline-') || k.startsWith('wf-'))) keys.push(k)
+    }
+    keys.forEach(k => localStorage.removeItem(k))
+    setBlocklist([])
+    setCleared(true)
+    toast.success('Local preferences cleared')
+    setTimeout(() => setCleared(false), 2500)
+  }
+
   return (
-    <div className="space-y-6">
-      <SectionCard title="Domain blocklist" description="Inline disables itself on these domains." action={<SaveBadge saved={saved} />}>
+    <div className="space-y-8">
+      <SectionCard
+        title="Domain blocklist"
+        description={extensionConfigured
+          ? 'Inline disables itself on these domains. Synced to the extension automatically.'
+          : 'Inline disables itself on these domains. Set NEXT_PUBLIC_CHROME_EXTENSION_ID to sync this list to the extension, or manage it from the extension panel directly.'}
+        action={<SaveBadge saved={saved} />}
+      >
         <Row label="Add domain">
           <div className="flex gap-2">
             <Input value={newDomain} onChange={e => setNewDomain(e.target.value)}
@@ -491,7 +753,7 @@ function ExtensionTab() {
               <span className="font-mono">{d}</span>
             </div>
             <button type="button" onClick={() => { const n = blocklist.filter(b => b !== d); setBlocklist(n); persist(n) }}
-              className="text-muted-foreground hover:text-destructive cursor-pointer">
+              className="text-muted-foreground hover:text-destructive cursor-pointer" aria-label={`Remove ${d}`}>
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -510,10 +772,15 @@ function ExtensionTab() {
             </div>
           ))}
         </div>
-        <div className="pt-2">
-          <Button variant="outline" size="sm" className="cursor-pointer gap-2 text-destructive border-destructive/30 hover:bg-destructive/5">
+        <div className="pt-2 flex items-center gap-3">
+          <Button
+            variant="outline" size="sm"
+            className="cursor-pointer gap-2 text-destructive border-destructive/30 hover:bg-destructive/5"
+            onClick={clearLocalData}
+          >
             <Shield className="w-3.5 h-3.5" />Clear all local data
           </Button>
+          {cleared && <span className="text-xs font-medium text-accent">Local preferences cleared</span>}
         </div>
       </SectionCard>
     </div>
@@ -521,128 +788,95 @@ function ExtensionTab() {
 }
 
 // ---------------------------------------------------------------------------
-// Integrations
-// ---------------------------------------------------------------------------
-function IntegrationsTab() {
-  const [rows, setRows] = useState([
-    { id: 'linkedin', name: 'LinkedIn',  connected: false, abbr: 'LI' },
-    { id: 'github',   name: 'GitHub',    connected: true,  abbr: 'GH' },
-    { id: 'slack',    name: 'Slack',     connected: false, abbr: 'SL' },
-    { id: 'notion',   name: 'Notion',    connected: false, abbr: 'NO' },
-  ])
-
-  return (
-    <SectionCard title="Apps & integrations" description="Connect tools you already use.">
-      <ul className="space-y-2">
-        {rows.map(r => (
-          <li key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-3 py-3">
-            <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
-            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
-              {r.abbr}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">{r.name}</p>
-              <p className="text-xs text-muted-foreground">{r.connected ? 'Connected' : 'Not connected'}</p>
-            </div>
-            {r.connected ? (
-              <Button type="button" variant="outline" size="sm"
-                className="cursor-pointer text-destructive border-destructive/30 hover:bg-destructive/5"
-                onClick={() => setRows(p => p.map(x => x.id === r.id ? { ...x, connected: false } : x))}>
-                Unbind <X className="w-3 h-3 ml-1" />
-              </Button>
-            ) : (
-              <Button type="button" size="sm" className="cursor-pointer gap-1"
-                onClick={() => setRows(p => p.map(x => x.id === r.id ? { ...x, connected: true } : x))}>
-                Connect <ArrowRight className="w-3 h-3" />
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </SectionCard>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function PersonalSettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('account')
+const TAB_DESCRIPTIONS: Partial<Record<Tab, string>> = {
+  general: 'Your name, icon, and email.',
+  security: 'Password and session.',
+  notifications: 'Choose how Inline communicates with you.',
+  appearance: 'Theme and text size for the dashboard.',
+  'ai-voice': 'Voice selection, tuning, and copilot options.',
+  extension: 'Blocklist and extension preferences.',
+  danger: 'Permanently delete your account and data.',
+}
+
+function PersonalSettingsPageInner() {
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState<Tab>('general')
+
+  useEffect(() => {
+    const t = searchParams.get('tab')
+    if (t && PROFILE_TABS.some(x => x.id === t)) setActiveTab(t as Tab)
+  }, [searchParams])
 
   const content: Record<Tab, React.ReactNode> = {
-    account:      <AccountTab />,
-    appearance:   <AppearanceTab />,
-    notifications:<NotificationsTab />,
-    'ai-voice':   <AIVoiceTab />,
-    extension:    <ExtensionTab />,
-    integrations: <IntegrationsTab />,
+    general:       <GeneralTab />,
+    security:      <SecurityTab />,
+    appearance:    <AppearanceTab />,
+    notifications: <NotificationsTab />,
+    'ai-voice':    <AIVoiceTab />,
+    extension:     <ExtensionTab />,
+    danger:        <AccountDangerTab />,
   }
 
   return (
     <>
       <PageHeader
-        crumbs={[{ label: 'Settings' }]}
-        title="Personal Settings"
-        subtitle="Manage your account, appearance, and integrations"
+        crumbs={[{ label: 'Account', href: '/app/ws-1/dashboard' }, { label: 'Settings' }]}
       />
 
-      {/* Two-column layout that lives INSIDE the WorkspaceShell */}
-      <div className="flex h-[calc(100vh-112px)] overflow-hidden">
-        {/* Left nav */}
-        <aside className="w-52 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col overflow-y-auto scrollbar-minimal">
-          <nav className="flex-1 p-3 space-y-5 pt-4">
-            {NAV_GROUPS.map(group => (
-              <div key={group.label}>
-                <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </p>
-                <ul className="space-y-0.5">
-                  {group.items.map(item => {
-                    const Icon = item.icon
-                    const active = activeTab === item.id
-                    return (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab(item.id)}
-                          className={cn(
-                            'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm transition-all cursor-pointer font-medium',
-                            active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                          )}
-                        >
-                          <Icon className="w-4 h-4 shrink-0 opacity-90" />
-                          <span className="truncate">{item.label}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
+      <div className="px-6 pb-12">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground mt-4">
+          Account Settings
+        </h1>
 
-          {/* Footer */}
-          <div className="p-3 border-t border-sidebar-border space-y-1 shrink-0">
-            <a href="mailto:support@inline.app"
-              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer">
-              <HelpCircle className="w-4 h-4" />Support
-            </a>
-            <form action={signOut}>
-              <button type="submit"
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                <LogOut className="w-4 h-4" />Log out
+        <nav
+          className="mt-6 flex gap-1 overflow-x-auto scrollbar-minimal border-b border-border -mb-px pb-px"
+          aria-label="Account settings sections"
+        >
+          {PROFILE_TABS.map(tab => {
+            const active = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'shrink-0 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap',
+                  tab.danger
+                    ? active
+                      ? 'border-destructive text-destructive'
+                      : 'border-transparent text-destructive/80 hover:text-destructive'
+                    : active
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {tab.label}
               </button>
-            </form>
-          </div>
-        </aside>
+            )
+          })}
+        </nav>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-background scrollbar-minimal">
-          <div className="max-w-2xl px-6 py-8 space-y-8">
-            {content[activeTab]}
-          </div>
-        </main>
+        <div className="mt-8 w-full space-y-2">
+          <h2 className="text-base font-semibold text-foreground">
+            {PROFILE_TABS.find(t => t.id === activeTab)?.label}
+          </h2>
+          {TAB_DESCRIPTIONS[activeTab] && (
+            <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+          )}
+        </div>
+
+        <div className="mt-6 w-full space-y-8">{content[activeTab]}</div>
       </div>
     </>
+  )
+}
+
+export default function PersonalSettingsPage() {
+  return (
+    <Suspense fallback={<div className="px-6 pb-12 pt-8 text-sm text-muted-foreground">Loading settings…</div>}>
+      <PersonalSettingsPageInner />
+    </Suspense>
   )
 }

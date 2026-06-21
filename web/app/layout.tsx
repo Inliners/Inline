@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { NotificationsProvider } from '@/components/ui/notifications'
 import { ThemeScript } from '@/components/shell/ThemeScript'
 
 const geistSans = Geist({
@@ -37,7 +38,9 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-full bg-background text-foreground">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <NotificationsProvider>{children}</NotificationsProvider>
+        </TooltipProvider>
       </body>
     </html>
   )

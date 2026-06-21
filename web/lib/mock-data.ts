@@ -211,19 +211,40 @@ export const MOCK_DASHBOARD_STATS: DashboardStats = {
   ],
 }
 
-export const MOCK_MAP_COORDINATES: MapCoordinate[] = MOCK_NOTES
-  .filter((n): n is typeof n & { lat: number; lng: number } => n.lat !== undefined && n.lng !== undefined)
-  .map(n => ({
-    id: `coord-${n.id}`,
-    lat: n.lat,
-    lng: n.lng,
-    noteId: n.id,
-    type: n.type,
-    notePreview: n.content.length > 120 ? `${n.content.slice(0, 120)}…` : n.content,
-    locationLabel: (n.pageTitle.split('|')[0] ?? n.domain).trim().slice(0, 100),
-    domain: n.domain,
-    color: n.color,
-  }))
+const EXTRA_GEO_NOTES: Omit<MapCoordinate, 'id'>[] = [
+  { lat: 40.7128,  lng: -74.006,   noteId: 'note-003', type: 'ai-summary', notePreview: 'Use automatic_payment_methods for new integrations. Deprecated payment_method_types array.', locationLabel: 'New York, NY', domain: 'stripe.com', color: '#BBF7D0' },
+  { lat: 37.7749,  lng: -122.4194, noteId: 'note-001', type: 'text',       notePreview: 'RSC payload serialization — potential perf win by chunking large payloads.', locationLabel: 'San Francisco, CA', domain: 'github.com', color: '#FFEB3B' },
+  { lat: 34.0522,  lng: -118.2437, noteId: 'note-006', type: 'text',       notePreview: 'CRITICAL: RLS policy bypassed on .rpc() calls in certain edge cases.', locationLabel: 'Los Angeles, CA', domain: 'github.com', color: '#FECACA' },
+  { lat: 41.8781,  lng: -87.6298,  noteId: 'note-008', type: 'text',       notePreview: 'Replace Redux with Zustand for the extension popup. 47kb → 3kb.', locationLabel: 'Chicago, IL', domain: 'github.com', color: '#FFEB3B' },
+  { lat: 33.749,   lng: -84.388,   noteId: 'note-007', type: 'ai-summary', notePreview: 'Edge Functions: ~0ms cold start vs ~400ms serverless. 128MB limit tradeoff.', locationLabel: 'Atlanta, GA', domain: 'vercel.com', color: '#BBF7D0' },
+  { lat: 29.7604,  lng: -95.3698,  noteId: 'note-010', type: 'canvas',     notePreview: 'Stripe Connect: 3 models. Use Destination charges for marketplace.', locationLabel: 'Houston, TX', domain: 'stripe.com', color: '#A5F3FC' },
+  { lat: 42.3601,  lng: -71.0589,  noteId: 'note-011', type: 'ai-summary', notePreview: 'Token bucket per user + global leaky bucket. Fallback to GPT-4o-mini.', locationLabel: 'Boston, MA', domain: 'news.ycombinator.com', color: '#BBF7D0' },
+  { lat: 32.7767,  lng: -96.797,   noteId: 'note-004', type: 'text',       notePreview: 'GraphQL subscription for real-time updates: issueUpdated.', locationLabel: 'Dallas, TX', domain: 'linear.app', color: '#FFEDD5' },
+  { lat: 25.7617,  lng: -80.1918,  noteId: 'note-012', type: 'text',       notePreview: 'Triage mode is exactly what we need. Enable workspace automation rules.', locationLabel: 'Miami, FL', domain: 'linear.app', color: '#FFEDD5' },
+  { lat: 38.9072,  lng: -77.0369,  noteId: 'note-006', type: 'text',       notePreview: 'Security patch expected in Supabase v2.44.0. Recreate affected functions.', locationLabel: 'Washington, DC', domain: 'github.com', color: '#FECACA' },
+  { lat: 36.1627,  lng: -86.7816,  noteId: 'note-005', type: 'text',       notePreview: 'Denver market cooling — listing sat for 12 days. Use as leverage.', locationLabel: 'Nashville, TN', domain: 'zillow.com', color: '#FED7AA' },
+  { lat: 45.5152,  lng: -122.6784, noteId: 'note-009', type: 'text',       notePreview: 'Seattle Eastside prices climbing. Walkability 72.', locationLabel: 'Portland, OR', domain: 'zillow.com', color: '#DDD6FE' },
+  { lat: 51.5074,  lng: -0.1278,   noteId: 'note-001', type: 'text',       notePreview: 'Next.js app-render performance investigations for EU edge.', locationLabel: 'London, UK', domain: 'github.com', color: '#FFEB3B' },
+  { lat: 48.8566,  lng: 2.3522,    noteId: 'note-007', type: 'ai-summary', notePreview: 'Edge functions geo-routing for GDPR compliance.', locationLabel: 'Paris, FR', domain: 'vercel.com', color: '#BBF7D0' },
+  { lat: 35.6762,  lng: 139.6503,  noteId: 'note-008', type: 'text',       notePreview: 'Zustand adoption in the JP market — bundle size matters.', locationLabel: 'Tokyo, JP', domain: 'github.com', color: '#FFEB3B' },
+]
+
+export const MOCK_MAP_COORDINATES: MapCoordinate[] = [
+  ...MOCK_NOTES
+    .filter((n): n is typeof n & { lat: number; lng: number } => n.lat !== undefined && n.lng !== undefined)
+    .map(n => ({
+      id: `coord-${n.id}`,
+      lat: n.lat,
+      lng: n.lng,
+      noteId: n.id,
+      type: n.type,
+      notePreview: n.content.length > 120 ? `${n.content.slice(0, 120)}…` : n.content,
+      locationLabel: (n.pageTitle.split('|')[0] ?? n.domain).trim().slice(0, 100),
+      domain: n.domain,
+      color: n.color,
+    })),
+  ...EXTRA_GEO_NOTES.map((n, i) => ({ ...n, id: `coord-extra-${i}` })),
+]
 
 export const MOCK_GRAPH_DATA: GraphData = {
   nodes: [

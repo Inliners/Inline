@@ -1,10 +1,18 @@
-import { Inter } from 'next/font/google'
+import { DM_Sans, Caveat } from 'next/font/google'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-dm',
+})
+
+const caveat = Caveat({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  display: 'swap',
+  variable: '--font-handwritten',
 })
 
 export default function MarketingLayout({
@@ -13,9 +21,9 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen antialiased`}>
+    <div className={`${dmSans.variable} ${caveat.variable} ${dmSans.className} bg-white text-[#1C1E26] min-h-screen antialiased`}>
       <MarketingNav />
-      <main className="pt-24 md:pt-28">{children}</main>
+      <main>{children}</main>
       <MarketingFooter />
     </div>
   )

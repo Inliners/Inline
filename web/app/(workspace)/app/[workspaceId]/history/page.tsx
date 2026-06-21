@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import NotesTable from '@/components/history/NotesTable'
+import PageActivityGroupsClient from '@/components/history/PageActivityGroupsClient'
 import PageHeader from '@/components/shell/PageHeader'
 import ExportButton from '@/components/shell/ExportButton'
 import { Skeleton } from '@/components/ui/skeleton'
-import { fetchNotes } from '@/lib/data'
+import { fetchNotes, fetchRecapsByPageUrl } from '@/lib/data'
 import { getWorkspaceName } from '@/lib/workspaces'
 
 export const metadata: Metadata = { title: 'History' }
@@ -21,13 +22,28 @@ function TableSkeleton() {
 
 async function HistorySection({
   workspaceId,
+  workspaceName,
   highlightNoteId,
 }: {
   workspaceId: string
+  workspaceName: string
   highlightNoteId?: string
 }) {
-  const notes = await fetchNotes(workspaceId)
-  return <NotesTable notes={notes} workspaceId={workspaceId} highlightNoteId={highlightNoteId} />
+  const [notes, recapByPageUrl] = await Promise.all([
+    fetchNotes(workspaceId),
+    fetchRecapsByPageUrl(workspaceId),
+  ])
+  return (
+    <>
+      <PageActivityGroupsClient
+        notes={notes}
+        workspaceId={workspaceId}
+        workspaceName={workspaceName}
+        serverRecapByPageUrl={recapByPageUrl}
+      />
+      <NotesTable notes={notes} workspaceId={workspaceId} highlightNoteId={highlightNoteId} />
+    </>
+  )
 }
 
 export default async function WorkspaceHistoryPage({
@@ -42,14 +58,12 @@ export default async function WorkspaceHistoryPage({
   const workspaceName = getWorkspaceName(workspaceId)
 
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full bg-white dark:bg-[#0A1430]">
       <PageHeader
         crumbs={[
           { label: workspaceName, href: `/app/${workspaceId}/dashboard` },
           { label: 'History' },
         ]}
-        title="Your Captures"
-        subtitle="Everything you've saved from the web, all in one place."
         action={
           <ExportButton
             workspaceId={workspaceId}
@@ -57,9 +71,9 @@ export default async function WorkspaceHistoryPage({
           />
         }
       />
-      <div className="p-6 max-w-7xl">
+      <div className="w-full min-w-0 p-6">
         <Suspense fallback={<TableSkeleton />}>
-          <HistorySection workspaceId={workspaceId} highlightNoteId={q} />
+          <HistorySection workspaceId={workspaceId} workspaceName={workspaceName} highlightNoteId={q} />
         </Suspense>
       </div>
     </div>

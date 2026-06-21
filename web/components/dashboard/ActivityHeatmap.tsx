@@ -12,12 +12,12 @@ interface ActivityHeatmapProps {
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getIntensityClass(count: number, max: number) {
-  if (count === 0) return 'bg-slate-100'
+  if (count === 0) return 'bg-muted'
   const ratio = count / max
-  if (ratio < 0.25) return 'bg-[#EDEBE8]'
-  if (ratio < 0.5) return 'bg-[#E3E2DE]'
-  if (ratio < 0.75) return 'bg-[#7A756D]'
-  return 'bg-[#191919]'
+  if (ratio < 0.25) return 'bg-[#EDE9E3] dark:bg-[#1E3878]'
+  if (ratio < 0.5)  return 'bg-[#d6d3d1] dark:bg-[#3A5AA8]'
+  if (ratio < 0.75) return 'bg-[#78716c] dark:bg-[#6C8ED0]'
+  return 'bg-[#1C1E26] dark:bg-[#B5CDEF]'
 }
 
 export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps) {
@@ -40,18 +40,24 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
     weeks.push(cells.slice(i, i + 7))
   }
 
-  const shellClass = 'rounded-xl border border-slate-200 bg-white p-5'
+  const shellClass = 'rounded-xl border border-border bg-card p-5'
 
   const body = (
     <>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Activity</p>
-          <p className="text-xs text-slate-400 mt-0.5">Capture frequency, last 30 days</p>
+          <p className="text-sm font-semibold text-foreground">Activity</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Capture frequency, last 30 days</p>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
           <span>Less</span>
-          {['bg-slate-100', 'bg-[#EDEBE8]', 'bg-[#E3E2DE]', 'bg-[#7A756D]', 'bg-[#191919]'].map(cls => (
+          {[
+            'bg-muted',
+            'bg-[#EDE9E3] dark:bg-[#1E3878]',
+            'bg-[#d6d3d1] dark:bg-[#3A5AA8]',
+            'bg-[#78716c] dark:bg-[#6C8ED0]',
+            'bg-[#1C1E26] dark:bg-[#B5CDEF]',
+          ].map(cls => (
             <div key={cls} className={cn('w-3 h-3 rounded-sm', cls)} />
           ))}
           <span>More</span>
@@ -64,7 +70,7 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
           {WEEKDAY_LABELS.map((day, i) => (
             <div key={day} className="h-3 flex items-center">
               {i % 2 === 1 && (
-                <span className="text-[9px] text-slate-400 leading-none w-6">{day}</span>
+                <span className="w-6 text-[9px] leading-none text-muted-foreground">{day}</span>
               )}
               {i % 2 !== 1 && <span className="w-6" />}
             </div>
@@ -79,7 +85,7 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
           return (
             <div key={`w-${wi}`} className="flex flex-col gap-1 shrink-0">
               <div className="h-3 flex items-center">
-                <span className="text-[9px] text-slate-400 leading-none">{wi % 4 === 0 ? monthLabel : ''}</span>
+                <span className="text-[9px] leading-none text-muted-foreground">{wi % 4 === 0 ? monthLabel : ''}</span>
               </div>
               {week.map((cell, di) => (
                 <div
@@ -103,7 +109,7 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
     return (
       <Link
         href={linkHref}
-        className={cn(shellClass, 'block transition-colors hover:border-[#D3D1CB]')}
+        className={cn(shellClass, 'block transition-colors hover:border-stone-400/50')}
         aria-label="View full activity on Analytics"
       >
         {body}

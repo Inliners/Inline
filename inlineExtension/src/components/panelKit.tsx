@@ -1,0 +1,613 @@
+import { useEffect, useState, type ReactNode, type CSSProperties } from 'react'
+import { PANEL as C, FONT, BRAND_GRADIENT } from '../lib/extensionTheme'
+
+/**
+ * Inline panel design system.
+ *
+ * One premium, solid work-surface shell plus the primitives every tool panel
+ * is built from — action tiles, chips, a segmented control, custom toggles and
+ * a real composer. Warm off-white surfaces, crisp white inner cards, soft
+ * layered shadows, generous spacing and confident hierarchy.
+ */
+
+/* ─────────────────────────  Brand + chrome  ───────────────────────── */
+
+/** The Inline brand glyph (slanted tick) inside a navy rounded tile. */
+export function BrandMark({ size = 24, radius }: { size?: number; radius?: number }) {
+  return (
+    <span
+      style={{
+        position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: size, height: size, flexShrink: 0,
+        borderRadius: radius ?? Math.round(size * 0.32),
+        background: BRAND_GRADIENT,
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}
+    >
+      <span style={{
+        width: Math.max(2, Math.round(size * 0.13)), height: Math.round(size * 0.48),
+        borderRadius: 2, background: '#FFFFFF', transform: 'rotate(-12deg)',
+      }} />
+    </span>
+  )
+}
+
+const ICloseGlyph = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+    <path d="M4 4l8 8M12 4l-8 8" />
+  </svg>
+)
+
+const IChevronDown = ({ open = false }: { open?: boolean }) => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.14s ease' }}
+  >
+    <path d="M4 6l4 4 4-4" />
+  </svg>
+)
+
+const IPanelGlyph = () => (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <rect x="4.25" y="2.75" width="9.5" height="12.5" rx="2.1" />
+    <path d="M7.1 5.6v6.8" strokeLinecap="round" />
+  </svg>
+)
+
+/** Custom close button — hover state, accessible label, never a native title. */
+export function CloseButton({ onClose, label = 'Close' }: { onClose: () => void; label?: string }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      aria-label={label}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 30, height: 30, borderRadius: 10, border: 'none', padding: 0,
+        background: hov ? C.hoverBg : 'transparent',
+        color: hov ? C.text : C.textMuted,
+        cursor: 'pointer', transition: 'background 0.14s, color 0.14s', flexShrink: 0,
+      }}
+    >
+      <ICloseGlyph />
+    </button>
+  )
+}
+
+export interface PanelShellProps {
+  title: string
+  subtitle?: string
+  chip?: string
+  width?: number
+  onClose: () => void
+  footer?: ReactNode
+  headerActions?: ReactNode
+  /** Optional element rendered before the close button (e.g. a back button). */
+  headerLeading?: ReactNode
+  children: ReactNode
+  style?: CSSProperties
+}
+
+/**
+ * The premium work-panel shell: solid warm surface, big rounded corners, a
+ * soft layered shadow, and a confident branded header with a custom close.
+ */
+export function PanelShell({
+  title, subtitle, chip, width = 400, onClose, footer, headerActions, headerLeading, children, style,
+}: PanelShellProps) {
+  const [metaOpen, setMetaOpen] = useState(false)
+
+  return (
+    <div
+      style={{
+        width,
+        maxWidth: 'min(94vw, 430px)',
+        maxHeight: 'calc(100vh - 64px)',
+        background: C.bg,
+        border: `1px solid ${C.border}`,
+        borderRadius: C.radius,
+        boxShadow: C.shadowOuter,
+        fontFamily: FONT,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        ...style,
+      }}
+    >
+      <header
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          minHeight: 56,
+          padding: '0 12px',
+          borderBottom: `1px solid ${C.divider}`,
+          background: C.headerBg,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ position: 'absolute', left: 12, display: 'flex', alignItems: 'center' }}>
+          {headerLeading}
+        </div>
+
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <BrandMark size={25} radius={8} />
+          <button
+            type="button"
+            onClick={() => setMetaOpen(v => !v)}
+            aria-label={metaOpen ? 'Hide panel details' : 'Show panel details'}
+            aria-expanded={metaOpen}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 22,
+              height: 22,
+              borderRadius: 8,
+              border: 'none',
+              background: 'transparent',
+              color: C.textMuted,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <IChevronDown open={metaOpen} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {headerActions}
+          <button
+            type="button"
+            onClick={() => setMetaOpen(v => !v)}
+            aria-label="Panel details"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              borderRadius: 10,
+              border: 'none',
+              background: 'transparent',
+              color: C.textMuted,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <IPanelGlyph />
+          </button>
+        </div>
+        <CloseButton onClose={onClose} />
+      </header>
+
+      {metaOpen && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '9px 16px',
+          borderBottom: `1px solid ${C.divider}`,
+          background: C.bg,
+          flexShrink: 0,
+        }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: C.text,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>{title}</div>
+            {subtitle && (
+              <div style={{
+                marginTop: 2,
+                fontSize: 11.5,
+                color: C.textMuted,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>{subtitle}</div>
+            )}
+          </div>
+          {chip && <Pill>{chip}</Pill>}
+        </div>
+      )}
+
+      <div style={{
+        display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1,
+        overflowY: 'auto', overflowX: 'hidden',
+      }}>
+        {children}
+      </div>
+
+      {footer && (
+        <div style={{ borderTop: `1px solid ${C.divider}`, background: C.bg, flexShrink: 0 }}>
+          {footer}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** A small status/context pill used in headers. */
+export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' }) {
+  const accent = tone === 'accent'
+  return (
+    <span style={{
+      flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '3px 9px', borderRadius: C.radiusPill,
+      background: accent ? 'rgba(63,111,227,0.12)' : C.surfaceMuted,
+      border: `1px solid ${accent ? 'rgba(63,111,227,0.22)' : C.divider}`,
+      color: accent ? C.link : C.textMuted,
+      fontSize: 10.5, fontWeight: 700, letterSpacing: '0.01em',
+      maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    }}>{children}</span>
+  )
+}
+
+/* ─────────────────────────  Layout helpers  ───────────────────────── */
+
+/** Uppercase section label with consistent rhythm. */
+export function SectionLabel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div style={{
+      margin: '0 2px 9px', fontSize: 10.5, fontWeight: 700, color: C.textLight,
+      letterSpacing: '0.06em', textTransform: 'uppercase', ...style,
+    }}>{children}</div>
+  )
+}
+
+/* ─────────────────────────  Interactive tiles/chips  ───────────────────────── */
+
+/** A solid quick-action card with optional leading icon + description. */
+export function ActionTile({
+  icon, label, desc, disabled, onClick,
+}: { icon?: ReactNode; label: string; desc?: string; disabled?: boolean; onClick: () => void }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      aria-label={label}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+        padding: '11px 12px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
+        border: `1px solid ${disabled ? C.divider : hov ? C.borderStrong : C.border}`,
+        background: disabled ? C.surfaceMuted : C.surfaceBubble,
+        color: disabled ? C.textLight : C.text,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.7 : 1,
+        transition: 'background 0.14s, border-color 0.14s',
+        fontFamily: FONT,
+      }}
+    >
+      {icon && (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+          background: disabled ? C.surfaceSunken : C.surfaceMuted,
+          color: disabled ? C.textLight : C.accent,
+        }}>{icon}</span>
+      )}
+      <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 650, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{label}</span>
+        {desc && <span style={{ fontSize: 10.5, color: C.textLight, lineHeight: 1.3 }}>{desc}</span>}
+      </span>
+    </button>
+  )
+}
+
+/** Pill-style chip with hover + active states. */
+export function Chip({
+  label, active, disabled, onClick,
+}: { label: string; active?: boolean; disabled?: boolean; onClick: () => void }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      aria-label={label}
+      aria-pressed={active}
+      style={{
+        padding: '7px 13px', borderRadius: C.radiusPill,
+        border: `1px solid ${active ? C.accent : disabled ? C.divider : hov ? C.borderStrong : C.border}`,
+        background: active ? C.accent : disabled ? C.surfaceMuted : hov ? C.hoverBg : C.surfaceBubble,
+        color: active ? '#fff' : disabled ? C.textLight : C.text,
+        fontSize: 11.5, fontWeight: 600, fontFamily: FONT, letterSpacing: '-0.01em',
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.7 : 1,
+        boxShadow: 'none',
+        transition: 'background 0.14s, border-color 0.14s, color 0.14s',
+      }}
+    >{label}</button>
+  )
+}
+
+/** iOS-style segmented control. */
+export function Segmented<T extends string>({
+  options, value, onChange,
+}: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 3, padding: 4, borderRadius: 14,
+      background: C.surfaceSunken, border: `1px solid ${C.divider}`,
+    }}>
+      {options.map(o => {
+        const active = o.value === value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            aria-pressed={active}
+            style={{
+              flex: 1, padding: '7px 4px', borderRadius: 11, border: 'none',
+              background: active ? C.surfaceBubble : 'transparent',
+              color: active ? C.text : C.textMuted,
+              fontSize: 12, fontWeight: active ? 700 : 600, fontFamily: FONT, letterSpacing: '-0.01em',
+              cursor: 'pointer',
+              transition: 'background 0.14s, color 0.14s',
+            }}
+          >{o.label}</button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Custom toggle switch (no native control). */
+export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label ? `${checked ? 'Disable' : 'Enable'} ${label}` : undefined}
+      onClick={() => onChange(!checked)}
+      style={{
+        position: 'relative', width: 44, height: 26, borderRadius: C.radiusPill,
+        background: checked ? C.toggleOn : C.toggleOff, border: 'none', cursor: 'pointer', padding: 0,
+        transition: 'background 0.22s cubic-bezier(0.4,0,0.2,1)', flexShrink: 0,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 3, left: checked ? 21 : 3,
+        width: 20, height: 20, borderRadius: '50%', background: '#fff', display: 'block',
+        boxShadow: 'none',
+        transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1)',
+      }} />
+    </button>
+  )
+}
+
+/** Custom checkbox (no native control). */
+export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+        padding: '9px 11px', borderRadius: 13, border: `1px solid ${hov ? C.borderStrong : C.border}`,
+        background: C.surfaceBubble, cursor: 'pointer', fontFamily: FONT,
+        transition: 'border-color 0.14s, background 0.14s',
+      }}
+    >
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 19, height: 19, borderRadius: 7, flexShrink: 0,
+        background: checked ? C.accent : C.surfaceBubble,
+        border: `1.5px solid ${checked ? C.accent : C.borderStrong}`,
+        color: '#fff', transition: 'background 0.14s, border-color 0.14s',
+      }}>
+        {checked && (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+        )}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 550, color: C.text }}>{label}</span>
+    </button>
+  )
+}
+
+const ISendGlyph = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+  </svg>
+)
+
+/** Premium composer — rounded surface, context/mode pill, send button. */
+export function Composer({
+  value, onChange, onSubmit, placeholder, disabled, modeLabel = 'Auto', sendDisabled,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSubmit: () => void
+  placeholder?: string
+  disabled?: boolean
+  modeLabel?: string
+  sendDisabled?: boolean
+}) {
+  const [focus, setFocus] = useState(false)
+  const canSend = !sendDisabled && !disabled && value.trim().length > 0
+  return (
+    <div style={{
+      border: `1.5px solid ${focus ? C.accent : C.border}`,
+      borderRadius: 18, background: disabled ? C.surfaceMuted : C.surfaceBubble,
+      boxShadow: 'none',
+      padding: '10px 10px 8px 14px', transition: 'border-color 0.14s, background 0.14s',
+    }}>
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && canSend) { e.preventDefault(); onSubmit() } }}
+        disabled={disabled}
+        placeholder={placeholder}
+        rows={2}
+        style={{
+          width: '100%', border: 'none', outline: 'none', resize: 'none',
+          background: 'transparent', fontSize: 13, lineHeight: 1.5, color: C.text,
+          fontFamily: FONT, padding: 0, minHeight: 34, boxSizing: 'border-box',
+        }}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px',
+          borderRadius: C.radiusPill, background: C.surfaceMuted, border: `1px solid ${C.divider}`,
+          fontSize: 10.5, fontWeight: 700, color: C.textMuted, letterSpacing: '0.01em',
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.link }} />
+          {modeLabel}
+        </span>
+        <button
+          type="button"
+          onClick={() => { if (canSend) onSubmit() }}
+          disabled={!canSend}
+          aria-label="Send"
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, borderRadius: 12, border: 'none',
+            background: canSend ? C.accent : C.surfaceSunken,
+            color: canSend ? '#fff' : C.textLight,
+            cursor: canSend ? 'pointer' : 'not-allowed', flexShrink: 0,
+            boxShadow: 'none',
+            transition: 'background 0.14s',
+          }}
+        ><ISendGlyph /></button>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────  States  ───────────────────────── */
+
+export function Spinner({ size = 18 }: { size?: number }) {
+  return (
+    <span style={{
+      display: 'inline-block', width: size, height: size,
+      border: `2px solid ${C.divider}`, borderTopColor: C.accent,
+      borderRadius: '50%', animation: 'inline-spin 0.7s linear infinite',
+    }} />
+  )
+}
+
+export function PanelLoading({ label = 'Working…' }: { label?: string }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 12, padding: '38px 20px', color: C.textMuted, fontFamily: FONT,
+    }}>
+      <Spinner size={24} />
+      <span style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '-0.01em' }}>{label}</span>
+    </div>
+  )
+}
+
+export function PanelEmpty({ icon, title, hint }: { icon?: ReactNode; title: string; hint?: string }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 9, padding: '34px 24px', textAlign: 'center', fontFamily: FONT,
+    }}>
+      {icon && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 46, height: 46, borderRadius: 16, marginBottom: 2,
+          background: C.surfaceMuted, color: C.textMuted, border: `1px solid ${C.divider}`,
+        }}>{icon}</div>
+      )}
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, letterSpacing: '-0.01em' }}>{title}</div>
+      {hint && <div style={{ fontSize: 12, color: C.textMuted, maxWidth: 240, lineHeight: 1.5 }}>{hint}</div>}
+    </div>
+  )
+}
+
+export function PanelError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 11, padding: '30px 24px', textAlign: 'center', fontFamily: FONT,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: 44, height: 44, borderRadius: 15,
+        background: '#FEF2F2', color: '#DC2626', border: '1px solid rgba(220,38,38,0.18)',
+      }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        </svg>
+      </div>
+      <div style={{ fontSize: 13, color: C.text, maxWidth: 250, lineHeight: 1.5 }}>{message}</div>
+      {onRetry && (
+        <button type="button" onClick={onRetry} style={{
+          marginTop: 2, padding: '8px 18px', borderRadius: C.radiusPill,
+          border: `1px solid ${C.border}`, background: C.surfaceBubble, color: C.text,
+          fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: C.shadowSoft,
+        }}>Try again</button>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────  Hooks + utilities  ───────────────────────── */
+
+/** Close the panel when Escape is pressed (capture so it beats page handlers). */
+export function useEscape(active: boolean, onEscape: () => void) {
+  useEffect(() => {
+    if (!active) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onEscape() }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [active, onEscape])
+}
+
+/** Inject the spin keyframes once into the shadow root that hosts the panels. */
+let keyframesInjected = false
+export function ensurePanelKeyframes(root: ShadowRoot | Document | null) {
+  if (keyframesInjected || !root) return
+  try {
+    const style = document.createElement('style')
+    style.textContent = '@keyframes inline-spin{to{transform:rotate(360deg)}}'
+    ;(root as ShadowRoot).appendChild(style)
+    keyframesInjected = true
+  } catch { /* ignore */ }
+}

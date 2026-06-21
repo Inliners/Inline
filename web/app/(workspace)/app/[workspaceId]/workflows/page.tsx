@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Play, CheckCircle2, Circle, AlertTriangle,
   Sparkles, StickyNote, ListTodo, Link2, Lightbulb,
-  ChevronRight, X, Clock, Users, MoreHorizontal,
+  ChevronRight, X, Clock, Users,
   ArrowRight, Trash2, GripVertical,
 } from 'lucide-react'
 
@@ -133,20 +133,17 @@ export default function WorkflowsPage() {
 
   function runConflictCheck() {
     setChecking(true)
-    setConflictResult(null)
-    setTimeout(() => {
-      const inProgress = tasks.filter(t => t.status === 'in-progress')
-      const assignees = inProgress.map(t => t.assignee)
-      const duplicates = assignees.filter((a, i) => assignees.indexOf(a) !== i && a !== 'Unassigned')
-      if (duplicates.length > 0) {
-        setConflictResult(`Potential conflict: ${[...new Set(duplicates)].join(', ')} ${duplicates.length > 1 ? 'are' : 'is'} working on multiple tasks simultaneously. Consider prioritizing to avoid bottlenecks.`)
-      } else if (inProgress.length > 5) {
-        setConflictResult('You have more than 5 tasks in progress. Consider completing some before starting new ones to maintain focus.')
-      } else {
-        setConflictResult('No conflicts detected. Your workflow looks good!')
-      }
-      setChecking(false)
-    }, 1500)
+    const inProgress = tasks.filter(t => t.status === 'in-progress')
+    const assignees = inProgress.map(t => t.assignee)
+    const duplicates = assignees.filter((a, i) => assignees.indexOf(a) !== i && a !== 'Unassigned')
+    if (duplicates.length > 0) {
+      setConflictResult(`Potential conflict: ${[...new Set(duplicates)].join(', ')} ${duplicates.length > 1 ? 'are' : 'is'} working on multiple tasks simultaneously. Consider prioritizing to avoid bottlenecks.`)
+    } else if (inProgress.length > 5) {
+      setConflictResult('You have more than 5 tasks in progress. Consider completing some before starting new ones to maintain focus.')
+    } else {
+      setConflictResult('No conflicts detected. Your workflow looks good!')
+    }
+    setChecking(false)
   }
 
   const columns: { status: TaskStatus; label: string; color: string }[] = [
@@ -163,7 +160,7 @@ export default function WorkflowsPage() {
     <div className="min-h-full bg-white">
       {/* Header */}
       <div className="border-b border-slate-200 bg-white px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl">
+        <div className="flex w-full min-w-0 items-center justify-between">
           <div>
             <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
               <Link href={`/app/${workspaceId}/dashboard`} className="hover:text-slate-600 transition-colors">
@@ -172,10 +169,7 @@ export default function WorkflowsPage() {
               <ChevronRight className="w-3 h-3" />
               <span className="text-slate-600 font-medium">Workflows</span>
             </nav>
-            <h1 className="text-xl font-bold text-slate-800">
-              Workflows
-              <span className="text-slate-400 font-normal text-lg ml-2">&mdash; plan, collaborate, and ship</span>
-            </h1>
+            <h1 className="text-xl font-bold text-slate-800">Workflows</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -229,7 +223,7 @@ export default function WorkflowsPage() {
           {[
             { id: 'board' as const, label: 'Task Board', icon: ListTodo },
             { id: 'ideas' as const, label: 'Ideas Wall', icon: Lightbulb },
-            { id: 'insights' as const, label: 'AI Insights', icon: Sparkles },
+            { id: 'insights' as const, label: 'Insights', icon: Sparkles },
           ].map(tab => (
             <button
               key={tab.id}
@@ -250,7 +244,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Content */}
-      <div className="p-6 max-w-7xl">
+      <div className="w-full min-w-0 p-6">
         {/* ── Board tab ── */}
         {activeTab === 'board' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -414,7 +408,7 @@ export default function WorkflowsPage() {
               <div className="border-t border-slate-100 pt-3">
                 <p className="text-xs text-slate-500 leading-relaxed">
                   {tasks.length === 0
-                    ? 'Add some tasks to get started. AI insights will appear here as your workflow grows.'
+                    ? 'Add some tasks to get started. Insights will appear here as your workflow grows.'
                     : `You have ${tasks.length} total tasks across your workflow. ${tasks.filter(t => t.status === 'done').length} completed so far. ${ideas.length} ideas on the wall.`
                   }
                 </p>

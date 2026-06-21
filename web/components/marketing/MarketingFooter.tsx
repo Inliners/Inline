@@ -1,39 +1,66 @@
 import Link from 'next/link'
 
-const LINKS = {
-  Product: ['Features', 'Pricing', 'Changelog', 'Roadmap'],
-  Resources: ['Help Center', 'Getting Started', 'API Docs', 'GitHub'],
-  Company: ['About', 'Blog', 'Careers', 'Privacy'],
-}
+/**
+ * Footer with real destinations only — section anchors, the install guide,
+ * and auth/app routes. No placeholder links, ratings, or language switchers.
+ */
+const LINK_COLUMNS: { section: string; items: { label: string; href: string }[] }[] = [
+  {
+    section: 'Product',
+    items: [
+      { label: 'Overview',  href: '/#product' },
+      { label: 'Extension', href: '/#extension' },
+      { label: 'AI search', href: '/#rag' },
+      { label: 'FAQ',       href: '/#faq' },
+    ],
+  },
+  {
+    section: 'Workspace',
+    items: [
+      { label: 'Open workspace', href: '/app/ws-1/dashboard' },
+      { label: 'Sign in',        href: '/auth/login' },
+      { label: 'Create account', href: '/auth/register' },
+    ],
+  },
+  {
+    section: 'Get started',
+    items: [
+      { label: 'Install the extension', href: '/install' },
+      { label: 'Security & privacy',    href: '/#security' },
+    ],
+  },
+]
 
 export default function MarketingFooter() {
   return (
-    <footer className="border-t-2 border-slate-200 bg-white py-16 px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-          <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-md bg-[#191919] border-2 border-[#191919] flex items-center justify-center">
+    <footer className="bg-[#14161C] border-t border-white/10 text-stone-300">
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
+          {/* Brand */}
+          <div className="col-span-2">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center ring-1 ring-white/10" aria-hidden>
                 <span className="block h-4 w-1 rounded-full bg-white -rotate-12" />
               </div>
-              <span className="font-bold text-sm text-slate-900">Inline</span>
+              <span className="font-semibold text-sm text-white">inline</span>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
-              Your notes, right where you need them. Built for individuals who browse and teams who ship.
+            <p className="text-xs text-stone-500 leading-relaxed max-w-[240px]">
+              Capture context directly on the web. Turn highlights, notes,
+              rewrites, and recaps into a searchable AI workspace.
             </p>
           </div>
 
-          {Object.entries(LINKS).map(([section, items]) => (
-            <div key={section}>
-              <p className="text-xs font-bold text-slate-900 mb-4 uppercase tracking-wider">{section}</p>
+          {LINK_COLUMNS.map(col => (
+            <div key={col.section}>
+              <p className="text-xs font-semibold text-white mb-4">{col.section}</p>
               <ul className="space-y-2.5">
-                {items.map(item => (
-                  <li key={item}>
+                {col.items.map(item => (
+                  <li key={item.label}>
                     <Link
-                      href="#"
-                      className="text-xs text-slate-500 hover:text-slate-900 transition-colors"
+                      href={item.href}
+                      className="text-xs text-stone-500 hover:text-white transition-colors"
                     >
-                      {item}
+                      {item.label}
                     </Link>
                   </li>
                 ))}
@@ -42,13 +69,11 @@ export default function MarketingFooter() {
           ))}
         </div>
 
-        <div className="mt-16 pt-8 border-t-2 border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>&copy; {new Date().getFullYear()} Inline, Inc. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="hover:text-slate-900 transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-slate-900 transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-slate-900 transition-colors">Cookies</Link>
-          </div>
+        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-stone-500">
+            Built through the INIT FIU Build Program.
+          </p>
+          <p className="text-xs text-stone-500">&copy;{new Date().getFullYear()} Inline</p>
         </div>
       </div>
     </footer>

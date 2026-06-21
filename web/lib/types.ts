@@ -1,4 +1,15 @@
-export type NoteType = 'text' | 'canvas' | 'ai-summary'
+export type NoteType =
+  | 'text'
+  | 'canvas'
+  | 'ai-summary'
+  | 'sticky'
+  | 'anchor'
+  | 'drawing'
+  | 'handwriting'
+  | 'highlight'
+  | 'clip'
+  | 'stamp'
+  | 'paper-note'
 
 export interface Note {
   id: string
@@ -75,12 +86,18 @@ export interface DashboardStats {
   streakDays: number
   captureHistory: DailyCapture[]
   topDomains: DomainStat[]
+  /** Counts per notes.type for the active workspace (for pie chart + KPIs). */
+  typeCounts?: Partial<Record<NoteType, number>>
 }
 
 export interface GraphNode {
   id: string
   label: string
   type: 'url' | 'note' | 'tag'
+  /** The underlying notes.type when `type === 'note'` — drives glyph/colour. */
+  noteType?: NoteType
+  /** Optional glyph (emoji or short symbol) to render inside the node. */
+  glyph?: string
   domain?: string
   size: number
   color?: string

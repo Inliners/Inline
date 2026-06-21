@@ -81,7 +81,7 @@
 }
 
 .toggle--on {
-  background: #2563eb;
+  background: #0b1735;
 }
 
 .toggle-thumb {
@@ -135,5 +135,5 @@
 }
 
 .footer__all-settings:hover {
-  color: #2563eb;
+  color: #0b1735;
 }

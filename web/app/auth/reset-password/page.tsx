@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
 import { sendPasswordReset } from '@/lib/actions/auth'
+import SolarSystemArt from '@/components/auth/SolarSystemArt'
 
 export default function ResetPasswordPage() {
   const [email,   setEmail]   = useState('')
@@ -25,88 +25,107 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
-      <div className="w-full max-w-sm">
-
+    <div className="min-h-screen flex bg-[#FDFBF7] text-[#1C1E26] selection:bg-stone-200 selection:text-[#1C1E26]">
+      
+      {/* LEFT COLUMN: FORM */}
+      <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center px-8 sm:px-16 lg:px-24 relative z-10 bg-[#FDFBF7]">
+        
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-xl bg-[#6C91C2] flex items-center justify-center">
+        <Link
+          href="/"
+          className="absolute top-8 left-8 sm:left-16 lg:left-24 flex items-center gap-2"
+        >
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#1C1E26]" aria-hidden>
             <span className="block h-4 w-1 rounded-full bg-white -rotate-12" />
           </div>
-          <span className="font-bold text-[15px] tracking-tight text-slate-800">Inline</span>
-        </div>
+          <span className="font-semibold text-xl tracking-tight text-[#1C1E26]">
+            inline<span className="text-stone-400 ml-0.5 text-sm align-top">~</span>
+          </span>
+        </Link>
 
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8">
+        <div className="w-full max-w-sm mt-16 md:mt-0">
           {sent ? (
-            <div className="text-center space-y-4">
-              <div className="w-14 h-14 rounded-full bg-[#E6F4F2] flex items-center justify-center mx-auto">
-                <CheckCircle className="w-7 h-7 text-[#5FA8A1]" />
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-200/50">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
               </div>
-              <h1 className="text-lg font-semibold text-slate-800">Check your inbox</h1>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                We&apos;ve sent a password reset link to <strong className="text-slate-700">{email}</strong>.
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1E26]">
+                Check your inbox
+              </h1>
+              <p className="text-[15px] text-stone-500 leading-relaxed">
+                We&apos;ve sent a password reset link to <strong className="text-[#1C1E26] font-medium">{email}</strong>.
                 It may take a minute to arrive.
               </p>
-              <Link
-                href="/auth/login"
-                className="block mt-4 text-sm text-[#6C91C2] hover:text-[#5A7FB0] transition-colors font-medium"
-              >
-                ← Back to sign in
-              </Link>
+              <div className="pt-4">
+                <Link
+                  href="/auth/login"
+                  className="text-[15px] font-medium text-[#1C1E26] hover:text-stone-700 transition-colors"
+                >
+                  ← Back to log in
+                </Link>
+              </div>
             </div>
           ) : (
-            <>
-              <div className="mb-6">
-                <h1 className="text-lg font-semibold text-slate-800">Reset your password</h1>
-                <p className="text-sm text-slate-500 mt-1">
-                  Enter your email and we&apos;ll send you a reset link.
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-8">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1E26] mb-3">
+                  Reset Password
+                </h1>
+                <p className="text-[15px] text-stone-500">
+                  Remembered it?{' '}
+                  <Link href="/auth/login" className="text-[#1C1E26] font-medium hover:text-stone-700 transition-colors">
+                    Log in
+                  </Link>
                 </p>
               </div>
 
               {error && (
-                <div className="mb-4 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200/80 rounded-xl text-sm text-red-700">
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Email address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <div className="relative group">
                     <input
                       type="email"
                       required
                       autoComplete="email"
-                      placeholder="you@company.com"
+                      placeholder="Email address"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-[#6C91C2]/40 focus:border-[#6C91C2] transition-colors"
+                      className="w-full h-12 px-5 rounded-full border border-stone-200/50 bg-white text-[15px] text-[#1C1E26] placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-all"
                     />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-10 rounded-lg bg-[#6C91C2] text-white text-sm font-semibold hover:bg-[#5A7FB0] transition-colors disabled:opacity-60 cursor-pointer"
-                >
-                  {loading ? 'Sending…' : 'Send reset link'}
-                </button>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 rounded-full bg-[#1C1E26] text-white text-sm font-medium hover:bg-stone-800 active:scale-[0.98] transition-all disabled:opacity-70 cursor-pointer"
+                  >
+                    {loading ? 'Sending link...' : 'Send reset link'}
+                  </button>
+                </div>
               </form>
 
-              <Link
-                href="/auth/login"
-                className="flex items-center justify-center gap-1.5 mt-5 text-sm text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to sign in
-              </Link>
-            </>
+              <div className="mt-8 text-center text-[13px] text-stone-500 leading-relaxed">
+                Your captures stay private to your account,<br />
+                protected by row-level security.
+              </div>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* RIGHT COLUMN: navy "solar system" illustration matching the marketing Hero. */}
+      <div className="hidden md:block flex-1 relative">
+        <SolarSystemArt tagline="A quick reset, and you're back in orbit." />
       </div>
     </div>
   )

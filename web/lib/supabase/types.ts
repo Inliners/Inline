@@ -104,6 +104,26 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['extractions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['extractions']['Insert']>
       }
+      workspace_embeddings: {
+        Row: {
+          id: string
+          user_id: string
+          workspace_id: string
+          source_type: 'note' | 'document' | 'page' | 'recap' | 'annotation'
+          source_id: string
+          page_url: string | null
+          page_title: string | null
+          domain: string | null
+          chunk_text: string
+          chunk_index: number
+          metadata: Json
+          embedding: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['workspace_embeddings']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['workspace_embeddings']['Insert']>
+      }
       spatial_entities: {
         Row: {
           id: string
@@ -122,6 +142,26 @@ export interface Database {
       }
     }
     Functions: {
+      match_workspace_embeddings: {
+        Args: {
+          query_embedding: string
+          p_workspace_id?: string | null
+          match_count?: number
+          match_threshold?: number
+        }
+        Returns: {
+          id: string
+          source_type: string
+          source_id: string
+          page_url: string | null
+          page_title: string | null
+          domain: string | null
+          chunk_text: string
+          chunk_index: number
+          metadata: Json
+          similarity: number
+        }[]
+      }
       match_notes: {
         Args: { query_embedding: number[]; match_count?: number; match_threshold?: number }
         Returns: { id: string; content: string; page_url: string; domain: string; similarity: number }[]

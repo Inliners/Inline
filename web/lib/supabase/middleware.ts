@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/app/dashboard'
+    url.pathname = '/app/ws-1/dashboard'
     return NextResponse.redirect(url)
   }
 

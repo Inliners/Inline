@@ -63,6 +63,46 @@ export async function fetchNotes(workspaceId?: string): Promise<Note[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Auto-generated page recap documents (workspace-scoped)
+// ---------------------------------------------------------------------------
+export interface RecapDocRef {
+  id: string
+  title: string
+  updatedAt: string
+  pageUrl: string
+}
+
+export async function fetchRecapsByPageUrl(workspaceId: string): Promise<Record<string, RecapDocRef>> {
+  if (!HAS_SUPABASE) return {}
+  try {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const sb = supabase as any
+    const { data } = await sb.from('documents')
+      .select('id, title, updated_at, page_url')
+      .eq('workspace_id', workspaceId)
+      .eq('auto_generated', true)
+      .not('page_url', 'is', null)
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+    if (!Array.isArray(data)) return {}
+    const map: Record<string, RecapDocRef> = {}
+    for (const d of data as { id: string; title: string; updated_at: string; page_url: string }[]) {
+      if (!d.page_url) continue
+      map[d.page_url] = {
+        id: d.id,
+        title: d.title,
+        updatedAt: d.updated_at,
+        pageUrl: d.page_url,
+      }
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard Stats (workspace-scoped)
 // ---------------------------------------------------------------------------
 export async function fetchDashboardStats(workspaceId?: string): Promise<DashboardStats> {
@@ -99,6 +139,13 @@ export async function fetchDashboardStats(workspaceId?: string): Promise<Dashboa
     base('domain, created_at'),
     sb.from('extractions').select('*', { count: 'exact', head: true }).eq('schema_type', 'ai-summary'),
   ])
+
+  const { data: typeRowsRaw } = await base('type')
+  const typeRows = (typeRowsRaw ?? []) as { type: string }[]
+  const typeCounts: Record<string, number> = {}
+  for (const row of typeRows) {
+    typeCounts[row.type] = (typeCounts[row.type] ?? 0) + 1
+  }
 
   const domainRows = (domainRowsRaw ?? []) as { domain: string; created_at: string }[]
 
@@ -150,6 +197,7 @@ export async function fetchDashboardStats(workspaceId?: string): Promise<Dashboa
     streakDays,
     captureHistory,
     topDomains,
+    typeCounts: typeCounts as DashboardStats['typeCounts'],
   }
 }
 
@@ -244,10 +292,34 @@ export async function fetchGraphData(workspaceId?: string): Promise<GraphData> {
     size: Math.min(count + 4, 14), color: '#5FA8A1',
   }))
 
-  const noteNodes = notes.slice(0, 30).map(n => ({
-    id: n.id, label: n.content.slice(0, 32) + '…',
-    type: 'note' as const, domain: n.domain, size: 5, color: n.color,
-  }))
+  const TYPE_META: Record<string, { color: string; glyph: string; size: number }> = {
+    text:         { color: '#6C91C2', glyph: '📝', size: 5 },
+    canvas:       { color: '#8B5CF6', glyph: '🎨', size: 5 },
+    'ai-summary': { color: '#10B981', glyph: '✨', size: 6 },
+    sticky:       { color: '#F59E0B', glyph: '📌', size: 5 },
+    anchor:       { color: '#D97706', glyph: '⚓', size: 5 },
+    drawing:      { color: '#7C3AED', glyph: '✏️', size: 5 },
+    handwriting:  { color: '#DB2777', glyph: '✍️', size: 5 },
+    highlight:    { color: '#84CC16', glyph: '🖍️', size: 5 },
+    clip:         { color: '#0EA5E9', glyph: '📎', size: 5 },
+    stamp:        { color: '#F43F5E', glyph: '🏷️', size: 5 },
+    'paper-note': { color: '#EA580C', glyph: '📄', size: 5 },
+  }
+
+  const { prettyNotePreviewTruncated } = await import('./note-preview')
+  const noteNodes = notes.slice(0, 30).map(n => {
+    const meta = TYPE_META[n.type] ?? { color: n.color || '#6C91C2', glyph: '•', size: 5 }
+    return {
+      id: n.id,
+      label: prettyNotePreviewTruncated(n, 32),
+      type: 'note' as const,
+      noteType: n.type,
+      glyph: meta.glyph,
+      domain: n.domain,
+      size: meta.size,
+      color: meta.color,
+    }
+  })
 
   const nodeIdSet = new Set([
     ...domainNodes.map(n => n.id),

@@ -3,8 +3,9 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import {
   BarChart2, BookMarked, Globe, BrainCircuit, Flame,
-  Plus, Sparkles, ChevronRight,
+  Sparkles, ChevronRight,
 } from 'lucide-react'
+import NewDocumentButton from '@/components/dashboard/NewDocumentButton'
 import KpiCard from '@/components/dashboard/KpiCard'
 import CaptureChart from '@/components/dashboard/CaptureChart'
 import TopDomainsChart from '@/components/dashboard/TopDomainsChart'
@@ -29,11 +30,11 @@ async function StatsSection({ workspaceId }: { workspaceId: string }) {
   const analyticsBase = `/app/${workspaceId}/analytics`
 
   const kpis = [
-    { title: 'This week',     value: stats.notesThisWeek,               delta: stats.notesThisWeekDelta, deltaLabel: 'vs last week', icon: BookMarked,   iconColor: 'text-[#4B83C4]', href: analyticsBase },
-    { title: 'Total notes',   value: stats.totalNotes.toLocaleString(), description: 'All time',         icon: BarChart2,    iconColor: 'text-[#4B83C4]', href: analyticsBase },
-    { title: 'Domains',       value: stats.totalDomains,                description: 'Unique websites',  icon: Globe,        iconColor: 'text-[#4B83C4]', href: analyticsBase },
-    { title: 'AI queries',    value: stats.aiQueriesRun,                description: 'Summaries made',   icon: BrainCircuit, iconColor: 'text-[#4B83C4]', href: analyticsBase },
-    { title: 'Streak',        value: `${stats.streakDays}d`,            description: 'Active days',      icon: Flame,        iconColor: 'text-[#4B83C4]', href: analyticsBase },
+    { title: 'This week',     value: stats.notesThisWeek,               delta: stats.notesThisWeekDelta, deltaLabel: 'vs last week', icon: BookMarked,   iconColor: 'text-stone-700', href: analyticsBase },
+    { title: 'Total notes',   value: stats.totalNotes.toLocaleString(), description: 'All time',         icon: BarChart2,    iconColor: 'text-teal-800', href: analyticsBase },
+    { title: 'Domains',       value: stats.totalDomains,                description: 'Unique websites',  icon: Globe,        iconColor: 'text-amber-800', href: analyticsBase },
+    { title: 'AI queries',    value: stats.aiQueriesRun,                description: 'Summaries made',   icon: BrainCircuit, iconColor: 'text-stone-600', href: analyticsBase },
+    { title: 'Streak',        value: `${stats.streakDays}d`,            description: 'Active days',      icon: Flame,        iconColor: 'text-orange-800', href: analyticsBase },
   ]
 
   return (
@@ -67,38 +68,38 @@ export default async function WorkspaceDashboardPage({
   const workspaceName   = getWorkspaceName(workspaceId)
 
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full bg-background">
       {/* ── Top breadcrumb bar ── */}
-      <div className="border-b border-[#E3E2DE] bg-white px-8 py-3">
-        <nav className="flex items-center gap-1.5 text-xs text-[#9B9A97]">
+      <div className="border-b border-border bg-card px-8 py-3">
+        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>{workspaceName}</span>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-[#37352F] font-medium">Dashboard</span>
+          <ChevronRight className="h-3 w-3" />
+          <span className="font-medium text-foreground">Dashboard</span>
         </nav>
       </div>
 
       {/* ── Main content — generous bottom padding so chat bar never overlaps ── */}
-      <div className="px-8 py-8 pb-32 max-w-7xl space-y-12">
+      <div className="w-full min-w-0 px-8 py-8 pb-32 space-y-12">
 
         {/* ── Greeting + actions ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#191919] tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               <Greeting />
             </h1>
-            <p className="text-sm text-[#9B9A97] mt-0.5">Here&apos;s what&apos;s happening in your workspace.</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">Here&apos;s what&apos;s happening in your workspace.</p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href={`/app/${workspaceId}/workflows`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#E3E2DE] text-sm font-medium text-[#37352F] hover:bg-[#F7F6F3] hover:border-[#D3D1CB] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-stone-400/50 hover:bg-muted/60"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
               Workflows
             </Link>
             <Link
               href={`/app/${workspaceId}/history`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#191919] text-sm font-medium text-white hover:bg-[#150C00] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
               View all captures
             </Link>
@@ -111,7 +112,7 @@ export default async function WorkspaceDashboardPage({
           <Suspense fallback={
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-40 animate-pulse rounded-2xl bg-muted" />
               ))}
             </div>
           }>
@@ -122,19 +123,13 @@ export default async function WorkspaceDashboardPage({
         {/* ── Library Documents ── */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-[#37352F]">Library Documents</h2>
-            <Link
-              href={`/app/${workspaceId}/folder/new`}
-              className="inline-flex items-center gap-1 text-xs font-medium text-[#9B9A97] hover:text-[#37352F] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              New
-            </Link>
+            <h2 className="text-sm font-semibold text-foreground">Library Documents</h2>
+            <NewDocumentButton workspaceId={workspaceId} />
           </div>
           <Suspense fallback={
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-40 animate-pulse rounded-2xl bg-muted" />
               ))}
             </div>
           }>
@@ -144,7 +139,7 @@ export default async function WorkspaceDashboardPage({
 
         {/* ── Stats & Activity ── */}
         <section>
-          <h2 className="text-sm font-semibold text-[#37352F] mb-4">Stats &amp; Activity</h2>
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Stats &amp; Activity</h2>
           <Suspense fallback={
             <div className="space-y-4">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

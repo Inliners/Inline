@@ -1,15 +1,23 @@
 'use client'
 
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { ExternalLink, Clock, Globe, Tag, MapPin, FileText, PenTool, BrainCircuit, X } from 'lucide-react'
+import { ExternalLink, Clock, Globe, Tag, MapPin, FileText, PenTool, BrainCircuit, X, StickyNote, Anchor, Highlighter, Paperclip, Stamp, NotebookPen, PenLine } from 'lucide-react'
 import type { Note, NoteType } from '@/lib/types'
-import { cn } from '@/lib/utils'
 import { formatDistanceToNow, format } from 'date-fns'
+import { prettyNotePreview } from '@/lib/note-preview'
 
 const TYPE_META: Record<NoteType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  text:        { label: 'Text Note',   icon: FileText,     color: '#6C91C2', bg: '#DCE6F4' },
-  canvas:      { label: 'Drawing',     icon: PenTool,      color: '#a855f7', bg: '#f3e8ff' },
-  'ai-summary':{ label: 'AI Summary',  icon: BrainCircuit, color: '#5FA8A1', bg: '#E6F4F2' },
+  text:         { label: 'Text Note',   icon: FileText,     color: '#6C91C2', bg: '#DCE6F4' },
+  canvas:       { label: 'Drawing',     icon: PenTool,      color: '#a855f7', bg: '#f3e8ff' },
+  'ai-summary': { label: 'AI Summary',  icon: BrainCircuit, color: '#5FA8A1', bg: '#E6F4F2' },
+  sticky:       { label: 'Sticky Note', icon: StickyNote,   color: '#B45309', bg: '#FEF3C7' },
+  anchor:       { label: 'Anchor Note', icon: Anchor,       color: '#6C91C2', bg: '#DCE6F4' },
+  drawing:      { label: 'Drawing',     icon: PenTool,      color: '#a855f7', bg: '#f3e8ff' },
+  handwriting:  { label: 'Handwriting', icon: PenLine,      color: '#a855f7', bg: '#f3e8ff' },
+  highlight:    { label: 'Highlight',   icon: Highlighter,  color: '#B45309', bg: '#FEF3C7' },
+  clip:         { label: 'Clip',        icon: Paperclip,    color: '#0F7B6C', bg: '#E6F4F2' },
+  stamp:        { label: 'Stamp',       icon: Stamp,        color: '#9065B0', bg: '#EFEAF5' },
+  'paper-note': { label: 'Paper Note',  icon: NotebookPen,  color: '#B45309', bg: '#F5EDE3' },
 }
 
 interface MetaRowProps {
@@ -98,10 +106,10 @@ export default function NoteDetailSheet({ note, onClose }: NoteDetailSheetProps)
               <div className="mt-4 mb-2">
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Content</p>
                 <div
-                  className="rounded-xl px-4 py-3 text-[13px] leading-relaxed font-medium text-zinc-800 min-h-[72px] border border-transparent"
+                  className="rounded-xl px-4 py-3 text-[13px] leading-relaxed font-medium text-zinc-800 min-h-[72px] border border-transparent whitespace-pre-wrap"
                   style={{ backgroundColor: note.color ?? '#fef9c3' }}
                 >
-                  {note.content || <span className="text-slate-400 italic">No content</span>}
+                  {prettyNotePreview(note) || <span className="text-slate-400 italic">No content</span>}
                 </div>
               </div>
 

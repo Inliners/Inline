@@ -12,16 +12,20 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { Image } from '@tiptap/extension-image'
 import { Underline } from '@tiptap/extension-underline'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
+  Heading1, Heading2, Heading3,
   Plus, GripVertical, ChevronRight, Link2,
   ArrowLeft, Search, List, ListOrdered, AlignLeft,
   Quote, Code, Minus, CheckSquare, Type,
   Table as TableIcon, ImageIcon,
+  BetweenVerticalStart, BetweenVerticalEnd,
+  BetweenHorizontalStart, BetweenHorizontalEnd,
+  Trash2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import './editor-content.css'
 
 /* ─── Props ─── */
 interface Props {
@@ -54,6 +58,22 @@ const MENU_MOTION = {
   transition: { duration: 0.1, ease: 'easeOut' as const },
 }
 
+function decodeHtmlEntities(value: string): string {
+  if (typeof window === 'undefined') return value
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = value
+  return textarea.value
+}
+
+function normalizeEditorContent(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return value
+  const looksLikeEscapedHtml =
+    /&lt;(p|h[1-6]|ul|ol|li|blockquote|pre|table|img|div|br)\b/i.test(trimmed) ||
+    /&lt;\/(p|h[1-6]|ul|ol|li|blockquote|pre|table|div)&gt;/i.test(trimmed)
+  return looksLikeEscapedHtml ? decodeHtmlEntities(value) : value
+}
+
 /* ─── Insert-block catalogue ─── */
 type InsertItem = {
   section: string
@@ -63,35 +83,28 @@ type InsertItem = {
   action:  (e: Editor) => void
 }
 
-const INSERT_ITEMS: InsertItem[] = [
-  /* Text */
-  { section: 'Text',    Icon: AlignLeft,    label: 'Paragraph',      desc: 'Plain text',                 action: e => e.chain().focus().setParagraph().run() },
-  { section: 'Text',    Icon: Heading1,     label: 'Heading 1',      desc: 'Big section heading',        action: e => e.chain().focus().setHeading({ level: 1 }).run() },
-  { section: 'Text',    Icon: Heading2,     label: 'Heading 2',      desc: 'Medium section heading',     action: e => e.chain().focus().setHeading({ level: 2 }).run() },
-  { section: 'Text',    Icon: Heading3,     label: 'Heading 3',      desc: 'Small section heading',      action: e => e.chain().focus().setHeading({ level: 3 }).run() },
-  /* Lists */
-  { section: 'Lists',   Icon: List,         label: 'Bulleted list',  desc: 'Unordered bullet list',      action: e => e.chain().focus().toggleBulletList().run() },
-  { section: 'Lists',   Icon: ListOrdered,  label: 'Numbered list',  desc: 'Ordered numbered list',      action: e => e.chain().focus().toggleOrderedList().run() },
-  { section: 'Lists',   Icon: Minus,        label: 'Dash list',      desc: 'List with dash markers',     action: e => e.chain().focus().toggleBulletList().run() },
-  { section: 'Lists',   Icon: CheckSquare,  label: 'Task list',      desc: 'Checkbox to-do list',        action: e => e.chain().focus().toggleTaskList().run() },
-  /* Media */
-  { section: 'Media',   Icon: TableIcon,    label: 'Table',          desc: 'Insert a data table',        action: e => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { section: 'Media',   Icon: ImageIcon,    label: 'Image',          desc: 'Upload or paste an image',   action: e => {
-    const url = prompt('Paste image URL:')
-    if (url) e.chain().focus().setImage({ src: url }).run()
-  }},
-  /* Quote */
-  { section: 'Quote',   Icon: Quote,        label: 'Quote block',    desc: 'Highlighted blockquote',     action: e => e.chain().focus().toggleBlockquote().run() },
-  { section: 'Quote',   Icon: Code,         label: 'Code block',     desc: 'Multi-line code snippet',    action: e => e.chain().focus().toggleCodeBlock().run() },
-  { section: 'Quote',   Icon: Type,         label: 'Inline code',    desc: 'Monospace inline code',      action: e => e.chain().focus().toggleCode().run() },
-  { section: 'Quote',   Icon: Minus,        label: 'Divider',        desc: 'Horizontal rule',            action: e => e.chain().focus().setHorizontalRule().run() },
-]
-
-const INSERT_SECTIONS = [...new Set(INSERT_ITEMS.map(i => i.section))]
+function buildInsertItems(onPickImage: (e: Editor) => void): InsertItem[] {
+  return [
+    { section: 'Text',    Icon: AlignLeft,    label: 'Paragraph',      desc: 'Plain text',                 action: e => e.chain().focus().setParagraph().run() },
+    { section: 'Text',    Icon: Heading1,     label: 'Heading 1',      desc: 'Big section heading',        action: e => e.chain().focus().setHeading({ level: 1 }).run() },
+    { section: 'Text',    Icon: Heading2,     label: 'Heading 2',      desc: 'Medium section heading',     action: e => e.chain().focus().setHeading({ level: 2 }).run() },
+    { section: 'Text',    Icon: Heading3,     label: 'Heading 3',      desc: 'Small section heading',      action: e => e.chain().focus().setHeading({ level: 3 }).run() },
+    { section: 'Lists',   Icon: List,         label: 'Bulleted list',  desc: 'Unordered bullet list',      action: e => e.chain().focus().toggleBulletList().run() },
+    { section: 'Lists',   Icon: ListOrdered,  label: 'Numbered list',  desc: 'Ordered numbered list',      action: e => e.chain().focus().toggleOrderedList().run() },
+    { section: 'Lists',   Icon: Minus,        label: 'Dash list',      desc: 'List with dash markers',     action: e => e.chain().focus().toggleBulletList().run() },
+    { section: 'Lists',   Icon: CheckSquare,  label: 'Task list',      desc: 'Checkbox to-do list',        action: e => e.chain().focus().toggleTaskList().run() },
+    { section: 'Media',   Icon: TableIcon,    label: 'Table',          desc: 'Insert a data table',        action: e => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+    { section: 'Media',   Icon: ImageIcon,    label: 'Image',          desc: 'Upload or paste an image',   action: onPickImage },
+    { section: 'Quote',   Icon: Quote,        label: 'Quote block',    desc: 'Highlighted blockquote',     action: e => e.chain().focus().toggleBlockquote().run() },
+    { section: 'Quote',   Icon: Code,         label: 'Code block',     desc: 'Multi-line code snippet',    action: e => e.chain().focus().toggleCodeBlock().run() },
+    { section: 'Quote',   Icon: Type,         label: 'Inline code',    desc: 'Monospace inline code',      action: e => e.chain().focus().toggleCode().run() },
+    { section: 'Quote',   Icon: Minus,        label: 'Divider',        desc: 'Horizontal rule',            action: e => e.chain().focus().setHorizontalRule().run() },
+  ]
+}
 
 /* ─── Style options (for Paragraph style submenu) ─── */
 const STYLE_OPTS = [
-  { Icon: AlignLeft,  label: 'T',  title: 'Text',      action: (e: Editor) => e.chain().focus().setParagraph().run(),             active: (e: Editor) => e.isActive('paragraph') },
+  { Icon: AlignLeft,  label: 'T',  title: 'Text',      action: (e: Editor) => e.chain().focus().setParagraph().run(),             active: (e: Editor) => e.isActive('paragraph') && !e.isActive('heading') },
   { Icon: Heading1,   label: 'H₁', title: 'Heading 1', action: (e: Editor) => e.chain().focus().setHeading({ level: 1 }).run(), active: (e: Editor) => e.isActive('heading', { level: 1 }) },
   { Icon: Heading2,   label: 'H₂', title: 'Heading 2', action: (e: Editor) => e.chain().focus().setHeading({ level: 2 }).run(), active: (e: Editor) => e.isActive('heading', { level: 2 }) },
   { Icon: Heading3,   label: 'H₃', title: 'Heading 3', action: (e: Editor) => e.chain().focus().setHeading({ level: 3 }).run(), active: (e: Editor) => e.isActive('heading', { level: 3 }) },
@@ -107,22 +120,60 @@ const QUOTE_OPTS = [
   { Icon: Minus,  label: '—',  title: 'Rule',  action: (e: Editor) => e.chain().focus().setHorizontalRule().run() },
 ]
 
-/* ─── Slash commands ─── */
-const SLASH_CMDS = INSERT_ITEMS.slice(0, -1).map(item => ({
-  ...item,
-  keys: [item.label.toLowerCase().replace(/ /g, ''), item.section.toLowerCase()],
-}))
+/** Move selection into the hovered block so block-menu commands target the right node. */
+function focusSelectionInBlock(editor: Editor, blockEl: HTMLElement | null) {
+  if (!blockEl) {
+    editor.chain().focus().run()
+    return
+  }
+  try {
+    const view = editor.view
+    const pos = view.posAtDOM(blockEl, 0)
+    if (pos == null || pos < 0) {
+      editor.chain().focus().run()
+      return
+    }
+    const $pos = editor.state.doc.resolve(pos)
+    let d = $pos.depth
+    while (d > 0 && !$pos.node(d).isTextblock) d--
+    const start = d > 0 ? $pos.start(d) : pos
+    const end = d > 0 ? $pos.end(d) : pos + 1
+    /* Empty block: use start; otherwise place caret after first character */
+    const anchor = end <= start + 1 ? start : Math.min(start + 1, end - 1)
+    editor.chain().focus().setTextSelection(anchor).run()
+  } catch {
+    editor.chain().focus().run()
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 export default function FolderDocumentEditor({ content, onChange, className }: Props) {
   const wrapperRef      = useRef<HTMLDivElement>(null)
-  const lastContent     = useRef(content)
+  const lastContent     = useRef(normalizeEditorContent(content))
   const hoverTimer      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const editorRef       = useRef<Editor | null>(null)
+  const imageInputRef   = useRef<HTMLInputElement>(null)
 
   const [handle,       setHandle]       = useState<HandleState | null>(null)
   const [insertOpen,   setInsertOpen]   = useState(false)
   const [blockMenu,    setBlockMenu]    = useState<{ open: boolean; sub: 'style' | 'insert' | null }>({ open: false, sub: null })
   const [slash,        setSlash]        = useState<SlashState | null>(null)
+
+  const triggerImagePick = useCallback((ed: Editor) => {
+    ed.chain().focus().run()
+    requestAnimationFrame(() => imageInputRef.current?.click())
+  }, [])
+
+  const insertItems = useMemo(() => buildInsertItems(triggerImagePick), [triggerImagePick])
+  const insertSections = useMemo(() => [...new Set(insertItems.map(i => i.section))], [insertItems])
+  const slashCmds = useMemo(
+    () =>
+      insertItems.map(item => ({
+        ...item,
+        keys: [item.label.toLowerCase().replace(/ /g, ''), item.section.toLowerCase()],
+      })),
+    [insertItems],
+  )
 
   /* ─── Handle positions (derived from handle state) ─── */
   const insertPos  = handle ? { top: handle.top + 28, left: handle.left } : null
@@ -143,7 +194,7 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
       Image.configure({ inline: false, allowBase64: true }),
       Underline,
     ],
-    content,
+    content: normalizeEditorContent(content),
     onUpdate({ editor }) {
       const html = editor.getHTML()
       if (html !== lastContent.current) {
@@ -170,7 +221,28 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
     },
     editorProps: {
       attributes: {
-        class: 'outline-none min-h-[320px] prose prose-slate prose-headings:font-bold max-w-none leading-relaxed focus:outline-none',
+        class: 'outline-none min-h-[320px] max-w-none focus:outline-none prose-li:my-0 folder-doc-prosemirror',
+      },
+      handlePaste(_view, event) {
+        const ed = editorRef.current
+        if (!ed) return false
+        const items = event.clipboardData?.items
+        if (!items?.length) return false
+        for (const item of Array.from(items)) {
+          if (item.kind === 'file' && item.type.startsWith('image/')) {
+            const file = item.getAsFile()
+            if (file) {
+              event.preventDefault()
+              const reader = new FileReader()
+              reader.onload = () => {
+                ed.chain().focus().setImage({ src: reader.result as string }).run()
+              }
+              reader.readAsDataURL(file)
+              return true
+            }
+          }
+        }
+        return false
       },
       handleKeyDown(_view, event) {
         if (event.key === 'Escape') { setSlash(null); setInsertOpen(false); setBlockMenu(m => ({ ...m, open: false })); return false }
@@ -179,12 +251,28 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
     },
   })
 
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
+
+  const onImageFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file?.type.startsWith('image/')) return
+    const ed = editorRef.current
+    if (!ed) return
+    const reader = new FileReader()
+    reader.onload = () => ed.chain().focus().setImage({ src: reader.result as string }).run()
+    reader.readAsDataURL(file)
+  }, [])
+
   /* Sync external content */
   useEffect(() => {
     if (!editor) return
-    if (content !== lastContent.current) {
-      lastContent.current = content
-      editor.commands.setContent(content)
+    const normalized = normalizeEditorContent(content)
+    if (normalized !== lastContent.current) {
+      lastContent.current = normalized
+      editor.commands.setContent(normalized)
     }
   }, [editor, content])
 
@@ -250,7 +338,7 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
   }
 
   /* ─── Slash execute ─── */
-  function execSlash(cmd: typeof SLASH_CMDS[number]) {
+  function execSlash(cmd: (typeof slashCmds)[number]) {
     if (!editor || !slash) return
     const to = editor.state.selection.from
     editor.chain().focus().deleteRange({ from: slash.fromPos, to }).run()
@@ -260,7 +348,7 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
 
   /* ─── Slash filtered ─── */
   const filteredSlash = slash
-    ? SLASH_CMDS.filter(c =>
+    ? slashCmds.filter(c =>
         c.label.toLowerCase().includes(slash.query) ||
         c.keys.some(k => k.includes(slash.query)) ||
         slash.query === '')
@@ -272,13 +360,28 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
   return (
     <div
       ref={wrapperRef}
-      className={cn('relative', className)}
+      className={cn('relative folder-document-editor', className)}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
-      {/* ── Bubble menu on selection ── */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        aria-hidden
+        tabIndex={-1}
+        onChange={onImageFileChange}
+      />
+
+      {/* ── Bubble menu on text selection (hidden inside tables) ── */}
       <BubbleMenu
         editor={editor}
+        pluginKey="inlineFormatBubble"
+        shouldShow={({ editor: ed, state }) => {
+          if (ed.isActive('table')) return false
+          return state.selection.from !== state.selection.to
+        }}
         className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1.5 py-1 text-sm"
       >
         {[
@@ -298,7 +401,7 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
           const Icon  = Icons[l - 1]
           return (
             <button key={l} type="button"
-              onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: l }).run() }}
+              onMouseDown={e => { e.preventDefault(); editor.chain().focus().setHeading({ level: l }).run() }}
               className={cn('w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
                 editor.isActive('heading', { level: l }) ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground')}>
               <Icon className="w-3.5 h-3.5" />
@@ -311,6 +414,52 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
           className={cn('w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
             editor.isActive('bulletList') ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground')}>
           <List className="w-3.5 h-3.5" />
+        </button>
+      </BubbleMenu>
+
+      {/* ── Table structure toolbar ── */}
+      <BubbleMenu
+        editor={editor}
+        pluginKey="tableStructureBubble"
+        shouldShow={({ editor: ed }) => ed.isActive('table')}
+        className="flex flex-wrap items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1.5 py-1 text-sm max-w-[min(100vw-2rem,28rem)]"
+      >
+        <button type="button" title="Row above"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().addRowBefore().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          <BetweenVerticalStart className="w-4 h-4" />
+        </button>
+        <button type="button" title="Row below"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().addRowAfter().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          <BetweenVerticalEnd className="w-4 h-4" />
+        </button>
+        <button type="button" title="Delete row"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteRow().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-red-600 cursor-pointer">
+          <Trash2 className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <button type="button" title="Column left"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().addColumnBefore().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          <BetweenHorizontalStart className="w-4 h-4" />
+        </button>
+        <button type="button" title="Column right"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().addColumnAfter().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          <BetweenHorizontalEnd className="w-4 h-4" />
+        </button>
+        <button type="button" title="Delete column"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteColumn().run() }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-red-600 cursor-pointer">
+          <Trash2 className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <button type="button" title="Delete table"
+          onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteTable().run() }}
+          className="px-2 h-8 flex items-center justify-center rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
+          Remove table
         </button>
       </BubbleMenu>
 
@@ -362,13 +511,13 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
             style={{ position: 'fixed', top: insertPos.top, left: insertPos.left, zIndex: 50 }}
             className="w-64 rounded-xl border border-slate-200 bg-white py-2 overflow-hidden max-h-[420px] overflow-y-auto scrollbar-minimal"
           >
-            {INSERT_SECTIONS.map((section, si) => (
+            {insertSections.map((section, si) => (
               <div key={section}>
                 {si > 0 && <div className="h-px bg-slate-100 my-1.5 mx-3" />}
                 <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 pt-1.5 pb-1">
                   {section}
                 </p>
-                {INSERT_ITEMS.filter(i => i.section === section).map(item => (
+                {insertItems.filter(i => i.section === section).map(item => (
                   <button
                     key={item.label}
                     type="button"
@@ -428,7 +577,12 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
                     <div className="flex items-center gap-1.5 mb-3">
                       {STYLE_OPTS.map(opt => (
                         <button key={opt.label} type="button"
-                          onMouseDown={e => { e.preventDefault(); opt.action(editor); setBlockMenu({ open: false, sub: null }) }}
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            focusSelectionInBlock(editor, handle?.blockEl ?? null)
+                            opt.action(editor)
+                            setBlockMenu({ open: false, sub: null })
+                          }}
                           title={opt.title}
                           className={cn('flex flex-col items-center justify-center w-12 h-11 rounded-lg border text-xs font-bold transition-colors cursor-pointer gap-0.5',
                             opt.active(editor) ? 'bg-slate-100 border-slate-300 text-foreground' : 'border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground'
@@ -445,7 +599,12 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
                     <div className="flex items-center gap-1.5 mb-3">
                       {LIST_OPTS.map(opt => (
                         <button key={opt.label} type="button"
-                          onMouseDown={e => { e.preventDefault(); opt.action(editor); setBlockMenu({ open: false, sub: null }) }}
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            focusSelectionInBlock(editor, handle?.blockEl ?? null)
+                            opt.action(editor)
+                            setBlockMenu({ open: false, sub: null })
+                          }}
                           title={opt.title}
                           className="flex items-center justify-center w-12 h-11 rounded-lg border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground transition-colors cursor-pointer"
                         >
@@ -459,7 +618,12 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
                     <div className="flex items-center gap-1.5">
                       {QUOTE_OPTS.map(opt => (
                         <button key={opt.label} type="button"
-                          onMouseDown={e => { e.preventDefault(); opt.action(editor); setBlockMenu({ open: false, sub: null }) }}
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            focusSelectionInBlock(editor, handle?.blockEl ?? null)
+                            opt.action(editor)
+                            setBlockMenu({ open: false, sub: null })
+                          }}
                           title={opt.title}
                           className="flex items-center justify-center w-12 h-11 rounded-lg border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground transition-colors cursor-pointer"
                         >

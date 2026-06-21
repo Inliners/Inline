@@ -3,50 +3,60 @@ import { cn } from '@/lib/utils'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
 interface KpiCardProps {
-  title:        string
-  value:        string | number
-  delta?:       number
-  deltaLabel?:  string
-  icon:         React.ElementType
-  iconColor?:   string
+  title: string
+  value: string | number
+  delta?: number
+  deltaLabel?: string
+  icon: React.ElementType
+  iconColor?: string
   description?: string
-  href?:        string
+  href?: string
 }
 
 export default function KpiCard({
-  title, value, delta, deltaLabel, icon: Icon,
-  iconColor = 'text-[#4B83C4]', description, href,
+  title,
+  value,
+  delta,
+  deltaLabel,
+  icon: Icon,
+  iconColor = 'text-foreground',
+  description,
+  href,
 }: KpiCardProps) {
   const isPositive = delta !== undefined && delta >= 0
 
   const content = (
     <>
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-500 tracking-wide">
-          {title}
-        </p>
-        <div className={cn('w-8 h-8 rounded-md bg-[#EBF1F7] flex items-center justify-center p-1.5', iconColor)}>
-          <Icon className="w-4 h-4" />
+        <p className="text-xs font-medium tracking-wide text-muted-foreground">{title}</p>
+        <div
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-lg bg-muted p-1.5',
+            iconColor,
+          )}
+        >
+          <Icon className="h-4 w-4" />
         </div>
       </div>
       <div>
-        <p className="text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+        <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
         {delta !== undefined && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className={cn(
-              'inline-flex items-center gap-0.5 text-xs font-medium',
-              isPositive ? 'text-emerald-600' : 'text-red-500',
-            )}>
-              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {isPositive ? '+' : ''}{delta}%
+          <div className="mt-1 flex items-center gap-1.5">
+            <span
+              className={cn(
+                'inline-flex items-center gap-0.5 text-xs font-medium',
+                isPositive ? 'text-emerald-700' : 'text-red-600',
+              )}
+            >
+              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {isPositive ? '+' : ''}
+              {delta}%
             </span>
-            {deltaLabel && (
-              <span className="text-xs text-slate-400">{deltaLabel}</span>
-            )}
+            {deltaLabel && <span className="text-xs text-muted-foreground">{deltaLabel}</span>}
           </div>
         )}
         {description && !delta && (
-          <p className="text-xs text-slate-400 mt-1">{description}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
         )}
       </div>
     </>
@@ -56,16 +66,12 @@ export default function KpiCard({
     return (
       <Link
         href={href}
-        className="block rounded-xl border border-slate-100 bg-white p-5 space-y-3 hover:border-slate-200 transition-all cursor-pointer"
+        className="block space-y-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-stone-400/50 cursor-pointer"
       >
         {content}
       </Link>
     )
   }
 
-  return (
-    <div className="rounded-xl border border-slate-100 bg-white p-5 space-y-3">
-      {content}
-    </div>
-  )
+  return <div className="space-y-3 rounded-xl border border-border bg-card p-5">{content}</div>
 }

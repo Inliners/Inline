@@ -17,7 +17,7 @@ body {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 4px 4px 0px #E2E8F0;
+  box-shadow: none;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
 }
@@ -28,14 +28,14 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #f0f9ff;
+  background: #f6f7f9;
   border-bottom: 1.5px solid #e2e8f0;
 }
 
 .panel-header__title {
   font-size: 13px;
   font-weight: 700;
-  color: #2563eb;
+  color: #0b1735;
 }
 
 /* Flat button */
@@ -74,19 +74,19 @@ body {
 }
 
 .btn-pill--active {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: #0b1735;
+  background: #f0f3f8;
+  color: #0b1735;
 }
 
 .btn-pill--primary {
-  background: #2563eb;
+  background: #0b1735;
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: #0b1735;
 }
 
 .btn-pill--primary:hover {
-  background: #1d4ed8;
+  background: #13244d;
 }
 
 /* iOS-style toggle */
@@ -103,7 +103,7 @@ body {
 }
 
 .toggle-switch--on {
-  background: #2563eb;
+  background: #0b1735;
 }
 
 .toggle-switch__thumb {

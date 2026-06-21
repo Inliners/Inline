@@ -3,35 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { Note } from '@/lib/types'
-import { Star } from 'lucide-react'
+import { Star, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   getPinnedNoteIds,
   togglePinnedNote,
   isPinnedNote,
 } from '@/lib/dashboard-favorites'
-import { collaboratorIndexForId } from '@/lib/dashboard-mock-avatars'
+import { prettyNotePreviewTruncated } from '@/lib/note-preview'
 
-const PASTEL_BGS = ['bg-[#F1F1EF]', 'bg-[#EBF1F7]', 'bg-[#FDECC8]', 'bg-[#DBEDDB]']
-
-const MOCK_USERS = [
-  { name: 'Wonpil',  avatar: 'W', color: '#D9730D' },
-  { name: 'Young K', avatar: 'Y', color: '#9065B0' },
-  { name: 'Dowoon',  avatar: 'D', color: '#4B83C4' },
-  { name: 'Park S',  avatar: 'P', color: '#0F7B6C' },
-  { name: 'Jae W',   avatar: 'J', color: '#C4554D' },
-  { name: 'Brian L', avatar: 'B', color: '#f59e0b' },
+const PASTEL_BGS = [
+  'bg-card dark:bg-[#15285C]',
+  'bg-card dark:bg-[#17296B]',
+  'bg-card dark:bg-[#1B326D]',
+  'bg-card dark:bg-[#1E3878]',
 ]
-
-function getMockAvatars(noteId: string) {
-  const base = collaboratorIndexForId(noteId, MOCK_USERS.length)
-  const count = 2 + (base % 2)
-  const avatars: typeof MOCK_USERS = []
-  for (let i = 0; i < count; i++) {
-    avatars.push(MOCK_USERS[(base + i) % MOCK_USERS.length])
-  }
-  return avatars
-}
 
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -60,12 +46,11 @@ function NoteCaptureCard({
 }) {
   const time = relativeTime(note.updatedAt)
   const bg = PASTEL_BGS[index % PASTEL_BGS.length]
-  const avatars = getMockAvatars(note.id)
 
   return (
     <div className={cn(
       'relative shrink-0 w-full rounded-2xl p-5 flex flex-col justify-between h-40',
-      'border border-transparent hover:border-slate-200 transition-colors cursor-pointer',
+      'cursor-pointer border border-border transition-colors hover:border-stone-400/50',
       bg,
     )}>
       <button
@@ -76,7 +61,7 @@ function NoteCaptureCard({
           e.stopPropagation()
           onTogglePin()
         }}
-        className="absolute top-3 right-3 z-20 text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
+        className="absolute right-3 top-3 z-20 cursor-pointer text-muted-foreground/50 transition-colors hover:text-amber-600"
       >
         <Star className={cn('w-4 h-4', pinned && 'fill-amber-400 text-amber-400')} />
       </button>
@@ -86,30 +71,20 @@ function NoteCaptureCard({
         className="flex flex-col justify-between flex-1 min-h-0"
       >
         <div>
-          <p className="text-base font-semibold text-slate-900 tracking-tight line-clamp-1 pr-6">
+          <p className="line-clamp-1 pr-6 text-base font-semibold tracking-tight text-foreground">
             {note.pageTitle || note.domain}
           </p>
-          <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-            {note.content?.slice(0, 120) || note.domain}
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+            {prettyNotePreviewTruncated(note, 120) || note.domain}
           </p>
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex -space-x-2">
-            {avatars.map((user, i) => (
-              <div
-                key={user.name}
-                className="relative w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white"
-                style={{ backgroundColor: user.color, zIndex: avatars.length - i }}
-              >
-                {user.avatar}
-                {i === 0 && (
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white" />
-                )}
-              </div>
-            ))}
-          </div>
-          <span className="text-[10px] text-slate-400">{time}</span>
+        <div className="flex items-center justify-between gap-2 mt-4">
+          <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-slate-500 dark:text-[#9BBCE5]">
+            <Globe className="w-3 h-3 shrink-0" aria-hidden />
+            <span className="truncate">{note.domain}</span>
+          </span>
+          <span className="shrink-0 text-[10px] text-slate-400 dark:text-[#9BBCE5]">{time}</span>
         </div>
       </Link>
     </div>
@@ -158,8 +133,8 @@ export default function PinnedCapturesRow({
 
   if (!displayNotes.length) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center">
-        <p className="text-sm text-slate-400">
+      <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
+        <p className="text-sm text-muted-foreground">
           No web captures yet. Use the browser extension to save pages, then star your favorites here.
         </p>
       </div>
@@ -167,7 +142,7 @@ export default function PinnedCapturesRow({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
       {displayNotes.slice(0, 8).map((note, i) => (
         <NoteCaptureCard
           key={note.id}

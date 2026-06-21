@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Tell Tailwind v4 to activate `dark:` variants from the `.dark` class on <html>
+   instead of the OS `prefers-color-scheme: dark` media query. Without this, every
+   `dark:` utility lights up on any device whose OS is in dark mode, regardless of
+   the in-app theme toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -50,50 +56,121 @@
   --font-sans: var(--font-geist-sans);
   --radius: 0.625rem;
 
-  /* ── Notion-inspired warm palette ──
-     Primary dark:  #150C00 (rich near-black brown)
+  /* ── Warm cream palette (matches marketing homepage) ──
+     Primary dark:  #1C1E26
      Accent blue:   #4B83C4 (medium-saturation steel blue)
-     Text:          #37352F (Notion warm dark)
-     Muted:         #787774 / #9B9A97
-     Surface:       #F7F6F3  |  Border: #E3E2DE
+     Text:          #1C1E26
+     Muted:         #78716c (stone-500)
+     Surface:       #F5EDE3  |  Border: #d6d3d1 (stone-300)
   */
   --background:                 #FFFFFF;
-  --foreground:                 #37352F;
+  --foreground:                 #1C1E26;
   --card:                       #FFFFFF;
-  --card-foreground:            #37352F;
+  --card-foreground:            #1C1E26;
   --popover:                    #FFFFFF;
-  --popover-foreground:         #37352F;
-  --primary:                    #191919;
-  --primary-hover:              #150C00;
+  --popover-foreground:         #1C1E26;
+  --primary:                    #1C1E26;
+  --primary-hover:              #13151B;
   --primary-light:              #F7F6F3;
   --primary-foreground:         #FFFFFF;
-  --secondary:                  #F7F6F3;
-  --secondary-foreground:       #37352F;
-  --muted:                      #F1F1EF;
-  --muted-foreground:           #787774;
-  --accent:                     #F1F1EF;
+  --secondary:                  #F7F7F5;
+  --secondary-foreground:       #1C1E26;
+  --muted:                      #F4F4F2;
+  --muted-foreground:           #78716c;
+  --accent:                     #F4F4F2;
   --accent-light:               #F7F6F3;
-  --accent-foreground:          #37352F;
-  --highlight:                  #FDECC8;
+  --accent-foreground:          #1C1E26;
+  --highlight:                  #F8F0D8;
   --destructive:                #EB5757;
   --destructive-foreground:     #FFFFFF;
-  --border:                     #E3E2DE;
-  --input:                      #E3E2DE;
+  --border:                     #d6d3d1;
+  --input:                      #d6d3d1;
   --ring:                       #4B83C4;
   --chart-1:                    #4B83C4;
   --chart-2:                    #0F7B6C;
   --chart-3:                    #9065B0;
   --chart-4:                    #D9730D;
   --chart-5:                    #CB912F;
-  --sidebar:                    #FFFFFF;
-  --sidebar-foreground:         #37352F;
-  --sidebar-primary:            #191919;
+  --sidebar:                    #FDFBF7;
+  --sidebar-foreground:         #1C1E26;
+  --sidebar-primary:            #1C1E26;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent:             #F1F1EF;
-  --sidebar-accent-foreground:  #37352F;
-  --sidebar-border:             #E3E2DE;
+  --sidebar-accent:             #F0EBE3;
+  --sidebar-accent-foreground:  #1C1E26;
+  --sidebar-border:             #d6d3d1;
   --sidebar-ring:               #4B83C4;
   --font-size-base:             14px;
+}
+
+/* ── Dark theme ──
+   Activated by the `.dark` class on <html> (set by ThemeScript before first paint
+   and toggled by Settings › Appearance and the sidebar toggle). Keeps the same
+   token names so every shadcn component inherits the new palette automatically. */
+.dark {
+  /* ── Elevation stack ──
+     Uses six distinct blue tones so dashboards don't read as one flat slab.
+     Darkest → lightest: background · sidebar · muted · card · secondary · accent · popover/accent-light
+     Picked so any component that uses bg-card or bg-popover visibly sits above the page. */
+  --background:                 #0A1430;   /* deepest canvas */
+  --foreground:                 #E7EEF9;
+  --card:                       #15285C;   /* dashboards cards, form panels */
+  --card-foreground:            #EAF1FB;
+  --popover:                    #1E3878;   /* menus, dialogs, floating panels */
+  --popover-foreground:         #EAF1FB;
+  --primary:                    #B5CDEF;
+  --primary-hover:              #C9DAF0;
+  --primary-light:              #15285C;
+  --primary-foreground:         #0A1430;
+  --secondary:                  #17296B;
+  --secondary-foreground:       #EAF1FB;
+  --muted:                      #10214A;   /* subtle elevation on bg */
+  --muted-foreground:           #9BBCE5;   /* bumped from #8AACDB so numbers/labels read clearly */
+  --accent:                     #1B326D;
+  --accent-light:               #26428B;
+  --accent-foreground:          #EAF1FB;
+  --highlight:                  #3B2E66;
+  --destructive:                #F08686;
+  --destructive-foreground:     #0A1430;
+  --border:                     #263E7A;   /* visible 1px stroke against navy */
+  --input:                      #15285C;
+  --ring:                       #8AACDB;
+  --chart-1:                    #8AACDB;
+  --chart-2:                    #5FA8A1;
+  --chart-3:                    #B599D9;
+  --chart-4:                    #E8A46A;
+  --chart-5:                    #E2B96F;
+  --sidebar:                    #0D1B3C;   /* sits slightly above the page */
+  --sidebar-foreground:         #E7EEF9;
+  --sidebar-primary:            #B5CDEF;
+  --sidebar-primary-foreground: #0A1430;
+  --sidebar-accent:             #17296B;
+  --sidebar-accent-foreground:  #EAF1FB;
+  --sidebar-border:             #263E7A;
+  --sidebar-ring:               #8AACDB;
+}
+
+.dark .glass {
+  background: rgba(21, 40, 92, 0.72);
+}
+
+/* Scrollbar tuned for dark backgrounds. */
+.dark .scrollbar-minimal,
+.dark html {
+  scrollbar-color: #8AACDB transparent;
+}
+.dark .scrollbar-minimal::-webkit-scrollbar-thumb,
+.dark html::-webkit-scrollbar-thumb {
+  background-color: rgba(138, 172, 219, 0.45);
+}
+.dark .scrollbar-minimal::-webkit-scrollbar-thumb:hover,
+.dark html::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(201, 218, 240, 0.7);
+}
+.dark .scrollbar-overlay::-webkit-scrollbar-thumb {
+  background-color: rgba(201, 218, 240, 0.35);
+}
+.dark .scrollbar-overlay::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(201, 218, 240, 0.55);
 }
 
 @layer base {
@@ -150,4 +227,49 @@ html::-webkit-scrollbar-button {
 html::-webkit-scrollbar-button:start:decrement,
 html::-webkit-scrollbar-button:end:increment {
   display: none;
+}
+
+/* Floating panels / dropdowns: overlay-style thumb only (no track, no arrow buttons) */
+.scrollbar-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+}
+.scrollbar-overlay::-webkit-scrollbar {
+  width: 5px;
+}
+.scrollbar-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-overlay::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.scrollbar-overlay::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+.scrollbar-overlay::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.scrollbar-overlay::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  min-width: 0;
+  height: 0;
+  min-height: 0;
+}
+.scrollbar-overlay::-webkit-scrollbar-button:single-button,
+.scrollbar-overlay::-webkit-scrollbar-button:double-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.scrollbar-overlay::-webkit-scrollbar-button:vertical:start:decrement,
+.scrollbar-overlay::-webkit-scrollbar-button:vertical:end:increment,
+.scrollbar-overlay::-webkit-scrollbar-button:horizontal:start:decrement,
+.scrollbar-overlay::-webkit-scrollbar-button:horizontal:end:increment {
+  display: none;
+  width: 0;
+  height: 0;
 }

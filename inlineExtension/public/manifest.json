@@ -3,8 +3,18 @@
   "name": "Inline",
   "description": "Annotate any webpage with sticky notes, highlights, and spatial saves.",
   "version": "1.1",
-  "permissions": ["storage", "activeTab", "contextMenus", "scripting"],
-  "host_permissions": ["http://localhost:3000/*", "http://localhost:3001/*", "https://*/*"],
+  "permissions": ["storage", "activeTab", "contextMenus", "scripting", "alarms", "tabs"],
+  "host_permissions": [
+    "http://localhost:3000/*", "http://127.0.0.1:3000/*",
+    "http://localhost:3030/*", "http://127.0.0.1:3030/*",
+    "https://*/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:3000/*", "http://127.0.0.1:3000/*",
+      "http://localhost:3030/*", "http://127.0.0.1:3030/*"
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -16,12 +26,31 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "Inline.png"
+    "default_popup": "index.html",
+    "default_icon": "vite.svg"
   },
-  "icons": {
-    "16": "Inline.png",
-    "48": "Inline.png",
-    "128": "Inline.png"
+  "commands": {
+    "toggle-command-palette": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Open command palette"
+    },
+    "toggle-rewrite": {
+      "description": "Toggle Rewrite panel"
+    },
+    "toggle-ai": {
+      "description": "Toggle Ask AI panel"
+    },
+    "toggle-highlighter": {
+      "description": "Toggle Highlighter"
+    },
+    "new-note": {
+      "description": "Create new note"
+    },
+    "toggle-pause": {
+      "description": "Pause/resume extension"
+    }
   }
 }

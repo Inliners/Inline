@@ -9,46 +9,44 @@ import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
 import {
-  User, Mail, Key, Camera, Check, Loader2, LogOut,
-  Shield, Bell, Palette, Trash2, AlertTriangle,
+  Mail, Key, Check, Loader2, LogOut,
+  AlertTriangle,
 } from 'lucide-react'
 
-type Tab = 'profile' | 'security' | 'notifications' | 'appearance' | 'danger'
+// ---------------------------------------------------------------------------
+// Shell matches workspace settings: breadcrumb → title → horizontal tabs → content
+// ---------------------------------------------------------------------------
+type Tab = 'general' | 'security' | 'notifications' | 'appearance' | 'danger'
 
-const ACCOUNT_NAV: { label: string; items: { id: Tab; label: string; icon: React.ElementType; danger?: boolean }[] }[] = [
-  {
-    label: 'Account',
-    items: [
-      { id: 'profile',  label: 'Profile',  icon: User },
-      { id: 'security', label: 'Security', icon: Shield },
-    ],
-  },
-  {
-    label: 'Preferences',
-    items: [
-      { id: 'notifications', label: 'Notifications', icon: Bell },
-      { id: 'appearance',    label: 'Appearance',    icon: Palette },
-    ],
-  },
-  {
-    label: 'Danger zone',
-    items: [
-      { id: 'danger', label: 'Delete account', icon: Trash2, danger: true },
-    ],
-  },
+const ACCOUNT_TABS: { id: Tab; label: string; danger?: boolean }[] = [
+  { id: 'general', label: 'General' },
+  { id: 'security', label: 'Security' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'appearance', label: 'Themes' },
+  { id: 'danger', label: 'Delete account', danger: true },
 ]
+
+const TAB_DESCRIPTIONS: Partial<Record<Tab, string>> = {
+  general: 'Your name, icon, and email.',
+  security: 'Password, sessions, and sign out.',
+  notifications: 'Choose how Inline communicates with you.',
+  appearance: 'Light, dark, or system appearance.',
+  danger: 'Permanently delete your account and data.',
+}
+
+const PROFILE_ACCENT = '#6C91C2'
 
 function SectionCard({ title, description, children, action }: { title: string; description?: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-foreground tracking-tight">{title}</h3>
-          {description && <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">{description}</p>}
+          <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
+          {description && <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">{description}</p>}
         </div>
         {action}
       </div>
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+      <div className="space-y-5 rounded-2xl border border-border bg-card p-6">
         {children}
       </div>
     </div>
@@ -57,42 +55,25 @@ function SectionCard({ title, description, children, action }: { title: string; 
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[1fr_1.8fr] gap-6 items-start">
+    <div className="grid grid-cols-[1fr_1.8fr] items-start gap-6">
       <div className="pt-0.5">
         <p className="text-sm font-medium text-foreground">{label}</p>
-        {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{hint}</p>}
       </div>
       <div>{children}</div>
     </div>
   )
 }
 
-function ToggleRow({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={cn('relative shrink-0 w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer', checked ? 'bg-primary' : 'bg-muted-foreground/30')}
-      >
-        <span className={cn('absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background ring-1 ring-border/60 transition-transform duration-200', checked && 'translate-x-4')} />
-      </button>
-    </div>
-  )
-}
-
 function SaveBadge({ saved }: { saved: boolean }) {
   return saved ? (
-    <span className="inline-flex items-center gap-1 text-xs text-accent font-medium">
-      <Check className="w-3 h-3" /> Saved
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-accent">
+      <Check className="h-3 w-3" /> Saved
     </span>
   ) : null
 }
 
-function ProfileTab() {
+function GeneralTab() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [avatar, setAvatar] = useState<string | null>(null)
@@ -103,7 +84,7 @@ function ProfileTab() {
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    void supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
       setFullName(user.user_metadata?.full_name || user.user_metadata?.name || '')
       setEmail(user.email ?? '')
@@ -135,40 +116,41 @@ function ProfileTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Personal Information" description="This information is visible to your teammates.">
-        <Row label="Avatar">
+      <SectionCard title="Profile Identity" description="Customize your name, icon, and email.">
+        <Row label="Icon / Logo">
           <div className="flex items-center gap-4">
             <div
               onClick={() => fileRef.current?.click()}
-              className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center text-primary font-bold text-xl shrink-0 cursor-pointer hover:opacity-80 transition-opacity overflow-hidden"
+              className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white transition-opacity hover:opacity-80"
+              style={{ backgroundColor: PROFILE_ACCENT }}
             >
-              {avatar ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" /> : initial}
+              {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : initial}
             </div>
             <div>
-              <Button variant="outline" size="sm" className="cursor-pointer gap-1.5" onClick={() => fileRef.current?.click()}>
-                <Camera className="w-3.5 h-3.5" /> Upload Photo
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => fileRef.current?.click()}>
+                Upload Icon
               </Button>
-              <p className="text-xs text-muted-foreground mt-1.5">PNG, JPG up to 2MB</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">PNG, SVG, JPG</p>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </div>
           </div>
         </Row>
 
-        <Row label="Full Name" hint="How you appear to teammates.">
+        <Row label="Name" hint="How your name appears across Inline.">
           <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your name" />
         </Row>
 
-        <Row label="Email" hint="Your login email address.">
+        <Row label="Email" hint="Your login email address. Managed by your auth provider.">
           <div className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{email || 'Not set'}</span>
           </div>
         </Row>
 
         <div className="flex items-center justify-between pt-1">
           <SaveBadge saved={saved} />
-          <Button size="sm" onClick={handleSave} disabled={pending} className="cursor-pointer ml-auto">
-            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+          <Button size="sm" onClick={handleSave} disabled={pending} className="ml-auto cursor-pointer">
+            {pending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Changes
           </Button>
         </div>
@@ -178,7 +160,6 @@ function ProfileTab() {
 }
 
 function SecurityTab() {
-  const [currentPw, setCurrentPw] = useState('')
   const [newPw, setNewPw] = useState('')
   const [confirmPw, setConfirmPw] = useState('')
   const [saved, setSaved] = useState(false)
@@ -190,7 +171,6 @@ function SecurityTab() {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
       const supabase = createClient()
       await supabase.auth.updateUser({ password: newPw })
-      setCurrentPw('')
       setNewPw('')
       setConfirmPw('')
       setSaved(true)
@@ -201,9 +181,6 @@ function SecurityTab() {
   return (
     <div className="space-y-8">
       <SectionCard title="Change Password" description="Update your password to keep your account secure.">
-        <Row label="Current Password">
-          <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="••••••••" />
-        </Row>
         <Row label="New Password">
           <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="••••••••" />
         </Row>
@@ -212,20 +189,40 @@ function SecurityTab() {
         </Row>
         <div className="flex items-center justify-between pt-1">
           <SaveBadge saved={saved} />
-          <Button size="sm" onClick={handleChangePassword} disabled={pending || newPw !== confirmPw || !newPw} className="cursor-pointer ml-auto">
-            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Key className="w-3.5 h-3.5 mr-1.5" />}
+          <Button
+            size="sm"
+            onClick={handleChangePassword}
+            disabled={pending || newPw !== confirmPw || !newPw}
+            className="ml-auto cursor-pointer"
+          >
+            {pending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Key className="mr-1.5 h-3.5 w-3.5" />}
             Update Password
           </Button>
         </div>
       </SectionCard>
 
-      <SectionCard title="Active Sessions" description="Manage devices where you are signed in.">
+      <SectionCard title="Active Sessions" description="Devices where you are signed in.">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Current Session</p>
-            <p className="text-xs text-muted-foreground mt-0.5">This browser · active now</p>
+            <p className="text-sm font-medium text-foreground">Current session</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">This browser · active now</p>
           </div>
-          <span className="text-xs font-medium text-accent px-2 py-0.5 rounded-full bg-accent/10">Active</span>
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">Active</span>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Session" description="Sign out of Inline on this device.">
+        <div className="flex items-center justify-between gap-4 py-0.5">
+          <div>
+            <p className="text-sm font-medium text-foreground">Sign out</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">You will need to sign in again to access your workspace.</p>
+          </div>
+          <form action={signOut}>
+            <Button type="submit" variant="outline" size="sm" className="cursor-pointer gap-1.5">
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </Button>
+          </form>
         </div>
       </SectionCard>
     </div>
@@ -233,48 +230,51 @@ function SecurityTab() {
 }
 
 function NotificationsTab() {
-  const [notifs, setNotifs] = useState({ emailUpdates: true, productNews: false, securityAlerts: true })
-  const [saved, setSaved] = useState(false)
-
-  function toggle(k: keyof typeof notifs) {
-    const next = { ...notifs, [k]: !notifs[k] }
-    setNotifs(next)
-    localStorage.setItem('inline_account_notifs', JSON.stringify(next))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1800)
-  }
-
-  useEffect(() => {
-    try { const s = JSON.parse(localStorage.getItem('inline_account_notifs') || '{}'); setNotifs(p => ({ ...p, ...s })) } catch { /* ignore */ }
-  }, [])
-
   return (
     <div className="space-y-8">
-      <SectionCard title="Email Preferences" description="Choose what emails you receive from Inline.">
-        <ToggleRow label="Product updates" description="New features and improvements." checked={notifs.emailUpdates} onChange={() => toggle('emailUpdates')} />
-        <div className="h-px bg-border" />
-        <ToggleRow label="Product news" description="Announcements and blog posts." checked={notifs.productNews} onChange={() => toggle('productNews')} />
-        <div className="h-px bg-border" />
-        <ToggleRow label="Security alerts" description="Sign-in from new devices and password changes." checked={notifs.securityAlerts} onChange={() => toggle('securityAlerts')} />
-        <div className="flex justify-end"><SaveBadge saved={saved} /></div>
+      <SectionCard
+        title="Notifications"
+        description="Email notifications aren't available yet."
+      >
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Inline doesn&apos;t send emails today. When notifications ship, you&apos;ll be
+          able to opt into product updates and security alerts from this page.
+        </p>
       </SectionCard>
     </div>
   )
 }
 
 function AppearanceTab() {
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system')
+  // Reads and writes the same `inline-theme` key used by ThemeScript and the
+  // sidebar ThemeToggle, so the choice applies immediately and persists.
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  useEffect(() => {
+    const stored = (localStorage.getItem('inline-theme') as 'light' | 'dark' | null) ?? 'light'
+    setTheme(stored)
+  }, [])
+
+  function applyTheme(t: 'light' | 'dark') {
+    setTheme(t)
+    localStorage.setItem('inline-theme', t)
+    if (t === 'dark') document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+    window.dispatchEvent(new CustomEvent('inline-theme-changed', { detail: t }))
+  }
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Theme" description="Select your preferred appearance.">
+      <SectionCard title="Theme" description="Select your preferred appearance. Applies immediately across the workspace.">
         <div className="flex gap-3">
-          {(['system', 'light', 'dark'] as const).map(t => (
+          {(['light', 'dark'] as const).map(t => (
             <button
               key={t}
-              onClick={() => setTheme(t)}
+              type="button"
+              onClick={() => applyTheme(t)}
+              aria-pressed={theme === t}
               className={cn(
-                'flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all cursor-pointer capitalize',
+                'flex-1 cursor-pointer rounded-xl border-2 py-3 text-sm font-medium capitalize transition-all',
                 theme === t
                   ? 'border-primary bg-primary/5 text-primary'
                   : 'border-border text-muted-foreground hover:border-primary/30',
@@ -294,12 +294,23 @@ function DangerTab() {
   const [showModal, setShowModal] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleDelete() {
     if (confirmText !== 'DELETE') return
     setDeleting(true)
-    await new Promise(r => setTimeout(r, 600))
-    router.push('/')
+    setDeleteError(null)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? 'Failed to delete account.')
+      }
+      router.push('/')
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
   }
 
   return (
@@ -307,21 +318,11 @@ function DangerTab() {
       <SectionCard title="Danger Zone" description="These actions are permanent and cannot be undone.">
         <div className="flex items-center justify-between py-1">
           <div>
-            <p className="text-sm font-medium">Sign out everywhere</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Revoke all active sessions except this one.</p>
-          </div>
-          <Button size="sm" variant="outline" className="cursor-pointer border-amber-300 text-amber-600 hover:bg-amber-50">
-            Sign Out All
-          </Button>
-        </div>
-        <div className="h-px bg-border" />
-        <div className="flex items-center justify-between py-1">
-          <div>
             <p className="text-sm font-medium text-destructive">Delete account</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Permanently deletes your account and all personal data.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Permanently deletes your account and all personal data.</p>
           </div>
           <Button size="sm" variant="destructive" className="cursor-pointer" onClick={() => setShowModal(true)}>
-            Delete Account
+            Delete
           </Button>
         </div>
       </SectionCard>
@@ -329,25 +330,58 @@ function DangerTab() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-card text-card-foreground rounded-2xl border border-border p-6 w-full max-w-sm space-y-4"
-            onClick={e => e.stopPropagation()}>
+          <div
+            className="relative w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-card-foreground"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4.5 h-4.5 text-destructive" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">Delete your account?</h3>
-                <p className="text-xs text-muted-foreground mt-1">This action is irreversible. All workspaces you own and all personal data will be deleted.</p>
+                <h3 className="text-sm font-semibold">Delete your account?</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This action is irreversible. All workspaces you own and all personal data will be deleted.
+                </p>
               </div>
             </div>
             <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">Type <strong className="text-foreground font-mono">DELETE</strong> to confirm:</p>
-              <Input value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" className="font-mono text-sm" autoFocus />
+              <p className="text-xs text-muted-foreground">
+                Type <strong className="font-mono text-foreground">DELETE</strong> to confirm:
+              </p>
+              <Input
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="font-mono text-sm"
+                autoFocus
+              />
             </div>
+            {deleteError && (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
+                {deleteError}
+              </p>
+            )}
             <div className="flex gap-2 pt-1">
-              <Button variant="outline" size="sm" className="flex-1 cursor-pointer" onClick={() => { setShowModal(false); setConfirmText('') }}>Cancel</Button>
-              <Button variant="destructive" size="sm" className="flex-1 cursor-pointer" disabled={confirmText !== 'DELETE' || deleting} onClick={handleDelete}>
-                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Delete Account'}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 cursor-pointer"
+                onClick={() => {
+                  setShowModal(false)
+                  setConfirmText('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1 cursor-pointer"
+                disabled={confirmText !== 'DELETE' || deleting}
+                onClick={handleDelete}
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Delete account'}
               </Button>
             </div>
           </div>
@@ -358,10 +392,10 @@ function DangerTab() {
 }
 
 export default function AccountSettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('profile')
+  const [activeTab, setActiveTab] = useState<Tab>('general')
 
   const TabContent: Record<Tab, React.ReactNode> = {
-    profile:       <ProfileTab />,
+    general:       <GeneralTab />,
     security:      <SecurityTab />,
     notifications: <NotificationsTab />,
     appearance:    <AppearanceTab />,
@@ -370,65 +404,49 @@ export default function AccountSettingsPage() {
 
   return (
     <>
-      <PageHeader
-        crumbs={[{ label: 'Account Settings' }]}
-        title="Account Settings"
-        subtitle="Manage your personal account"
-      />
+      <PageHeader crumbs={[{ label: 'Account', href: '/app/ws-1/dashboard' }, { label: 'Settings' }]} />
 
-      <div className="flex h-[calc(100vh-112px)] overflow-hidden">
-        <aside className="w-52 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col overflow-y-auto scrollbar-minimal">
-          <nav className="flex-1 p-3 space-y-5 pt-4">
-            {ACCOUNT_NAV.map(group => (
-              <div key={group.label}>
-                <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </p>
-                <ul className="space-y-0.5">
-                  {group.items.map(item => {
-                    const Icon = item.icon
-                    const active = activeTab === item.id
-                    return (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab(item.id)}
-                          className={cn(
-                            'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm transition-all cursor-pointer font-medium',
-                            item.danger
-                              ? active ? 'bg-destructive/15 text-destructive' : 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive'
-                              : active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                          )}
-                        >
-                          <Icon className="w-4 h-4 shrink-0 opacity-90" />
-                          <span className="truncate">{item.label}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
+      <div className="px-6 pb-12">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Account Settings</h1>
 
-          <div className="p-3 border-t border-sidebar-border shrink-0">
-            <form action={signOut}>
+        <nav
+          className="mt-6 flex gap-1 overflow-x-auto border-b border-border pb-px scrollbar-minimal -mb-px"
+          aria-label="Account settings sections"
+        >
+          {ACCOUNT_TABS.map(tab => {
+            const active = activeTab === tab.id
+            return (
               <button
-                type="submit"
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all cursor-pointer font-medium"
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  '-mb-px shrink-0 cursor-pointer whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
+                  tab.danger
+                    ? active
+                      ? 'border-destructive text-destructive'
+                      : 'border-transparent text-destructive/80 hover:text-destructive'
+                    : active
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
               >
-                <LogOut className="w-4 h-4 shrink-0 opacity-90" />
-                <span>Sign Out</span>
+                {tab.label}
               </button>
-            </form>
-          </div>
-        </aside>
+            )
+          })}
+        </nav>
 
-        <main className="flex-1 overflow-y-auto bg-background scrollbar-minimal">
-          <div className="max-w-2xl px-6 py-8 space-y-8">
-            {TabContent[activeTab]}
-          </div>
-        </main>
+        <div className="mt-8 w-full space-y-2">
+          <h2 className="text-base font-semibold text-foreground">
+            {ACCOUNT_TABS.find(t => t.id === activeTab)?.label}
+          </h2>
+          {TAB_DESCRIPTIONS[activeTab] && (
+            <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+          )}
+        </div>
+
+        <div className="mt-6 w-full space-y-8">{TabContent[activeTab]}</div>
       </div>
     </>
   )

@@ -2,19 +2,29 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { getWorkspaceName } from '@/lib/workspaces'
 import {
   getDocumentById,
   upsertFolderDocument,
+  deleteFolderDocument,
   type FolderDocument,
 } from '@/lib/workspace-library'
 import { findFolder, loadWorkspaceFolders } from '@/lib/workspace-folders'
+import { isPinnedDocument, togglePinnedDocument } from '@/lib/dashboard-favorites'
 import FolderDocumentEditor from '@/components/documents/FolderDocumentEditor'
+import { useConfirm, useToast } from '@/components/ui/notifications'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   ArrowLeft, Clock, Star, Share2, MessageCircle,
-  UserPlus, X, Send, MoreHorizontal,
+  X, Send, MoreHorizontal, Link2, Trash2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -34,6 +44,9 @@ interface Comment {
 
 export default function FolderDocumentEditorPage() {
   const params = useParams()
+  const router = useRouter()
+  const confirm = useConfirm()
+  const toast = useToast()
   const workspaceId  = Array.isArray(params.workspaceId)  ? params.workspaceId[0]!  : (params.workspaceId  as string)
   const folderId     = Array.isArray(params.folderId)     ? params.folderId[0]!     : (params.folderId     as string)
   const documentId   = Array.isArray(params.documentId)   ? params.documentId[0]!   : (params.documentId   as string)
@@ -42,16 +55,14 @@ export default function FolderDocumentEditorPage() {
 
   const [doc,        setDoc]        = useState<FolderDocument | null>(null)
   const [title,      setTitle]      = useState('')
-  const [subtitle,   setSubtitle]   = useState('')
   const [savedFlash, setSavedFlash] = useState(false)
   const [isFav,      setIsFav]      = useState(false)
 
   const [showComments,  setShowComments]  = useState(false)
-  const [showInvite,    setShowInvite]    = useState(false)
+  const [showShare,     setShowShare]     = useState(false)
   const [comments,      setComments]      = useState<Comment[]>([])
   const [commentDraft,  setCommentDraft]  = useState('')
-  const [inviteEmail,   setInviteEmail]   = useState('')
-  const [inviteSent,    setInviteSent]    = useState(false)
+  const [linkCopied,    setLinkCopied]    = useState(false)
   const commentInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -71,6 +82,7 @@ export default function FolderDocumentEditorPage() {
     if (!d || d.workspaceId !== workspaceId || d.folderId !== folderId) { setDoc(null); return }
     setDoc(d)
     setTitle(d.title)
+    setIsFav(isPinnedDocument(workspaceId, documentId))
     // Load comments from local storage
     try {
       const saved = localStorage.getItem(`doc-comments-${documentId}`)
@@ -117,10 +129,32 @@ export default function FolderDocumentEditorPage() {
     localStorage.setItem(`doc-comments-${documentId}`, JSON.stringify(next))
   }
 
-  function handleInvite() {
-    if (!inviteEmail.trim()) return
-    setInviteSent(true)
-    setTimeout(() => { setInviteSent(false); setInviteEmail(''); setShowInvite(false) }, 1800)
+  async function copyDocLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 1800)
+    } catch {
+      setLinkCopied(false)
+    }
+  }
+
+  function toggleFavorite() {
+    togglePinnedDocument(workspaceId, documentId)
+    setIsFav(isPinnedDocument(workspaceId, documentId))
+  }
+
+  async function handleDeleteDocument() {
+    const ok = await confirm({
+      title: 'Delete this document?',
+      description: 'This permanently removes the document. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
+    deleteFolderDocument(documentId)
+    toast.success('Document deleted')
+    router.push(`/app/${workspaceId}/folder/${folderId}`)
   }
 
   const timeSince = (ms: number) => {
@@ -186,31 +220,53 @@ export default function FolderDocumentEditorPage() {
 
           <button
             type="button"
-            onClick={() => setShowInvite(true)}
+            onClick={() => setShowShare(true)}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
-            title="Invite collaborator"
+            title="Share"
+            aria-label="Share document"
           >
             <Share2 className="w-4 h-4" />
           </button>
 
           <button
             type="button"
-            onClick={() => setIsFav(v => !v)}
+            onClick={toggleFavorite}
             className={cn(
               'w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer',
               isFav ? 'text-amber-500' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
             )}
-            title="Favorite"
+            title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={isFav}
           >
             <Star className="w-4 h-4" fill={isFav ? 'currentColor' : 'none'} />
           </button>
 
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer outline-none"
+              aria-label="Document options"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 bg-white border border-slate-200 rounded-xl">
+              <DropdownMenuItem
+                className="flex items-center gap-2 cursor-pointer text-slate-600"
+                onClick={copyDocLink}
+              >
+                <Link2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>{linkCopied ? 'Copied!' : 'Copy link'}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-100" />
+              <DropdownMenuItem
+                className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
+                onClick={handleDeleteDocument}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete document</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -230,33 +286,20 @@ export default function FolderDocumentEditorPage() {
               className="w-full text-3xl font-bold text-slate-800 placeholder:text-slate-300 bg-transparent border-0 outline-none focus:ring-0 mb-1 leading-tight"
             />
 
-            {/* Subtitle */}
-            <input
-              type="text"
-              value={subtitle}
-              onChange={e => setSubtitle(e.target.value)}
-              placeholder="Add a subtitle to this note"
-              className="w-full text-base text-slate-400 placeholder:text-slate-300 bg-transparent border-0 outline-none focus:ring-0 mb-6"
-            />
-
-            {/* Collaborators preview + invite inline */}
+            {/* Share row */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-200">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-[#EDEBE8] border-2 border-white flex items-center justify-center text-xs font-bold text-[#37352F]">
-                  Y
-                </div>
+              <div className="w-8 h-8 rounded-full bg-[#EDEBE8] border-2 border-white flex items-center justify-center text-xs font-bold text-[#37352F]">
+                Y
               </div>
               <button
                 type="button"
-                onClick={() => setShowInvite(true)}
+                onClick={() => setShowShare(true)}
                 className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-[#37352F] transition-colors cursor-pointer"
               >
-                <UserPlus className="w-3.5 h-3.5" />
-                Add new editor
+                <Share2 className="w-3.5 h-3.5" />
+                Share
               </button>
             </div>
-
-            
 
             {/* Editor */}
             <FolderDocumentEditor
@@ -344,15 +387,15 @@ export default function FolderDocumentEditorPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Invite modal ── */}
+      {/* ── Share modal — honest: copy link only, no fake invites ── */}
       <AnimatePresence>
-        {showInvite && (
+        {showShare && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/30 flex items-center justify-center"
-            onClick={() => setShowInvite(false)}
+            onClick={() => setShowShare(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -362,31 +405,36 @@ export default function FolderDocumentEditorPage() {
               className="bg-white rounded-2xl border border-slate-200 w-full max-w-md p-6 mx-4"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-800">Invite to this document</h3>
-                <button type="button" onClick={() => setShowInvite(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <h3 className="text-lg font-semibold text-slate-800">Share this document</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowShare(false)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                  aria-label="Close"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <p className="text-sm text-slate-500 mb-4">
-                Share this document with teammates. They&apos;ll get edit access.
+                Documents are private to your account. Real-time collaboration
+                isn&apos;t available yet — you can copy a link for your own
+                bookmarks or notes.
               </p>
 
               <div className="flex gap-2">
                 <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={e => setInviteEmail(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleInvite() }}
-                  placeholder="name@example.com"
-                  className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#C4D4E4] transition-colors"
+                  readOnly
+                  value={typeof window !== 'undefined' ? window.location.href : ''}
+                  onFocus={e => e.currentTarget.select()}
+                  aria-label="Document link"
+                  className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2.5 bg-slate-50 text-slate-600 outline-none focus:border-[#C4D4E4] transition-colors"
                 />
                 <Button
-                  onClick={handleInvite}
-                  disabled={!inviteEmail.trim() || inviteSent}
-                  className="bg-[#191919] hover:bg-[#150C00] text-white cursor-pointer"
+                  onClick={copyDocLink}
+                  className="bg-[#191919] hover:bg-[#150C00] text-white cursor-pointer shrink-0"
                 >
-                  {inviteSent ? 'Sent!' : 'Invite'}
+                  {linkCopied ? 'Copied' : 'Copy link'}
                 </Button>
               </div>
 

@@ -1,42 +1,44 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Home from '../components/Home'
 
 /**
  * PanelHost bridges the content script world with the panel components.
  * It captures the current text selection and range so panels (Rewrite, AI)
  * can operate on the user's highlighted text.
+ *
+ * The captured Range lives in React state (not a ref) so that when the user
+ * opens Rewrite or AI, the child Home tree re-renders with a fresh
+ * `originalRange` prop, letting Rewrite/AI Insert write back into the correct
+ * spot in the DOM.
  */
 export default function PanelHost() {
   const [selectedText, setSelectedText] = useState('')
-  const rangeRef = useRef<Range | null>(null)
+  const [originalRange, setOriginalRange] = useState<Range | null>(null)
 
   useEffect(() => {
     function capture() {
       const sel = window.getSelection()
-      if (sel && !sel.isCollapsed && sel.toString().trim()) {
+      if (!sel) return
+      if (sel.isCollapsed || !sel.toString().trim()) return
+      try {
+        const range = sel.getRangeAt(0).cloneRange()
         setSelectedText(sel.toString())
-        rangeRef.current = sel.getRangeAt(0).cloneRange()
-      }
-    }
-    function handleFeature(e: Event) {
-      const detail = (e as CustomEvent).detail as { featureId: string; selectedText: string }
-      if (detail.selectedText) {
-        setSelectedText(detail.selectedText)
+        setOriginalRange(range)
+      } catch {
+        /* ignore invalid selection */
       }
     }
     document.addEventListener('mouseup', capture)
     document.addEventListener('keyup', capture)
-    document.addEventListener('inline:feature', handleFeature)
     return () => {
       document.removeEventListener('mouseup', capture)
       document.removeEventListener('keyup', capture)
-      document.removeEventListener('inline:feature', handleFeature)
     }
   }, [])
 
   return (
     <div data-panel-host="">
-      <Home selectedText={selectedText} originalRange={rangeRef.current} />
+      <Home selectedText={selectedText} originalRange={originalRange} />
     </div>
   )
 }

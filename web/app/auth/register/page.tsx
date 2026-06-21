@@ -2,15 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import SolarSystemArt from '@/components/auth/SolarSystemArt'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [name,     setName]     = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -43,122 +39,138 @@ export default function RegisterPage() {
     setDone(true)
   }
 
-  if (done) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Check your inbox</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              We sent a confirmation link to <strong>{email}</strong>.
-              Click it to activate your account.
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => router.push('/auth/login')}>
-            Back to sign in
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex bg-[#FDFBF7] text-[#1C1E26] selection:bg-stone-200 selection:text-[#1C1E26]">
+      
+      {/* LEFT COLUMN: FORM */}
+      <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center px-8 sm:px-16 lg:px-24 relative z-10 bg-[#FDFBF7]">
+        
         {/* Logo */}
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <span className="block h-5 w-1.5 rounded-full bg-primary-foreground -rotate-12" />
+        <Link
+          href="/"
+          className="absolute top-8 left-8 sm:left-16 lg:left-24 flex items-center gap-2"
+        >
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#1C1E26]" aria-hidden>
+            <span className="block h-4 w-1 rounded-full bg-white -rotate-12" />
           </div>
-          <div className="text-center">
-            <h1 className="text-xl font-bold tracking-tight">Create your account</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Start capturing spatial intelligence today</p>
-          </div>
-        </div>
+          <span className="font-semibold text-xl tracking-tight text-[#1C1E26]">
+            inline<span className="text-stone-400 ml-0.5 text-sm align-top">~</span>
+          </span>
+        </Link>
 
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-xs font-medium">Full name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Jane Smith"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                required
-                autoComplete="name"
-                className="h-9 text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium">Work email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="h-9 text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-medium">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPw ? 'text' : 'password'}
-                  placeholder="Minimum 8 characters"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="h-9 text-sm pr-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(v => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        <div className="w-full max-w-sm mt-16 md:mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          
+          {done ? (
+            <div className="space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-200/50">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1E26]">
+                Check your inbox
+              </h1>
+              <p className="text-[15px] text-stone-500 leading-relaxed">
+                We sent a confirmation link to <strong className="text-[#1C1E26] font-medium">{email}</strong>.
+                Click it to activate your account.
+              </p>
+              <div className="pt-4">
+                <Link
+                  href="/auth/login"
+                  className="text-[15px] font-medium text-[#1C1E26] hover:text-stone-700 transition-colors"
                 >
-                  {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
+                  ← Back to log in
+                </Link>
               </div>
             </div>
+          ) : (
+            <>
+              <div className="mb-8">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1E26] mb-3">
+                  Create account
+                </h1>
+                <p className="text-[15px] text-stone-500">
+                  Already have an account?{' '}
+                  <Link href="/auth/login" className="text-[#1C1E26] font-medium hover:text-stone-700 transition-colors">
+                    Log in
+                  </Link>
+                </p>
+              </div>
 
-            {error && (
-              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg border border-red-100 dark:border-red-500/20">
-                {error}
-              </p>
-            )}
+              {error && (
+                <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200/80 rounded-xl text-sm text-red-700">
+                  {error}
+                </div>
+              )}
 
-            <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
-              {loading ? 'Creating account…' : 'Create account'}
-            </Button>
-          </form>
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <input
+                    id="name"
+                    type="text"
+                    required
+                    autoComplete="name"
+                    placeholder="Full name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full h-12 px-5 rounded-full border border-stone-200/50 bg-white text-[15px] text-[#1C1E26] placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-all"
+                  />
+                </div>
 
-          <p className="text-[11px] text-muted-foreground text-center">
-            By creating an account you agree to our{' '}
-            <a href="#" className="text-primary hover:underline">Terms</a> and{' '}
-            <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
-          </p>
+                <div className="space-y-2">
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="Work email address"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full h-12 px-5 rounded-full border border-stone-200/50 bg-white text-[15px] text-[#1C1E26] placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2 relative pb-2">
+                  <input
+                    id="password"
+                    type={showPw ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    placeholder="Password (min 8 characters)"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full h-12 pl-5 pr-12 rounded-full border border-stone-200/50 bg-white text-[15px] text-[#1C1E26] placeholder:text-stone-400 focus:outline-none focus:border-stone-400 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(v => !v)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 -mt-1 text-stone-400 hover:text-stone-600 transition-colors"
+                  >
+                    {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 rounded-full bg-[#1C1E26] text-white text-sm font-medium hover:bg-stone-800 active:scale-[0.98] transition-all disabled:opacity-70 cursor-pointer"
+                >
+                  {loading ? 'Creating account...' : 'Create account'}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center text-[13px] text-stone-500 leading-relaxed">
+                Your captures stay private to your account,<br />
+                protected by row-level security.
+              </div>
+            </>
+          )}
         </div>
+      </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-5">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary hover:underline font-medium">
-            Sign in
-          </Link>
-        </p>
+      {/* RIGHT COLUMN: navy "solar system" illustration matching the marketing Hero. */}
+      <div className="hidden md:block flex-1 relative">
+        <SolarSystemArt tagline="A place for every highlight, note, and idea." />
       </div>
     </div>
   )

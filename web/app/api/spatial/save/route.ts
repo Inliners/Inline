@@ -21,12 +21,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let address = '', insight = '', workspaceId = '', sourceUrl = ''
+  let address = '', insight = '', sourceUrl = ''
   try {
     const body = await request.json()
     address     = body.address     ?? ''
     insight     = body.insight     ?? ''
-    workspaceId = body.workspaceId ?? ''
     sourceUrl   = body.sourceUrl   ?? ''
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })

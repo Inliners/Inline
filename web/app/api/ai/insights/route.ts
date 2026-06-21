@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { getAIApiKey, getSupabaseAndUserFromRequest } from '@/lib/ai-key'
+import { INLINE_SHORT_PERSONA } from '@/lib/inline-persona'
 
 export async function POST(request: Request) {
   try {
@@ -58,8 +59,9 @@ export async function POST(request: Request) {
 
     const google = createGoogleGenerativeAI({ apiKey })
     const { text } = await generateText({
-      model: google('gemini-2.0-flash'),
-      prompt: `You are an analytics coach for a web research product. In 2-3 short sentences, give one actionable insight.
+      model: google('gemini-2.5-flash'),
+      system: `${INLINE_SHORT_PERSONA}\n\nIn this surface you are running as Inline's weekly analytics coach (shown on the dashboard). Never introduce yourself — the surface already labels you — just give the insight.`,
+      prompt: `In 2-3 short sentences, give one actionable insight.
 Hard numbers (last 7 days):
 - Total captures: ${totalWeek}
 - AI-tagged captures: ${aiWeek}

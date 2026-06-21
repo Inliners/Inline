@@ -8,17 +8,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Settings2, UserPlus, MoreHorizontal } from 'lucide-react'
+import { Settings2, MoreHorizontal } from 'lucide-react'
 import ExportButton from './ExportButton'
 
 interface Crumb { label: string; href?: string }
 
 interface PageHeaderProps {
   crumbs:     Crumb[]
-  title:      string
+  /** Optional; when set, shown below the crumb row (most pages use their own page title instead). */
+  title?:     string
   titleSlot?: React.ReactNode
   subtitle?:  string
   action?:    React.ReactNode
@@ -86,15 +86,17 @@ export default function PageHeader({ crumbs, title, titleSlot, subtitle, action,
                   className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-slate-600 rounded-sm hover:bg-slate-50 transition-colors"
                 />
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-100" />
-              <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-800">
-                <UserPlus className="w-3.5 h-3.5 text-slate-400" />
-                <span>Invite Members</span>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
+
+      {(title || subtitle) && (
+        <div className="px-6 pb-3 pt-0.5 min-w-0 space-y-0.5">
+          {title && <h1 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h1>}
+          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        </div>
+      )}
 
       {titleSlot && (
         <div className="px-6 pb-3 pt-0.5 min-w-0">{titleSlot}</div>

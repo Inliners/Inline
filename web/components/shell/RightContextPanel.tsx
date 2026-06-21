@@ -88,25 +88,30 @@ export default function RightContextPanel() {
     if (tab === 'insights') void loadInsights()
   }, [tab, loadInsights])
 
+  const panelEase = [0.4, 0, 0.2, 1] as const
+  const panelDuration = 0.22
+
   return (
     <motion.aside
-      initial={{ x: 240, opacity: 0 }}
-      animate={{ x: 0,   opacity: 1 }}
-      exit={{ x: 240, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-      className="w-60 shrink-0 h-screen flex flex-col bg-white border-l border-slate-200 overflow-hidden"
+      initial={{ x: 20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 16, opacity: 0 }}
+      transition={{ duration: panelDuration, ease: panelEase }}
+      className="flex h-screen w-60 shrink-0 flex-col overflow-hidden border-l border-border bg-card will-change-transform"
+      style={{ transform: 'translateZ(0)' }}
     >
       {/* Header tabs */}
-      <div className="h-[52px] flex items-center px-4 border-b border-slate-200 shrink-0 gap-1">
+      <div className="flex h-[52px] shrink-0 items-center gap-1 border-b border-border bg-card px-3">
         {(['activity', 'insights'] as const).map(t => (
           <button
             key={t}
+            type="button"
             onClick={() => setTab(t)}
             className={cn(
-              'flex-1 h-7 rounded-md text-xs font-semibold transition-colors cursor-pointer',
+              'h-7 flex-1 cursor-pointer rounded-md text-xs font-semibold transition-colors duration-150',
               tab === t
-                ? 'bg-[#F1F1EF] text-[#37352F]'
-                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100',
+                ? 'bg-white/90 text-foreground shadow-sm ring-1 ring-border/60'
+                : 'text-muted-foreground hover:bg-white/50 hover:text-foreground',
             )}
           >
             {t === 'activity' ? 'Activity' : 'Insights'}
@@ -114,37 +119,48 @@ export default function RightContextPanel() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 scrollbar-minimal">
+      <div className="scrollbar-minimal flex-1 space-y-2 overflow-y-auto px-3 py-3">
 
         {/* ── Activity tab ── */}
         {tab === 'activity' && (
           <>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-2">
+            <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Recent Workspace Activity
             </p>
             {feedLoading && (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             )}
             {!feedLoading && feed.length === 0 && (
-              <p className="text-[11px] text-slate-300 px-1">No activity yet.</p>
+              <p className="px-1 text-[11px] text-muted-foreground/80">No activity yet.</p>
             )}
             {!feedLoading && feed.map(item => {
               const Icon = KIND_ICON[item.type] ?? KIND_ICON[item.kind] ?? Activity
-              const color = item.kind === 'extraction' ? '#f59e0b' : item.type === 'ai-summary' ? '#5FA8A1' : '#6C91C2'
+              const color =
+                item.kind === 'extraction'
+                  ? '#b45309'
+                  : item.type === 'ai-summary'
+                    ? '#0f766e'
+                    : '#57534e'
               return (
-                <div key={item.id} className="flex items-start gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: color + '22' }}>
-                    <Icon className="w-3.5 h-3.5" style={{ color }} />
+                <div
+                  key={item.id}
+                  className="flex items-start gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-muted/80"
+                >
+                  <div
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${color}18` }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-semibold text-slate-700 truncate">{item.label}</p>
-                    <p className="text-[10.5px] text-slate-400 truncate">{item.sub}</p>
+                    <p className="truncate text-[12px] font-semibold text-foreground">{item.label}</p>
+                    <p className="truncate text-[10.5px] text-muted-foreground">{item.sub}</p>
                     {item.snippet && (
-                      <p className="text-[10px] text-slate-300 truncate mt-0.5">{item.snippet}</p>
+                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground/80">{item.snippet}</p>
                     )}
-                    <p className="text-[10px] text-slate-300 mt-0.5">{relTime(item.time)}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground/70">{relTime(item.time)}</p>
                   </div>
                 </div>
               )
@@ -155,24 +171,24 @@ export default function RightContextPanel() {
         {/* ── Insights tab ── */}
         {tab === 'insights' && (
           <>
-            <div className="flex items-center gap-1.5 px-1 mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-[#37352F]" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="mb-3 flex items-center gap-1.5 px-1">
+              <Sparkles className="h-3.5 w-3.5 text-foreground" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 AI Insights
               </p>
             </div>
             {insightLoading && (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             )}
             {!insightLoading && insightText && (
-              <div className="rounded-xl border border-slate-200 bg-[#F1F1EF] p-3">
-                <p className="text-[11.5px] text-slate-600 leading-relaxed">{insightText}</p>
+              <div className="rounded-xl border border-border bg-muted/50 p-3">
+                <p className="text-[11.5px] leading-relaxed text-foreground/90">{insightText}</p>
               </div>
             )}
             {!insightLoading && !insightText && (
-              <p className="text-[11px] text-slate-300 px-1">
+              <p className="px-1 text-[11px] text-muted-foreground/80">
                 No AI insights available yet.
               </p>
             )}
@@ -181,9 +197,9 @@ export default function RightContextPanel() {
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-3 border-t border-slate-200 shrink-0">
-        <div className="flex items-center gap-1.5 text-[10.5px] text-slate-300">
-          <Clock className="w-3 h-3" />
+      <div className="shrink-0 border-t border-border px-3 py-3">
+        <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+          <Clock className="h-3 w-3" />
           <span>Workspace: {wsId}</span>
         </div>
       </div>

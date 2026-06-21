@@ -24,6 +24,13 @@ export default function ThemeToggle({ className }: { className?: string }) {
   useEffect(() => {
     setMounted(true)
     setDark(document.documentElement.classList.contains('dark'))
+
+    const onChange = (e: Event) => {
+      const val = (e as CustomEvent<'light' | 'dark'>).detail
+      setDark(val === 'dark')
+    }
+    window.addEventListener('inline-theme-changed', onChange)
+    return () => window.removeEventListener('inline-theme-changed', onChange)
   }, [])
 
   function toggle() {
@@ -36,20 +43,17 @@ export default function ThemeToggle({ className }: { className?: string }) {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('inline-theme', 'light')
     }
+    window.dispatchEvent(new CustomEvent('inline-theme-changed', { detail: next ? 'dark' : 'light' }))
   }
 
-  if (!mounted) return <div className="w-8 h-8" />
+  if (!mounted) return <div className="w-7 h-7" />
 
   return (
     <button
+      type="button"
       onClick={toggle}
       title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className={`
-        flex items-center justify-center w-8 h-8 rounded-lg
-        text-muted-foreground hover:text-foreground
-        hover:bg-accent transition-colors
-        ${className ?? ''}
-      `}
+      className={`flex items-center justify-center w-7 h-7 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B] ${className ?? ''}`}
     >
       {dark ? <IcSun /> : <IcMoon />}
     </button>

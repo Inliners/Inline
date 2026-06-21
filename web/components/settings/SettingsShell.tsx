@@ -56,7 +56,7 @@ export default function SettingsShell({
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto rounded-[1.75rem] border border-border bg-card overflow-hidden flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
+      <div className="w-full max-w-none rounded-[1.75rem] border border-border bg-card overflow-hidden flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
         {/* Top bar */}
         <header className="shrink-0 flex items-center justify-between gap-4 px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3 min-w-0">
@@ -134,7 +134,7 @@ export default function SettingsShell({
 
           {/* Main content */}
           <main className="flex-1 overflow-y-auto bg-background scrollbar-minimal">
-            <div className="max-w-3xl px-6 py-8 lg:px-10 lg:py-10">{children}</div>
+            <div className="w-full max-w-none px-6 py-8 lg:px-10 lg:py-10">{children}</div>
           </main>
         </div>
       </div>
