@@ -21,9 +21,9 @@ const LeafletMap = dynamic(() => import('./LeafletMap'), {
 type ViewMode = '2d' | '3d' | 'globe' | 'street'
 
 const VIEW_MODES: { id: ViewMode; label: string; icon: React.ElementType }[] = [
-  { id: '2d', label: '2D', icon: MapIcon },
-  { id: '3d', label: '3D', icon: Box },
-  { id: 'globe', label: 'Globe', icon: Globe2 },
+  { id: '2d', label: 'Map', icon: MapIcon },
+  { id: '3d', label: 'Focus', icon: Box },
+  { id: 'globe', label: 'Satellite', icon: Globe2 },
   { id: 'street', label: 'Street', icon: Eye },
 ]
 
@@ -120,6 +120,10 @@ export default function SpatialMap({
   )
 
   const selectedCoord = allCoordinates.find(c => c.id === selectedId) ?? null
+  const domainCount = useMemo(
+    () => new Set(allCoordinates.map(c => c.domain).filter(Boolean)).size,
+    [allCoordinates],
+  )
 
   const tileUrl = useMemo(() => {
     switch (viewMode) {
@@ -259,6 +263,25 @@ export default function SpatialMap({
         <ArrowLeft className="h-4 w-4 text-[#222]" />
       </Link>
 
+      <div className="absolute left-16 top-4 z-700 hidden max-w-xs overflow-hidden rounded-2xl border border-stone-200/80 bg-white/95 shadow-[0_16px_40px_-24px_rgba(28,30,38,0.42)] backdrop-blur-sm md:block">
+        <div className="px-4 py-3">
+          <p className="text-sm font-semibold text-[#222]">Places</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#666]">
+            Locations connected to saved captures, page context, and pins you add yourself.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 border-t border-stone-200/70 text-xs">
+          <div className="px-4 py-2">
+            <p className="font-semibold text-[#222]">{allCoordinates.length}</p>
+            <p className="text-[#777]">Saved places</p>
+          </div>
+          <div className="border-l border-stone-200/70 px-4 py-2">
+            <p className="font-semibold text-[#222]">{domainCount}</p>
+            <p className="text-[#777]">Sources</p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Floating search bar (top-center) ── */}
       <div className="absolute left-1/2 top-4 z-700 -translate-x-1/2">
         <div
@@ -273,7 +296,7 @@ export default function SpatialMap({
                 ref={searchInputRef}
                 value={placeQuery}
                 onChange={e => setPlaceQuery(e.target.value)}
-                placeholder="Search an address or city…"
+                placeholder="Search a city, address, or place..."
                 className="min-w-0 flex-1 border-none bg-transparent text-sm text-[#222] outline-none placeholder:text-[#999]"
               />
               <button
@@ -339,7 +362,7 @@ export default function SpatialMap({
             <textarea
               value={draftNote}
               onChange={e => setDraftNote(e.target.value)}
-              placeholder="Add a note for this place…"
+              placeholder="Add a note for this place..."
               rows={2}
               className="w-full resize-none rounded-xl border border-[#e5e5e5] bg-white px-3 py-2 text-sm text-[#222] outline-none placeholder:text-[#999] focus:border-[#ccc]"
             />
@@ -437,6 +460,22 @@ export default function SpatialMap({
               )
             })}
           </div>
+        </div>
+      )}
+
+      {allCoordinates.length === 0 && (
+        <div className="absolute left-1/2 top-1/2 z-700 w-[min(420px,calc(100vw-40px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-stone-200 bg-white p-5 text-center shadow-[0_16px_40px_-24px_rgba(28,30,38,0.42)]">
+          <p className="text-sm font-semibold text-[#222]">No places yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-[#666]">
+            Search for a place or drop a pin to start building a map from this workspace.
+          </p>
+          <button
+            type="button"
+            onClick={openSearch}
+            className="mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#222] px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Add first place
+          </button>
         </div>
       )}
 

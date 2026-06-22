@@ -1,40 +1,266 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Send, Loader2, Bot, User, ChevronDown, Volume2, VolumeX, Clock } from 'lucide-react'
+import {
+  Plus,
+  Check,
+  ArrowUp,
+  Loader2,
+  User,
+  ChevronDown,
+  Volume2,
+  VolumeX,
+  Clock,
+  X,
+  MoreHorizontal,
+  Maximize2,
+  Paperclip,
+  Globe2,
+  Mic2,
+  PencilLine,
+  PanelRight,
+} from 'lucide-react'
+import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import { cn } from '@/lib/utils'
 import { useChatPanel } from '@/lib/chat-panel-context'
 import { loadFolderDocuments } from '@/lib/workspace-library'
 import { normalizeInlineVoiceId } from '@/lib/inlineVoicePresets'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  createChatSession,
+  loadChatSessions,
+  saveChatSessions,
+  touchSession,
+  type WorkspaceChatSession,
+} from '@/lib/workspace-chat-sessions'
 import { SourceCardRow, type ChatSource } from '@/components/shell/SourceCard'
 
 const EASE = [0.22, 1, 0.36, 1] as const
-const PANEL_DURATION = 0.32
+const PANEL_DURATION = 0.38
+const THINKING_MESSAGE = 'Putting together the best answer — one moment, Inline…'
+
+/** Collapse noisy citation clusters like [1, 2, 3, 4, 5] into [1–5]. */
+function formatCitations(text: string): string {
+  return text.replace(/\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g, (_, numsStr: string) => {
+    const nums = numsStr
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => !Number.isNaN(n))
+    if (nums.length === 0) return ''
+    if (nums.length === 1) return `[${nums[0]}]`
+    nums.sort((a, b) => a - b)
+    const consecutive = nums.every((n, i) => i === 0 || n === nums[i - 1]! + 1)
+    if (consecutive || nums.length > 3) {
+      return `[${nums[0]}–${nums[nums.length - 1]}]`
+    }
+    return `[${nums.join(', ')}]`
+  })
+}
+
+function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+}
+
+function normalizeAssistantText(text: string): string {
+  return reflowDomainList(formatCitations(stripInlineMarkdown(text)))
+}
+
+/** Turn run-on "site [1,2] site [3,4]" answers into a bullet list. */
+function reflowDomainList(text: string): string {
+  const host = '(?:localhost|[a-z0-9][\\w.-]*\\.[a-z]{2,})'
+  const citation = '\\[(?:\\d+\\s*[,–-]\\s*)*\\d+\\]'
+  const runOn = new RegExp(`(${host})\\s*(?:${citation})?`, 'gi')
+  const matches = [...text.matchAll(runOn)]
+  if (matches.length < 2) return text
+
+  const firstIdx = matches[0]!.index ?? 0
+  const intro = text.slice(0, firstIdx).trim()
+
+  const seen = new Set<string>()
+  const bullets: string[] = []
+  for (const match of matches) {
+    const domain = match[1]!.toLowerCase()
+    if (seen.has(domain)) continue
+    seen.add(domain)
+    bullets.push(`- ${match[1]}`)
+  }
+
+  if (bullets.length < 2) return text
+  return intro ? `${intro}\n\n${bullets.join('\n')}` : bullets.join('\n')
+}
+
+const emptyFadeContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.14, delayChildren: 0.1 } },
+}
+const emptyFadeItem = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+}
+
+function AssistantMessageContent({
+  content,
+  thinking,
+  error,
+}: {
+  content: string
+  thinking?: boolean
+  error?: boolean
+}) {
+  if (thinking && !content.trim()) {
+    return (
+      <p className="text-sm italic text-muted-foreground" role="status">
+        {THINKING_MESSAGE}
+      </p>
+    )
+  }
+
+  if (!content.trim()) return null
+
+  const plain = normalizeAssistantText(content)
+  const blocks = plain.split(/\n\n+/)
+
+  return (
+    <div className={cn('space-y-3', error && 'text-destructive')}>
+      {blocks.map((block, i) => {
+        const trimmed = block.trim()
+        if (!trimmed) return null
+
+        const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean)
+        const bulletLines = lines.filter(l => /^[-*•]\s/.test(l))
+        const proseLines = lines.filter(l => !/^[-*•]\s/.test(l) && !/^\d+[.)]\s/.test(l))
+
+        if (bulletLines.length > 0 && proseLines.length > 0) {
+          return (
+            <div key={i} className="space-y-2">
+              <p className="text-sm leading-relaxed text-foreground">{proseLines.join(' ')}</p>
+              <ul className="list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
+                {bulletLines.map((l, j) => (
+                  <li key={j}>{l.replace(/^[-*•]\s+/, '')}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        if (lines.every(l => /^[-*•]\s/.test(l))) {
+          return (
+            <ul key={i} className="list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
+              {lines.map((l, j) => (
+                <li key={j}>{l.replace(/^[-*•]\s+/, '')}</li>
+              ))}
+            </ul>
+          )
+        }
+
+        if (lines.every(l => /^\d+[.)]\s/.test(l))) {
+          return (
+            <ol key={i} className="list-decimal space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
+              {lines.map((l, j) => (
+                <li key={j}>{l.replace(/^\d+[.)]\s+/, '')}</li>
+              ))}
+            </ol>
+          )
+        }
+
+        if (lines.every(l => l.startsWith('>'))) {
+          return (
+            <blockquote
+              key={i}
+              className="border-l-2 border-border pl-3 text-sm leading-relaxed text-muted-foreground"
+            >
+              {lines.map(l => l.replace(/^>\s?/, '')).join(' ')}
+            </blockquote>
+          )
+        }
+
+        return (
+          <p key={i} className="text-sm leading-relaxed text-foreground">
+            {trimmed.replace(/\n/g, ' ')}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
 
 type RetrievalMode = 'semantic' | 'recency' | 'none'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
-  /** Server-retrieved sources only — never derived from model output. */
   sources?: ChatSource[]
   mode?: RetrievalMode
   error?: boolean
 }
 
+function UserMessageBubble({ content }: { content: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [multiline, setMultiline] = useState(() => /\n/.test(content))
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const measure = () => {
+      if (/\n/.test(content)) {
+        setMultiline(true)
+        return
+      }
+      const style = window.getComputedStyle(el)
+      const lineHeight = parseFloat(style.lineHeight) || 20
+      const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+      setMultiline(el.scrollHeight > lineHeight + paddingY + 2)
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [content])
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'ml-auto inline-block max-w-[82%] bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground wrap-anywhere',
+        multiline ? 'rounded-2xl' : 'rounded-full',
+      )}
+    >
+      {content}
+    </div>
+  )
+}
+
 let currentChatAudio: HTMLAudioElement | null = null
 let currentChatUtterance: SpeechSynthesisUtterance | null = null
 
-/** Fallback: browser speech synthesis. Always available, no keys, no quota. */
 function speakViaBrowserSynth(text: string, onEnd?: () => void): boolean {
   if (typeof window === 'undefined' || !window.speechSynthesis) return false
   try {
     const utter = new SpeechSynthesisUtterance(text)
     currentChatUtterance = utter
-    utter.onend = () => { currentChatUtterance = null; onEnd?.() }
-    utter.onerror = () => { currentChatUtterance = null; onEnd?.() }
+    utter.onend = () => {
+      currentChatUtterance = null
+      onEnd?.()
+    }
+    utter.onerror = () => {
+      currentChatUtterance = null
+      onEnd?.()
+    }
     window.speechSynthesis.cancel()
     window.speechSynthesis.speak(utter)
     return true
@@ -43,23 +269,21 @@ function speakViaBrowserSynth(text: string, onEnd?: () => void): boolean {
   }
 }
 
-/**
- * Chat read-aloud resolution order:
- *
- *   1. `/api/tts` proxy — authenticated via the dashboard session cookie;
- *      the ElevenLabs key lives only in the server env.
- *   2. `window.speechSynthesis` (browser built-in voice) when the proxy
- *      fails or cloud TTS is unavailable.
- */
 async function speakViaTts(text: string, onEnd?: () => void, onFallback?: () => void): Promise<void> {
-  if (currentChatAudio) { currentChatAudio.pause(); currentChatAudio = null }
+  if (currentChatAudio) {
+    currentChatAudio.pause()
+    currentChatAudio = null
+  }
   if (currentChatUtterance && typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.cancel()
     currentChatUtterance = null
   }
 
   const trimmed = text.slice(0, 2000)
-  if (!trimmed.trim()) { onEnd?.(); return }
+  if (!trimmed.trim()) {
+    onEnd?.()
+    return
+  }
 
   const voiceId =
     typeof window !== 'undefined'
@@ -85,8 +309,6 @@ async function speakViaTts(text: string, onEnd?: () => void, onFallback?: () => 
     })
 
     if (!res.ok) {
-      // Cloud voice unavailable — fall back to the browser's built-in
-      // voice so the user still gets audio, and let the UI say so.
       onFallback?.()
       if (!speakViaBrowserSynth(trimmed, onEnd)) onEnd?.()
       return
@@ -96,8 +318,16 @@ async function speakViaTts(text: string, onEnd?: () => void, onFallback?: () => 
     const url = URL.createObjectURL(blob)
     const audio = new Audio(url)
     currentChatAudio = audio
-    audio.onended = () => { URL.revokeObjectURL(url); currentChatAudio = null; onEnd?.() }
-    audio.onerror = () => { URL.revokeObjectURL(url); currentChatAudio = null; onEnd?.() }
+    audio.onended = () => {
+      URL.revokeObjectURL(url)
+      currentChatAudio = null
+      onEnd?.()
+    }
+    audio.onerror = () => {
+      URL.revokeObjectURL(url)
+      currentChatAudio = null
+      onEnd?.()
+    }
     audio.play()
   } catch {
     onFallback?.()
@@ -106,7 +336,10 @@ async function speakViaTts(text: string, onEnd?: () => void, onFallback?: () => 
 }
 
 function stopChatSpeaking() {
-  if (currentChatAudio) { currentChatAudio.pause(); currentChatAudio = null }
+  if (currentChatAudio) {
+    currentChatAudio.pause()
+    currentChatAudio = null
+  }
   if (currentChatUtterance && typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.cancel()
     currentChatUtterance = null
@@ -131,8 +364,10 @@ export default function WorkspaceChatPanel() {
   const wsId = getWsId(pathname)
   const { open, setOpen, toggle } = useChatPanel()
   const isApple = useIsApplePlatform()
+  const isDashboard = /\/dashboard$/.test(pathname)
 
-  const [messages, setMessages] = useState<Message[]>([])
+  const [sessions, setSessions] = useState<WorkspaceChatSession[]>([])
+  const [activeSessionId, setActiveSessionId] = useState('')
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [voiceMode, setVoiceMode] = useState(() =>
@@ -143,24 +378,84 @@ export default function WorkspaceChatPanel() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const activeSession = sessions.find(s => s.id === activeSessionId) ?? null
+  const messages = (activeSession?.messages ?? []) as Message[]
+  const sessionTitle = activeSession?.title ?? 'New AI chat'
+
+  const patchActiveMessages = useCallback((
+    updater: Message[] | ((prev: Message[]) => Message[]),
+  ) => {
+    setSessions(prev => {
+      const next = prev.map(session => {
+        if (session.id !== activeSessionId) return session
+        const nextMessages = typeof updater === 'function'
+          ? updater(session.messages as Message[])
+          : updater
+        return touchSession(session, nextMessages as WorkspaceChatSession['messages'])
+      })
+      saveChatSessions(wsId, next)
+      return next
+    })
+  }, [activeSessionId, wsId])
+
+  const startNewChat = useCallback(() => {
+    const fresh = createChatSession(wsId)
+    setSessions(prev => {
+      const next = [fresh, ...prev].slice(0, 20)
+      saveChatSessions(wsId, next)
+      return next
+    })
+    setActiveSessionId(fresh.id)
+    setInput('')
+    stopChatSpeaking()
+    setSpeakingIdx(null)
+  }, [wsId])
+
+  const switchSession = useCallback((sessionId: string) => {
+    setActiveSessionId(sessionId)
+    setInput('')
+    stopChatSpeaking()
+    setSpeakingIdx(null)
+  }, [])
+
+  useEffect(() => {
+    const loaded = loadChatSessions(wsId)
+    if (loaded.length === 0) {
+      const fresh = createChatSession(wsId)
+      setSessions([fresh])
+      setActiveSessionId(fresh.id)
+      saveChatSessions(wsId, [fresh])
+      return
+    }
+    setSessions(loaded)
+    setActiveSessionId(loaded[0]!.id)
+  }, [wsId])
+
   const toggleVoiceMode = useCallback(() => {
     setVoiceMode(prev => {
       const next = !prev
       localStorage.setItem('inline_voice_chat', String(next))
-      if (!next) { stopChatSpeaking(); setSpeakingIdx(null) }
+      if (!next) {
+        stopChatSpeaking()
+        setSpeakingIdx(null)
+      }
       return next
     })
   }, [])
 
   function handleSpeakMessage(idx: number, content: string) {
-    if (speakingIdx === idx) { stopChatSpeaking(); setSpeakingIdx(null); return }
+    if (speakingIdx === idx) {
+      stopChatSpeaking()
+      setSpeakingIdx(null)
+      return
+    }
     stopChatSpeaking()
     setSpeakingIdx(idx)
     setTtsNotice(null)
     void speakViaTts(
       content,
       () => setSpeakingIdx(null),
-      () => setTtsNotice('Cloud voice unavailable — using the browser voice.'),
+      () => setTtsNotice('Cloud voice unavailable - using the browser voice.'),
     )
   }
 
@@ -199,7 +494,7 @@ export default function WorkspaceChatPanel() {
     const text = input.trim()
     if (!text || loading) return
 
-    setMessages(prev => [...prev, { role: 'user', content: text }])
+    patchActiveMessages(prev => [...prev, { role: 'user', content: text }])
     setInput('')
     setLoading(true)
 
@@ -216,18 +511,16 @@ export default function WorkspaceChatPanel() {
         try {
           const j = (await res.json()) as { error?: string }
           if (j?.error) detail = j.error
-        } catch { /* non-JSON error body */ }
-        setMessages(prev => [
+        } catch {
+          // Ignore non-JSON error bodies.
+        }
+        patchActiveMessages(prev => [
           ...prev,
           { role: 'assistant', content: detail, error: true },
         ])
         return
       }
 
-      // The stream starts with one JSON metadata line:
-      //   { "sources": [...], "mode": "semantic" | "recency" | "none" }\n
-      // followed by the plain-text answer. Sources rendered in the UI come
-      // exclusively from this server-built header.
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -235,10 +528,10 @@ export default function WorkspaceChatPanel() {
       let sources: ChatSource[] = []
       let mode: RetrievalMode = 'none'
       let accumulated = ''
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+      patchActiveMessages(prev => [...prev, { role: 'assistant', content: '' }])
 
       const applyUpdate = () => {
-        setMessages(prev => {
+        patchActiveMessages(prev => {
           const next = [...prev]
           next[next.length - 1] = { role: 'assistant', content: accumulated, sources, mode }
           return next
@@ -260,7 +553,6 @@ export default function WorkspaceChatPanel() {
             sources = Array.isArray(meta.sources) ? meta.sources : []
             mode = meta.mode ?? 'none'
           } catch {
-            // Header missing (older server) — treat the line as answer text.
             buffer = headerLine + '\n' + buffer
           }
           headerParsed = true
@@ -272,6 +564,7 @@ export default function WorkspaceChatPanel() {
           applyUpdate()
         }
       }
+
       if (buffer) {
         accumulated += buffer
         applyUpdate()
@@ -284,18 +577,18 @@ export default function WorkspaceChatPanel() {
         void speakViaTts(
           accumulated,
           () => setSpeakingIdx(null),
-          () => setTtsNotice('Cloud voice unavailable — using the browser voice.'),
+          () => setTtsNotice('Cloud voice unavailable - using the browser voice.'),
         )
       }
     } catch {
-      setMessages(prev => [
+      patchActiveMessages(prev => [
         ...prev,
-        { role: 'assistant', content: 'Network error — check your connection and try again.', error: true },
+        { role: 'assistant', content: 'Network error - check your connection and try again.', error: true },
       ])
     } finally {
       setLoading(false)
     }
-  }, [input, loading, wsId, voiceMode, messages.length])
+  }, [input, loading, wsId, voiceMode, messages.length, patchActiveMessages])
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -304,141 +597,237 @@ export default function WorkspaceChatPanel() {
     }
   }
 
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'
+  const pillLabel = isDashboard ? `${greeting}. Ask Inline` : 'Ask Inline'
+  const quickPrompts = [
+    'What needs my attention today?',
+    'How do I use Inline?',
+    'Summarize recent captures',
+  ]
+
   return (
     <div
       data-chat-panel
-      className="fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-0 pb-4"
-      style={{ width: 'min(680px, calc(100vw - 48px))' }}
+      className="fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-0 pb-5"
+      style={{ width: open ? 'min(760px, calc(100vw - 48px))' : 'auto' }}
     >
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
             key="chat-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.985 }}
+            initial={{ opacity: 0, y: 18, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.985 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: PANEL_DURATION, ease: EASE }}
-            className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-[0_18px_48px_-18px_rgba(28,30,38,0.28)]"
-            style={{ maxHeight: 420, willChange: 'transform, opacity' }}
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_22px_70px_-42px_rgba(28,30,38,0.38)]"
+            style={{ height: 'min(720px, calc(100vh - 96px))', willChange: 'transform, opacity' }}
           >
-            <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1C1E26]/10">
-                  <Bot className="h-3.5 w-3.5 text-[#1C1E26]" />
-                </div>
-                <span className="truncate text-xs font-semibold tracking-tight text-foreground">
-                  Ask Inline
-                </span>
-                <span className="shrink-0 rounded-md bg-white/80 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground ring-1 ring-border/60">
-                  {wsId}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
+            <div className="flex h-14 items-center justify-between bg-card px-5">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="flex min-w-0 max-w-[min(280px,42vw)] cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-muted/70 outline-none"
+                  aria-label="Chat sessions"
+                >
+                  <InlineChatIcon size="md" variant="badge" />
+                  <span className="truncate">{sessionTitle}</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-72 bg-card border border-border rounded-lg">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={startNewChat}
+                  >
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                    <span>New chat</span>
+                  </DropdownMenuItem>
+                  {sessions.length > 0 && <DropdownMenuSeparator />}
+                  {sessions.map(session => (
+                    <DropdownMenuItem
+                      key={session.id}
+                      className="cursor-pointer"
+                      onClick={() => switchSession(session.id)}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{session.title}</span>
+                      {session.id === activeSessionId && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={toggleVoiceMode}
-                  className={cn(
-                    'flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors',
-                    voiceMode
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-white/80 hover:text-foreground',
-                  )}
-                  aria-label={voiceMode ? 'Disable voice replies' : 'Enable voice replies'}
-                  title={voiceMode ? 'Voice replies on' : 'Voice replies off'}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
+                  aria-label="Personalization enabled"
                 >
-                  {voiceMode ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                  <span>Personalize</span>
+                  <span className="relative h-5 w-9 rounded-full bg-[#2f80ed]">
+                    <span className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.18)]" />
+                  </span>
                 </button>
-                {messages.length > 0 && (
+                <span className="h-5 w-px bg-border" />
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => { setMessages([]); stopChatSpeaking(); setSpeakingIdx(null) }}
-                    className="cursor-pointer rounded-md px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-white/80 hover:text-foreground"
+                    onClick={toggleVoiceMode}
+                    className={cn(
+                      'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors',
+                      voiceMode
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                    )}
+                    aria-label={voiceMode ? 'Disable voice replies' : 'Enable voice replies'}
+                    title={voiceMode ? 'Voice replies on' : 'Voice replies off'}
                   >
-                    Clear
+                    {voiceMode ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/80 hover:text-foreground"
-                  aria-label="Minimize chat"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </button>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                    aria-label="Edit chat"
+                  >
+                    <PencilLine className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                    aria-label="Focus chat"
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                    aria-label="Toggle side context"
+                  >
+                    <PanelRight className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                    aria-label="More chat options"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </button>
+                  {messages.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        patchActiveMessages([])
+                        stopChatSpeaking()
+                        setSpeakingIdx(null)
+                      }}
+                      className="hidden cursor-pointer rounded-sm px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground sm:block"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-muted/80 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close chat"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div
-              className="scrollbar-minimal space-y-3 overflow-y-auto px-4 py-3"
-              style={{ maxHeight: 300 }}
-            >
+            <div className="scrollbar-minimal min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-8 py-6">
               {messages.length === 0 && (
-                <div className="flex flex-col items-center gap-2 py-6 text-center">
-                  <Sparkles className="h-6 w-6 text-muted-foreground/40" />
-                  <p className="text-xs text-muted-foreground">
-                    Ask about your captures, highlights, and documents. Answers use the workspace context you saved.
-                  </p>
-                  {[
-                    'What did I clip or highlight this week?',
-                    'Summarize themes across my recent captures',
-                    'Which sites have the most of my annotations?',
-                  ].map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => {
-                        setInput(s)
-                        setTimeout(() => inputRef.current?.focus(), 50)
-                      }}
-                      className="cursor-pointer text-[11px] text-[#57534e] underline decoration-border underline-offset-2 transition-colors hover:text-foreground"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+                <motion.div
+                  className="max-w-[560px]"
+                  variants={emptyFadeContainer}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <motion.div variants={emptyFadeItem} className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Ready to help across this workspace.
+                    </p>
+                    <div className="border-l border-border pl-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground">
+                          Start with a clear next step
+                        </p>
+                        <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          now
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                        Ask about saved captures, open documents, recent activity, or anything
+                        you want summarized into a useful answer.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    variants={emptyFadeItem}
+                    className="mt-8 border-t border-border pt-5"
+                  >
+                    <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>Use arrows to browse</span>
+                      <span>Esc to close</span>
+                    </div>
+                    <ul className="space-y-0.5">
+                      {quickPrompts.map(s => (
+                        <li key={s}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInput(s)
+                              setTimeout(() => inputRef.current?.focus(), 50)
+                            }}
+                            className="flex w-full cursor-pointer items-baseline gap-2.5 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted/50"
+                          >
+                            <span className="shrink-0 text-muted-foreground" aria-hidden>→</span>
+                            <span>{s}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                </motion.div>
               )}
+
+              {messages.length > 0 && (
+                <div className="min-w-0 space-y-5">
               {messages.map((m, i) => (
                 <div
                   key={i}
                   className={cn(
-                    'flex items-start gap-2',
+                    'flex min-w-0 items-start gap-2',
                     m.role === 'user' ? 'flex-row-reverse' : 'flex-row',
                   )}
                 >
+                  {m.role === 'user' && (
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary">
+                      <User className="h-3 w-3 text-foreground" />
+                    </div>
+                  )}
                   <div
                     className={cn(
-                      'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md',
-                      m.role === 'user' ? 'bg-secondary' : 'bg-muted',
+                      'group/msg relative min-w-0',
+                      m.role === 'user' ? 'flex flex-1 flex-col items-end' : 'max-w-[92%] flex-1',
                     )}
                   >
                     {m.role === 'user' ? (
-                      <User className="h-2.5 w-2.5 text-foreground" />
+                      <UserMessageBubble content={m.content} />
                     ) : (
-                      <Bot className="h-2.5 w-2.5 text-muted-foreground" />
+                      <AssistantMessageContent
+                        content={m.content}
+                        thinking={loading && i === messages.length - 1 && !m.content.trim()}
+                        error={m.error}
+                      />
                     )}
-                  </div>
-                  <div className="group/msg relative min-w-0 flex-1">
-                    <div
-                      className={cn(
-                        'max-w-[82%] rounded-xl px-3 py-2 text-xs leading-relaxed',
-                        m.role === 'user'
-                          ? 'ml-auto w-fit rounded-tr-sm bg-primary text-primary-foreground'
-                          : m.error
-                            ? 'rounded-tl-sm border border-destructive/30 bg-destructive/5 text-foreground'
-                            : 'rounded-tl-sm border border-border bg-muted/60 text-foreground',
-                      )}
-                    >
-                      {m.content ||
-                        (loading && i === messages.length - 1 ? (
-                          <span className="animate-pulse opacity-60">…</span>
-                        ) : (
-                          '…'
-                        ))}
-                    </div>
                     {m.role === 'assistant' && m.mode === 'recency' && m.content && (
-                      <p className="mt-1 flex items-center gap-1 text-[9px] text-muted-foreground/80">
+                      <p className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground/80">
                         <Clock className="h-2.5 w-2.5" />
-                        Workspace not indexed yet — answering from recent captures only.
+                        Workspace not indexed yet - answering from recent captures only.
                       </p>
                     )}
                     {m.role === 'assistant' && !loading && m.sources && m.sources.length > 0 && (
@@ -449,10 +838,11 @@ export default function WorkspaceChatPanel() {
                         type="button"
                         onClick={() => handleSpeakMessage(i, m.content)}
                         className={cn(
-                          'absolute -bottom-1 -right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-sm transition-opacity group-hover/msg:opacity-100',
+                          'mt-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100',
                           speakingIdx === i && 'opacity-100 text-primary',
                         )}
                         title={speakingIdx === i ? 'Stop speaking' : 'Read aloud'}
+                        aria-label={speakingIdx === i ? 'Stop speaking' : 'Read aloud'}
                       >
                         {speakingIdx === i
                           ? <VolumeX className="h-2.5 w-2.5" />
@@ -462,14 +852,15 @@ export default function WorkspaceChatPanel() {
                   </div>
                 </div>
               ))}
-              {loading && messages[messages.length - 1]?.role !== 'assistant' && (
-                <div className="flex items-center gap-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-muted">
-                    <Bot className="h-2.5 w-2.5 text-muted-foreground" />
-                  </div>
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+
+              {loading && messages[messages.length - 1]?.role === 'user' && (
+                <div className="max-w-[92%]">
+                  <AssistantMessageContent content="" thinking />
                 </div>
               )}
+                </div>
+              )}
+
               {ttsNotice && (
                 <p className="text-center text-[9px] text-muted-foreground/80" role="status">
                   {ttsNotice}
@@ -477,61 +868,102 @@ export default function WorkspaceChatPanel() {
               )}
               <div ref={bottomRef} />
             </div>
+
+            <div className="bg-card/95 p-4">
+              <div className="overflow-hidden rounded-lg border border-primary/25 bg-background shadow-[0_0_0_3px_rgba(75,131,196,0.10)]">
+                {input.trim() && (
+                  <div className="flex items-center justify-between border-b border-primary/10 bg-primary/5 px-4 py-2 text-xs text-primary">
+                    <span className="truncate">{input.trim()}</span>
+                    <button
+                      type="button"
+                      onClick={() => setInput('')}
+                      className="ml-3 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/10"
+                      aria-label="Clear current prompt"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex min-h-[78px] flex-col px-4 py-3">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder="Ask about your captures, documents, or recent activity…"
+                    className="min-w-0 w-full border-none bg-transparent pt-0 pb-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
+                    disabled={loading}
+                    aria-label="Message Inline"
+                  />
+                  <div className="mt-auto flex shrink-0 items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Attach context"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      className="hidden cursor-pointer items-center gap-1 rounded-md bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/80 sm:flex"
+                    >
+                      <InlineChatIcon size="sm" iconClassName="text-primary" />
+                      Smart mode
+                    </button>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Browse web context"
+                    >
+                      <Globe2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Voice input"
+                    >
+                      <Mic2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void send()}
+                      disabled={loading || !input.trim()}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#2f80ed] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+                      aria-label="Send message"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowUp className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div
-        className={cn(
-          'flex w-full items-center gap-2 rounded-2xl border border-border bg-card/95 px-4 py-2.5 shadow-[0_12px_36px_-20px_rgba(28,30,38,0.32)] backdrop-blur-md transition-[border-radius,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-          open && 'rounded-t-none border-t-0',
-        )}
-      >
-        <Sparkles className="h-4 w-4 shrink-0 text-[#78716c]" />
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          onFocus={() => !open && setOpen(true)}
-          placeholder="Ask anything across this workspace..."
-          className="flex-1 border-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
-          disabled={loading}
-          aria-label="Message Inline assistant"
-        />
-        <div className="flex shrink-0 items-center gap-1.5">
-          {open && input.trim() && (
-            <button
-              type="button"
-              onClick={() => void send()}
-              disabled={loading}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-            </button>
-          )}
-          {!open && (
-            <span
-              className="hidden items-center gap-0.5 text-[10px] text-muted-foreground sm:inline-flex"
-              title={isApple ? 'Open Inline (⌘⇧L)' : 'Open Inline (Ctrl+Shift+L)'}
-            >
-              <kbd className="rounded border border-border bg-muted/80 px-1 py-px font-mono text-[10px] text-muted-foreground">
-                {isApple ? '⌘' : 'Ctrl'}
-              </kbd>
-              <kbd className="rounded border border-border bg-muted/80 px-1 py-px font-mono text-[10px] text-muted-foreground">
-                ⇧
-              </kbd>
-              <kbd className="rounded border border-border bg-muted/80 px-1 py-px font-mono text-[10px] text-muted-foreground">
-                L
-              </kbd>
-            </span>
-          )}
-        </div>
-      </div>
+      {!open && (
+        <motion.button
+          type="button"
+          key="chat-pill"
+          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+          transition={{ duration: 0.22, ease: EASE }}
+          onClick={() => setOpen(true)}
+          title={isApple ? 'Open Inline (Cmd+Shift+L)' : 'Open Inline (Ctrl+Shift+L)'}
+          className="flex h-11 w-[210px] cursor-pointer items-center justify-start overflow-hidden rounded-full border border-border bg-card/95 px-3 text-left shadow-[0_14px_40px_-8px_rgba(28,30,38,0.34),0_6px_18px_-4px_rgba(28,30,38,0.2)] backdrop-blur-md"
+          aria-label="Open Inline chat"
+        >
+          <InlineChatIcon variant="badge" />
+          <span className="ml-2 whitespace-nowrap text-xs font-medium text-foreground">
+            {pillLabel}
+          </span>
+        </motion.button>
+      )}
     </div>
   )
 }

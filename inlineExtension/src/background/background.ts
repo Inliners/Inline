@@ -29,6 +29,74 @@ function isUsableJwt(token: string): boolean {
   return parts.length === 3 && parts.every((p) => p.length > 0)
 }
 
+type LocalAnnotationDoc = {
+  pageUrl: string
+  pageTitle: string
+  domain: string
+  elements: Record<string, unknown>
+  updatedAt: number
+  clearedAt?: number | null
+}
+
+function hashString(value: string): string {
+  let hash = 2166136261
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function localAnnotationsKey(pageUrl: string): string {
+  return `inlineLocalAnnotations:${hashString(pageUrl)}`
+}
+
+function asLocalAnnotationDoc(value: unknown, pageUrl: string): LocalAnnotationDoc {
+  if (!value || typeof value !== 'object') {
+    return { pageUrl, pageTitle: '', domain: '', elements: {}, updatedAt: 0 }
+  }
+  const doc = value as Partial<LocalAnnotationDoc>
+  const elements = doc.elements && typeof doc.elements === 'object' && !Array.isArray(doc.elements)
+    ? doc.elements as Record<string, unknown>
+    : {}
+  return {
+    pageUrl: typeof doc.pageUrl === 'string' ? doc.pageUrl : pageUrl,
+    pageTitle: typeof doc.pageTitle === 'string' ? doc.pageTitle : '',
+    domain: typeof doc.domain === 'string' ? doc.domain : '',
+    elements,
+    updatedAt: typeof doc.updatedAt === 'number' ? doc.updatedAt : 0,
+    clearedAt: typeof doc.clearedAt === 'number' ? doc.clearedAt : null,
+  }
+}
+
+async function loadLocalAnnotations(pageUrl: string): Promise<LocalAnnotationDoc> {
+  const key = localAnnotationsKey(pageUrl)
+  const stored = await chrome.storage.local.get(key)
+  return asLocalAnnotationDoc(stored[key], pageUrl)
+}
+
+async function saveLocalAnnotation(input: {
+  pageUrl: string
+  featureKey: string
+  data: unknown
+  pageTitle?: string
+  domain?: string
+  clearedAt?: number | null
+}): Promise<LocalAnnotationDoc> {
+  const key = localAnnotationsKey(input.pageUrl)
+  const current = await loadLocalAnnotations(input.pageUrl)
+  const next: LocalAnnotationDoc = {
+    ...current,
+    pageTitle: input.pageTitle ?? current.pageTitle,
+    domain: input.domain ?? current.domain,
+    elements: { ...current.elements, [input.featureKey]: input.data },
+    updatedAt: Date.now(),
+    clearedAt: input.clearedAt ?? current.clearedAt ?? null,
+  }
+  await chrome.storage.local.set({ [key]: next })
+  return next
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
   let binary = ''
@@ -177,6 +245,9 @@ chrome.runtime.onMessageExternal.addListener((message, _sender, sendResponse) =>
       workspaceId?: string
       apiBase?: string
       backendBase?: string
+      email?: string
+      name?: string
+      avatarUrl?: string
     }
     const patch: Record<string, string> = {}
     if (typeof p.accessToken === 'string') patch.inlineAccessToken = p.accessToken
@@ -184,6 +255,9 @@ chrome.runtime.onMessageExternal.addListener((message, _sender, sendResponse) =>
     if (typeof p.workspaceId === 'string' && p.workspaceId) patch.inlineActiveWorkspaceId = p.workspaceId
     if (typeof p.apiBase === 'string' && p.apiBase)         patch.inlineApiBase = p.apiBase.replace(/\/$/, '')
     if (typeof p.backendBase === 'string' && p.backendBase) patch.inlineBackendBase = p.backendBase.replace(/\/$/, '')
+    if (typeof p.email === 'string' && p.email)             patch.inlineUserEmail = p.email
+    if (typeof p.name === 'string' && p.name)               patch.inlineUserName = p.name
+    if (typeof p.avatarUrl === 'string' && p.avatarUrl)     patch.inlineUserAvatarUrl = p.avatarUrl
     void chrome.storage.local.set(patch, () => {
       if (chrome.runtime.lastError) {
         sendResponse({ ok: false, error: chrome.runtime.lastError.message })
@@ -328,6 +402,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
         if (isUsableJwt(accessToken)) headers.Authorization = `Bearer ${accessToken}`
 
+        if (!isUsableJwt(accessToken) || !ws) {
+          sendResponse({ ok: false, storageMode: 'local', error: 'Sign in to sync clips.' })
+          return
+        }
+
         try {
           const res = await fetch(`${base}/api/clip`, {
             method: 'POST',
@@ -363,7 +442,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
         if (isUsableJwt(accessToken)) headers.Authorization = `Bearer ${accessToken}`
 
+        if (!isUsableJwt(accessToken) || !workspaceId) {
+          try {
+            const localDoc = await saveLocalAnnotation({ pageUrl, featureKey, data, pageTitle, domain, clearedAt })
+            sendResponse({ ok: true, data: localDoc, storageMode: 'local' })
+            return
+          }
+          catch { /* storage full - best-effort */ }
+          sendResponse({ ok: false, storageMode: 'local', error: 'Browser storage is full.' })
+          return
+        }
+
         try {
+          await saveLocalAnnotation({ pageUrl, featureKey, data, pageTitle, domain, clearedAt })
           const res = await fetch(`${base}/api/annotations`, {
             method: 'POST',
             headers,
@@ -392,11 +483,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: false, error: err })
             return
           }
-          sendResponse({ ok: true, data: json })
+          sendResponse({ ok: true, data: json, storageMode: 'workspace' })
         } catch {
-          try { await enqueue({ pageUrl, featureKey, data, timestamp: Date.now() }) }
+          try {
+            await saveLocalAnnotation({ pageUrl, featureKey, data, pageTitle, domain, clearedAt })
+            await enqueue({ pageUrl, featureKey, data, timestamp: Date.now() })
+          }
           catch { /* storage full – best-effort */ }
-          sendResponse({ ok: false, queued: true, error: 'Queued for retry (backend unreachable)' })
+          sendResponse({ ok: false, queued: true, storageMode: 'local', error: 'Queued for retry (backend unreachable)' })
         }
       },
     )
@@ -415,24 +509,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const headers: Record<string, string> = {}
       if (isUsableJwt(accessToken)) headers.Authorization = `Bearer ${accessToken}`
 
+      if (!isUsableJwt(accessToken)) {
+        const localDoc = await loadLocalAnnotations(pageUrl)
+        sendResponse({ ok: true, data: localDoc, storageMode: 'local' })
+        return
+      }
+
       try {
         const res = await fetch(`${base}/api/annotations?url=${encodeURIComponent(pageUrl)}`, { headers })
         const text = await res.text()
         let json: unknown
         try { json = JSON.parse(text) as unknown }
         catch {
-          sendResponse({ ok: false, error: 'Server did not return JSON (check API URL / is the app running?).' })
+          const localDoc = await loadLocalAnnotations(pageUrl)
+          sendResponse({ ok: true, data: localDoc, storageMode: 'local', warning: 'Using browser copy.' })
           return
         }
         if (!res.ok) {
-          const err = typeof json === 'object' && json !== null && 'error' in json
-            ? String((json as { error?: string }).error)
-            : `HTTP ${res.status}`
-          sendResponse({ ok: false, error: err }); return
+          const localDoc = await loadLocalAnnotations(pageUrl)
+          sendResponse({ ok: true, data: localDoc, storageMode: 'local', warning: 'Using browser copy.' })
+          return
         }
         sendResponse({ ok: true, data: json })
       } catch (err) {
-        sendResponse({ ok: false, error: err instanceof Error ? err.message : 'Fetch failed' })
+        const localDoc = await loadLocalAnnotations(pageUrl)
+        sendResponse({ ok: true, data: localDoc, storageMode: 'local', warning: err instanceof Error ? err.message : 'Using browser copy.' })
       }
     })
     return true

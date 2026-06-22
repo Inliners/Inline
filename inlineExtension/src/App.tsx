@@ -17,10 +17,9 @@ function looksLikeJwt(token: string): boolean {
 function App() {
   const [apiBase, setApiBase] = useState('http://localhost:3000')
   const [token, setToken] = useState('')
-  const [workspaceId, setWorkspaceId] = useState('')
+  const [hasWorkspace, setHasWorkspace] = useState(false)
   const [voiceId, setVoiceId] = useState(DEFAULT_INLINE_VOICE_ID)
   const [saved, setSaved] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     void purgeLegacySecrets()
@@ -30,7 +29,7 @@ function App() {
       setVoiceId(s.voiceId)
     })
     chrome.storage.local.get(['inlineActiveWorkspaceId'], r => {
-      if (typeof r.inlineActiveWorkspaceId === 'string') setWorkspaceId(r.inlineActiveWorkspaceId)
+      setHasWorkspace(typeof r.inlineActiveWorkspaceId === 'string' && r.inlineActiveWorkspaceId.trim().length > 0)
     })
   }, [])
 
@@ -53,12 +52,12 @@ function App() {
           {signedIn ? (
             <>
               <strong>Connected</strong>
-              <span>{workspaceId ? `Workspace ${workspaceId}` : 'Session synced from dashboard'}</span>
+              <span>{hasWorkspace ? 'Personal Workspace' : 'Connected to cloud'}</span>
             </>
           ) : (
             <>
               <strong>Not signed in</strong>
-              <span>Open the dashboard once to sync your session automatically.</span>
+              <span>Local only. Sign in to sync captures across devices.</span>
             </>
           )}
         </div>
@@ -86,7 +85,7 @@ function App() {
         type="button"
         className="popup-save"
         onClick={async () => {
-          await saveSettings({ apiBaseUrl: apiBase, accessToken: token, voiceId })
+          await saveSettings({ voiceId })
           setSaved(true)
           setTimeout(() => setSaved(false), 1500)
         }}
@@ -102,38 +101,6 @@ function App() {
       >
         Open Inline dashboard
       </button>
-
-      <button
-        type="button"
-        className="popup-advanced-toggle"
-        aria-expanded={showAdvanced}
-        onClick={() => setShowAdvanced(v => !v)}
-      >
-        {showAdvanced ? 'Hide advanced' : 'Advanced'}
-      </button>
-      {showAdvanced && (
-        <div className="popup-advanced">
-          <label className="popup-label" htmlFor="popup-api-base">Dashboard URL</label>
-          <input
-            id="popup-api-base"
-            className="popup-input"
-            value={apiBase}
-            onChange={e => setApiBase(e.target.value)}
-            placeholder="http://localhost:3000"
-          />
-          <label className="popup-label" htmlFor="popup-token">
-            Access token <span className="popup-hint-inline">(synced automatically - manual override)</span>
-          </label>
-          <input
-            id="popup-token"
-            className="popup-input"
-            type="password"
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            placeholder="Synced when you open the dashboard"
-          />
-        </div>
-      )}
     </div>
   )
 }

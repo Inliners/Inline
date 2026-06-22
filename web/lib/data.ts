@@ -402,12 +402,22 @@ export async function fetchNoteById(noteId: string, workspaceId?: string): Promi
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const sb = supabase as any
-  let q = sb.from('notes').select('*').eq('id', noteId)
-  if (workspaceId) q = q.eq('workspace_id', workspaceId)
+
+  async function load(withWorkspace: boolean) {
+    let q = sb.from('notes').select('*').eq('id', noteId)
+    if (withWorkspace && workspaceId) q = q.eq('workspace_id', workspaceId)
+    return q.maybeSingle()
+  }
+
+  let { data, error } = await load(true)
+  if ((!data || error) && workspaceId) {
+    ;({ data, error } = await load(false))
+  }
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  const { data, error } = await q.single()
-  if (error || !data) return null
+  if (error || !data) {
+    return MOCK_NOTES.find(n => n.id === noteId) ?? null
+  }
 
   type NoteRow = Database['public']['Tables']['notes']['Row']
   const n = data as NoteRow

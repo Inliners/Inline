@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import type { GraphData, GraphNode } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Share2 } from 'lucide-react'
 import { useSidebar } from '@/lib/sidebar-context'
 
 const ForceGraph2D = dynamic(
@@ -23,16 +23,16 @@ interface KnowledgeGraphProps {
 const PALETTE = {
   light: {
     canvasBg:     'rgba(0,0,0,0)',
-    surface:      '#EAF3EE',            // soft teal-tinted cream slab
-    nodeByType:   { url: '#6C91C2', note: '#F2D6A2', tag: '#5FA8A1' } as const,
-    nodeOutline:  'rgba(28,30,38,0.55)',
+    surface:      '#FFFFFF',
+    nodeByType:   { url: '#416D9E', note: '#B9822A', tag: '#4F8F87' } as const,
+    nodeOutline:  'rgba(28,30,38,0.35)',
     haloAlpha:    '22',
-    linkStroke:   'rgba(108,145,194,0.35)',
-    linkParticle: 'rgba(95,168,161,0.85)',
+    linkStroke:   'rgba(65,109,158,0.22)',
+    linkParticle: 'rgba(79,143,135,0.75)',
     hoverFill:    '#FFFFFF',
-    labelText:    'rgba(28,30,38,0.72)',
+    labelText:    'rgba(28,30,38,0.68)',
     glyphText:    '#1C1E26',
-    pill:         'bg-white/80 border-stone-200 text-stone-700',
+    pill:         'bg-white/95 border-stone-200 text-stone-700 shadow-[0_10px_30px_-22px_rgba(28,30,38,0.35)]',
     pillLabel:    'text-stone-700',
     tooltipTitle: 'text-stone-900',
     tooltipSub:   'text-stone-500',
@@ -250,7 +250,17 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
       className="relative w-full h-full overflow-hidden"
       style={{ background: palette.surface }}
     >
-      <SolarBackdrop palette={palette} />
+      {isDark && <SolarBackdrop palette={palette} />}
+      {!isDark && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(28,30,38,0.08) 1px, transparent 0)',
+            backgroundSize: '28px 28px',
+          }}
+          aria-hidden
+        />
+      )}
 
       {mounted && (
         <ForceGraph2D
@@ -273,6 +283,30 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
         />
       )}
 
+      <div className={`absolute left-4 top-4 z-10 max-w-sm overflow-hidden rounded-2xl border backdrop-blur-sm ${palette.pill}`}>
+        <div className="flex items-start gap-3 px-4 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1C1E26] text-white">
+            <Share2 className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground dark:text-white">Connections</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground dark:text-[#B5CDEF]/80">
+              Explore how websites, captures, and tags relate inside this workspace.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-t border-border/70 text-xs dark:border-white/10">
+          <div className="px-4 py-2">
+            <p className="font-semibold text-foreground dark:text-white">{data.nodes.length}</p>
+            <p className="text-muted-foreground dark:text-[#B5CDEF]/80">Items</p>
+          </div>
+          <div className="border-l border-border/70 px-4 py-2 dark:border-white/10">
+            <p className="font-semibold text-foreground dark:text-white">{data.links.length}</p>
+            <p className="text-muted-foreground dark:text-[#B5CDEF]/80">Links</p>
+          </div>
+        </div>
+      </div>
+
       {/* Recenter button (bottom-right) */}
       <button
         type="button"
@@ -283,8 +317,8 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
         <RotateCcw className="h-3.5 w-3.5" />
       </button>
 
-      {/* Floating legend (top-left) */}
-      <div className={`absolute left-4 top-4 z-10 flex items-center gap-4 rounded-full border backdrop-blur-sm px-4 py-2 ${palette.pill}`}>
+      {/* Floating legend */}
+      <div className={`absolute right-4 top-4 z-10 flex items-center gap-4 rounded-full border backdrop-blur-sm px-4 py-2 ${palette.pill}`}>
         {[
           { label: 'Website', color: palette.nodeByType.url },
           { label: 'Note',    color: palette.nodeByType.note },
@@ -310,10 +344,6 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
         </div>
       )}
 
-      {/* Node count badge (top-right) */}
-      <div className={`absolute right-4 top-4 z-10 rounded-full border backdrop-blur-sm px-3 py-1.5 text-xs font-medium ${palette.pill}`}>
-        {data.nodes.length} nodes &middot; {data.links.length} links
-      </div>
     </div>
   )
 }

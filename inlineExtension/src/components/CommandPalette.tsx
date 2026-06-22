@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PANEL as C, FONT } from '../lib/extensionTheme'
+import { PANEL as C, CHAT, FONT } from '../lib/extensionTheme'
+import { InlineChatIcon } from './InlineChatIcon'
 
 type Category = 'action' | 'annotate' | 'app' | 'toolbar'
 
@@ -22,11 +23,7 @@ const IRewrite = () => (
     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
   </svg>
 )
-const IAi = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/>
-  </svg>
-)
+const IAi = () => <InlineChatIcon size={16} />
 const INotes = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
@@ -167,24 +164,35 @@ export default function CommandPalette({ onClose, onAction }: CommandPaletteProp
         }}
       >
         {/* Search input */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 10px' }}>
-          <span style={{ color: C.textLight, display: 'flex' }}><ISearch /></span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for actions and tools…"
-            style={{
-              flex: 1, border: 'none', background: 'transparent',
-              fontSize: 15, fontFamily: FONT, color: C.text, outline: 'none',
-            }}
-          />
+        <div style={{ padding: '14px 16px 10px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            border: `1px solid ${CHAT.inputBorder}`,
+            borderRadius: C.radiusMd,
+            background: C.bg,
+            boxShadow: CHAT.inputGlow,
+            padding: '10px 14px',
+          }}>
+            <span style={{ color: C.textMuted, display: 'flex' }}><ISearch /></span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for actions and tools…"
+              style={{
+                flex: 1, border: 'none', background: 'transparent',
+                fontSize: 14, fontFamily: FONT, color: C.text, outline: 'none',
+              }}
+            />
+          </div>
         </div>
 
         {/* Filter chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 16px 12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11.5, color: C.textLight, marginRight: 2 }}>I&apos;m looking for…</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px 12px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: C.textMuted, marginRight: 2 }}>I&apos;m looking for…</span>
           {FILTERS.map((f) => {
             const active = filter === f.id
             return (
@@ -194,8 +202,8 @@ export default function CommandPalette({ onClose, onAction }: CommandPaletteProp
                 onClick={() => setFilter(f.id)}
                 style={{
                   padding: '5px 12px', borderRadius: C.radiusPill,
-                  border: `1px solid ${active ? C.accent : C.border}`,
-                  background: active ? C.accent : C.bg,
+                  border: `1px solid ${active ? C.text : C.border}`,
+                  background: active ? C.text : C.bg,
                   color: active ? '#fff' : C.text,
                   fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
                   transition: 'background 0.13s, border-color 0.13s, color 0.13s',
@@ -224,8 +232,8 @@ export default function CommandPalette({ onClose, onAction }: CommandPaletteProp
                 {showHeader && (
                   <p style={{
                     margin: idx === 0 ? '4px 10px 4px' : '10px 10px 4px',
-                    fontSize: 10.5, fontWeight: 600, letterSpacing: '0.06em',
-                    textTransform: 'uppercase', color: C.textLight,
+                    fontSize: 12, fontWeight: 500, letterSpacing: 0,
+                    textTransform: 'none', color: C.textMuted,
                   }}>
                     {CATEGORY_LABEL[action.category]}
                   </p>
@@ -244,7 +252,7 @@ export default function CommandPalette({ onClose, onAction }: CommandPaletteProp
                 >
                   <span style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                    width: 30, height: 30, borderRadius: C.radiusSm, flexShrink: 0,
                     background: selected ? C.bg : C.surfaceMuted,
                     border: `1px solid ${C.border}`,
                     color: C.textMuted,
@@ -252,9 +260,9 @@ export default function CommandPalette({ onClose, onAction }: CommandPaletteProp
                     {action.icon}
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 500, color: C.text }}>{action.label}</span>
+                    <span style={{ display: 'block', fontSize: 14, fontWeight: 500, color: C.text }}>{action.label}</span>
                     {action.hint && (
-                      <span style={{ display: 'block', fontSize: 11.5, color: C.textLight, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{action.hint}</span>
+                      <span style={{ display: 'block', fontSize: 12, color: C.textMuted, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{action.hint}</span>
                     )}
                   </span>
                   {action.shortcut && (

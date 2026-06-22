@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { PANEL as C } from '../lib/extensionTheme'
 import { PanelShell, SectionLabel } from './panelKit'
 import { ensureHandwritingCanvas, restoreHandwriting } from '../content/handwritingRestore'
+import { emitSaveToast } from '../lib/saveToast'
 
 type HWTool = 'pen' | 'highlighter' | 'eraser'
 
@@ -188,7 +189,10 @@ export default function Handwriting({ onClose }: HandwritingProps) {
             clearedAt: data.length === 0 ? Date.now() : null,
           },
         },
-        () => { if (chrome.runtime.lastError) { /* ignore */ } },
+        (response) => {
+          if (chrome.runtime.lastError) return
+          emitSaveToast(response)
+        },
       )
     } catch { /* extension context unavailable */ }
   }, [])

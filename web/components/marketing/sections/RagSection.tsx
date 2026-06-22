@@ -1,3 +1,4 @@
+import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import { Database, SearchCheck, Quote, FileStack } from 'lucide-react'
 import { Reveal, SectionHeading, OrbitAccent } from '@/components/marketing/primitives/Reveal'
 
@@ -34,9 +35,7 @@ function ChatMock() {
   return (
     <div className="relative w-full rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
       <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-2.5">
-        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0B1735]" aria-hidden>
-          <span className="block h-2.5 w-[2px] rounded-full bg-white -rotate-12" />
-        </span>
+        <InlineChatIcon size="sm" variant="badge" className="rounded-md" />
         <span className="text-xs font-semibold text-[#1C1E26]">Ask Inline</span>
         <span className="ml-auto rounded-full bg-stone-100 px-2 py-0.5 font-mono text-[9px] text-stone-500">ws-research</span>
       </div>

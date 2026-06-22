@@ -1,3 +1,5 @@
+import { emitSaveToast } from '../lib/saveToast'
+
 const ACTION_META: Record<string, { bg: string; title: string }> = {
   summarize: { bg: 'rgba(187,247,208,0.92)', title: 'Summarized via Inline' },
   rewrite:   { bg: 'rgba(191,219,254,0.92)', title: 'Rewritten via Inline' },
@@ -56,7 +58,10 @@ const ACTION_META: Record<string, { bg: string; title: string }> = {
             domain: window.location.hostname,
           },
         },
-        () => { if (chrome.runtime.lastError) { /* ignore */ } },
+        (response) => {
+          if (chrome.runtime.lastError) return
+          emitSaveToast(response)
+        },
       )
     } catch { /* extension context unavailable */ }
   }

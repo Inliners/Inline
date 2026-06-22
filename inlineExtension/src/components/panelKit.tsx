@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode, type CSSProperties } from 'react'
-import { PANEL as C, FONT, BRAND_GRADIENT } from '../lib/extensionTheme'
+import { InlineChatBadge } from './InlineChatIcon'
+import { PANEL as C, CHAT, FONT, BRAND_GRADIENT } from '../lib/extensionTheme'
 
 /**
  * Inline panel design system.
@@ -38,29 +39,6 @@ const ICloseGlyph = () => (
   </svg>
 )
 
-const IChevronDown = ({ open = false }: { open?: boolean }) => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 16 16"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.14s ease' }}
-  >
-    <path d="M4 6l4 4 4-4" />
-  </svg>
-)
-
-const IPanelGlyph = () => (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7">
-    <rect x="4.25" y="2.75" width="9.5" height="12.5" rx="2.1" />
-    <path d="M7.1 5.6v6.8" strokeLinecap="round" />
-  </svg>
-)
-
 /** Custom close button — hover state, accessible label, never a native title. */
 export function CloseButton({ onClose, label = 'Close' }: { onClose: () => void; label?: string }) {
   const [hov, setHov] = useState(false)
@@ -73,7 +51,7 @@ export function CloseButton({ onClose, label = 'Close' }: { onClose: () => void;
       aria-label={label}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 30, height: 30, borderRadius: 10, border: 'none', padding: 0,
+        width: 30, height: 30, borderRadius: C.radiusSm, border: 'none', padding: 0,
         background: hov ? C.hoverBg : 'transparent',
         color: hov ? C.text : C.textMuted,
         cursor: 'pointer', transition: 'background 0.14s, color 0.14s', flexShrink: 0,
@@ -94,6 +72,8 @@ export interface PanelShellProps {
   headerActions?: ReactNode
   /** Optional element rendered before the close button (e.g. a back button). */
   headerLeading?: ReactNode
+  /** Use the canonical chat badge instead of the brand mark in the header. */
+  useChatBrand?: boolean
   children: ReactNode
   style?: CSSProperties
 }
@@ -103,15 +83,13 @@ export interface PanelShellProps {
  * soft layered shadow, and a confident branded header with a custom close.
  */
 export function PanelShell({
-  title, subtitle, chip, width = 400, onClose, footer, headerActions, headerLeading, children, style,
+  title, subtitle, chip, width = 360, onClose, footer, headerActions, headerLeading, useChatBrand, children, style,
 }: PanelShellProps) {
-  const [metaOpen, setMetaOpen] = useState(false)
-
   return (
     <div
       style={{
         width,
-        maxWidth: 'min(94vw, 430px)',
+        maxWidth: 'min(94vw, 388px)',
         maxHeight: 'calc(100vh - 64px)',
         background: C.bg,
         border: `1px solid ${C.border}`,
@@ -126,96 +104,22 @@ export function PanelShell({
     >
       <header
         style={{
-          position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           minHeight: 56,
-          padding: '0 12px',
-          borderBottom: `1px solid ${C.divider}`,
+          padding: '0 16px 0 20px',
           background: C.headerBg,
           flexShrink: 0,
         }}
       >
-        <div style={{ position: 'absolute', left: 12, display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           {headerLeading}
-        </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <BrandMark size={25} radius={8} />
-          <button
-            type="button"
-            onClick={() => setMetaOpen(v => !v)}
-            aria-label={metaOpen ? 'Hide panel details' : 'Show panel details'}
-            aria-expanded={metaOpen}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 22,
-              height: 22,
-              borderRadius: 8,
-              border: 'none',
-              background: 'transparent',
-              color: C.textMuted,
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <IChevronDown open={metaOpen} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {headerActions}
-          <button
-            type="button"
-            onClick={() => setMetaOpen(v => !v)}
-            aria-label="Panel details"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 30,
-              height: 30,
-              borderRadius: 10,
-              border: 'none',
-              background: 'transparent',
-              color: C.textMuted,
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <IPanelGlyph />
-          </button>
-        </div>
-        <CloseButton onClose={onClose} />
-      </header>
-
-      {metaOpen && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '9px 16px',
-          borderBottom: `1px solid ${C.divider}`,
-          background: C.bg,
-          flexShrink: 0,
-        }}>
+          {useChatBrand ? <InlineChatBadge size={24} iconSize={13} /> : <BrandMark size={24} radius={8} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              fontSize: 13,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 500,
               color: C.text,
               letterSpacing: '-0.01em',
               lineHeight: 1.2,
@@ -226,9 +130,9 @@ export function PanelShell({
             {subtitle && (
               <div style={{
                 marginTop: 2,
-                fontSize: 11.5,
+                fontSize: 12,
                 color: C.textMuted,
-                letterSpacing: '-0.01em',
+                lineHeight: 1.2,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -237,7 +141,12 @@ export function PanelShell({
           </div>
           {chip && <Pill>{chip}</Pill>}
         </div>
-      )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+          {headerActions}
+          <CloseButton onClose={onClose} />
+        </div>
+      </header>
 
       <div style={{
         display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1,
@@ -247,7 +156,7 @@ export function PanelShell({
       </div>
 
       {footer && (
-        <div style={{ borderTop: `1px solid ${C.divider}`, background: C.bg, flexShrink: 0 }}>
+        <div style={{ background: 'rgba(255,255,255,0.95)', flexShrink: 0 }}>
           {footer}
         </div>
       )}
@@ -262,10 +171,10 @@ export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone
     <span style={{
       flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: '3px 9px', borderRadius: C.radiusPill,
-      background: accent ? 'rgba(63,111,227,0.12)' : C.surfaceMuted,
-      border: `1px solid ${accent ? 'rgba(63,111,227,0.22)' : C.divider}`,
-      color: accent ? C.link : C.textMuted,
-      fontSize: 10.5, fontWeight: 700, letterSpacing: '0.01em',
+      background: accent ? 'rgba(75,131,196,0.12)' : C.surfaceMuted,
+      border: `1px solid ${accent ? 'rgba(75,131,196,0.22)' : C.divider}`,
+      color: accent ? CHAT.ring : C.textMuted,
+      fontSize: 10, fontWeight: 600, letterSpacing: '0.01em',
       maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
     }}>{children}</span>
   )
@@ -273,12 +182,18 @@ export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone
 
 /* ─────────────────────────  Layout helpers  ───────────────────────── */
 
-/** Uppercase section label with consistent rhythm. */
+/** Quiet section label with consistent rhythm. */
 export function SectionLabel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
   return (
     <div style={{
-      margin: '0 2px 9px', fontSize: 10.5, fontWeight: 700, color: C.textLight,
-      letterSpacing: '0.06em', textTransform: 'uppercase', ...style,
+      margin: '0 2px 8px',
+      fontSize: 12,
+      fontWeight: 500,
+      color: C.textMuted,
+      letterSpacing: 0,
+      textTransform: 'none',
+      lineHeight: 1.25,
+      ...style,
     }}>{children}</div>
   )
 }
@@ -300,12 +215,12 @@ export function ActionTile({
       aria-label={label}
       style={{
         display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-        padding: '11px 12px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
+        padding: '10px 12px', borderRadius: C.radiusMd, width: '100%', boxSizing: 'border-box',
         border: `1px solid ${disabled ? C.divider : hov ? C.borderStrong : C.border}`,
         background: disabled ? C.surfaceMuted : C.surfaceBubble,
         color: disabled ? C.textLight : C.text,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.7 : 1,
+        opacity: disabled ? 0.55 : 1,
         transition: 'background 0.14s, border-color 0.14s',
         fontFamily: FONT,
       }}
@@ -313,14 +228,14 @@ export function ActionTile({
       {icon && (
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+          width: 30, height: 30, borderRadius: C.radiusSm, flexShrink: 0,
           background: disabled ? C.surfaceSunken : C.surfaceMuted,
           color: disabled ? C.textLight : C.accent,
         }}>{icon}</span>
       )}
       <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 650, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{label}</span>
-        {desc && <span style={{ fontSize: 10.5, color: C.textLight, lineHeight: 1.3 }}>{desc}</span>}
+        <span style={{ fontSize: 12, fontWeight: 500, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{label}</span>
+        {desc && <span style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.3 }}>{desc}</span>}
       </span>
     </button>
   )
@@ -345,7 +260,7 @@ export function Chip({
         border: `1px solid ${active ? C.accent : disabled ? C.divider : hov ? C.borderStrong : C.border}`,
         background: active ? C.accent : disabled ? C.surfaceMuted : hov ? C.hoverBg : C.surfaceBubble,
         color: active ? '#fff' : disabled ? C.textLight : C.text,
-        fontSize: 11.5, fontWeight: 600, fontFamily: FONT, letterSpacing: '-0.01em',
+        fontSize: 12, fontWeight: 500, fontFamily: FONT, letterSpacing: '-0.01em',
         cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.7 : 1,
         boxShadow: 'none',
         transition: 'background 0.14s, border-color 0.14s, color 0.14s',
@@ -360,7 +275,7 @@ export function Segmented<T extends string>({
 }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
     <div style={{
-      display: 'flex', gap: 3, padding: 4, borderRadius: 14,
+      display: 'flex', gap: 3, padding: 4, borderRadius: C.radiusMd,
       background: C.surfaceSunken, border: `1px solid ${C.divider}`,
     }}>
       {options.map(o => {
@@ -372,10 +287,10 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             aria-pressed={active}
             style={{
-              flex: 1, padding: '7px 4px', borderRadius: 11, border: 'none',
+              flex: 1, padding: '7px 4px', borderRadius: C.radiusSm, border: 'none',
               background: active ? C.surfaceBubble : 'transparent',
               color: active ? C.text : C.textMuted,
-              fontSize: 12, fontWeight: active ? 700 : 600, fontFamily: FONT, letterSpacing: '-0.01em',
+              fontSize: 12, fontWeight: active ? 600 : 500, fontFamily: FONT, letterSpacing: '-0.01em',
               cursor: 'pointer',
               transition: 'background 0.14s, color 0.14s',
             }}
@@ -445,15 +360,15 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
   )
 }
 
-const ISendGlyph = () => (
+const IArrowUp = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+    <path d="M12 19V5M5 12l7-7 7 7" />
   </svg>
 )
 
-/** Premium composer — rounded surface, context/mode pill, send button. */
+/** Chat-style composer — matches the web dashboard AI input. */
 export function Composer({
-  value, onChange, onSubmit, placeholder, disabled, modeLabel = 'Auto', sendDisabled,
+  value, onChange, onSubmit, placeholder, disabled, modeLabel = 'Smart mode', sendDisabled,
 }: {
   value: string
   onChange: (v: string) => void
@@ -467,50 +382,67 @@ export function Composer({
   const canSend = !sendDisabled && !disabled && value.trim().length > 0
   return (
     <div style={{
-      border: `1.5px solid ${focus ? C.accent : C.border}`,
-      borderRadius: 18, background: disabled ? C.surfaceMuted : C.surfaceBubble,
-      boxShadow: 'none',
-      padding: '10px 10px 8px 14px', transition: 'border-color 0.14s, background 0.14s',
+      overflow: 'hidden',
+      border: `1px solid ${focus ? CHAT.ring : CHAT.inputBorder}`,
+      borderRadius: C.radiusMd,
+      background: disabled ? C.surfaceMuted : C.inputBg,
+      boxShadow: focus ? CHAT.inputGlow : 'none',
+      transition: 'border-color 0.14s, box-shadow 0.14s',
     }}>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocus(true)}
-        onBlur={() => setFocus(false)}
-        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && canSend) { e.preventDefault(); onSubmit() } }}
-        disabled={disabled}
-        placeholder={placeholder}
-        rows={2}
-        style={{
-          width: '100%', border: 'none', outline: 'none', resize: 'none',
-          background: 'transparent', fontSize: 13, lineHeight: 1.5, color: C.text,
-          fontFamily: FONT, padding: 0, minHeight: 34, boxSizing: 'border-box',
-        }}
-      />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px',
-          borderRadius: C.radiusPill, background: C.surfaceMuted, border: `1px solid ${C.divider}`,
-          fontSize: 10.5, fontWeight: 700, color: C.textMuted, letterSpacing: '0.01em',
+      {value.trim() && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(28, 30, 38, 0.10)',
+          background: 'rgba(28, 30, 38, 0.05)',
+          padding: '8px 16px',
+          fontSize: 12,
+          color: C.accent,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.link }} />
-          {modeLabel}
-        </span>
-        <button
-          type="button"
-          onClick={() => { if (canSend) onSubmit() }}
-          disabled={!canSend}
-          aria-label="Send"
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value.trim()}</span>
+        </div>
+      )}
+      <div style={{ display: 'flex', minHeight: 78, flexDirection: 'column', padding: '12px 16px' }}>
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && canSend) { e.preventDefault(); onSubmit() } }}
+          disabled={disabled}
+          placeholder={placeholder}
+          rows={2}
           style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 34, height: 34, borderRadius: 12, border: 'none',
-            background: canSend ? C.accent : C.surfaceSunken,
-            color: canSend ? '#fff' : C.textLight,
-            cursor: canSend ? 'pointer' : 'not-allowed', flexShrink: 0,
-            boxShadow: 'none',
-            transition: 'background 0.14s',
+            width: '100%', border: 'none', outline: 'none', resize: 'none',
+            background: 'transparent', fontSize: 14, lineHeight: 1.5, color: C.text,
+            fontFamily: FONT, padding: '0 0 8px', minHeight: 34, boxSizing: 'border-box',
           }}
-        ><ISendGlyph /></button>
+        />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 'auto' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+            borderRadius: C.radiusSm, background: C.surfaceMuted,
+            fontSize: 12, fontWeight: 500, color: C.text,
+          }}>
+            {modeLabel}
+          </span>
+          <button
+            type="button"
+            onClick={() => { if (canSend) onSubmit() }}
+            disabled={!canSend}
+            aria-label="Send"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: C.radiusPill, border: 'none',
+              background: canSend ? CHAT.send : C.surfaceMuted,
+              color: canSend ? '#fff' : C.textMuted,
+              cursor: canSend ? 'pointer' : 'not-allowed', flexShrink: 0,
+              opacity: canSend ? 1 : 0.35,
+              transition: 'background 0.14s, opacity 0.14s',
+            }}
+          ><IArrowUp /></button>
+        </div>
       </div>
     </div>
   )
@@ -579,7 +511,7 @@ export function PanelError({ message, onRetry }: { message: string; onRetry?: ()
         <button type="button" onClick={onRetry} style={{
           marginTop: 2, padding: '8px 18px', borderRadius: C.radiusPill,
           border: `1px solid ${C.border}`, background: C.surfaceBubble, color: C.text,
-          fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: C.shadowSoft,
+          fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: 'none',
         }}>Try again</button>
       )}
     </div>

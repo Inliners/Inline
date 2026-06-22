@@ -4,7 +4,7 @@ import KnowledgeGraph from '@/components/graph/KnowledgeGraph'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetchGraphData } from '@/lib/data'
 
-export const metadata: Metadata = { title: 'Knowledge Graph' }
+export const metadata: Metadata = { title: 'Connections' }
 
 async function GraphData({ workspaceId }: { workspaceId: string }) {
   const data = await fetchGraphData(workspaceId)

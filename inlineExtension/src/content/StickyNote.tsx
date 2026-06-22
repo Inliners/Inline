@@ -171,7 +171,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
               onPointerDown={e => e.stopPropagation()}
               style={{
                 flex: 1, border: 'none', background: 'transparent', outline: 'none',
-                fontSize: 12, fontWeight: 700, color: '#1e1b4b', fontFamily: 'system-ui,sans-serif',
+                fontSize: 12, fontWeight: 500, color: '#1c1e26', fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
               }}
             />
           : <span
@@ -193,7 +193,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
               padding: '2px 8px', border: 'none', borderRadius: 10,
               background: 'rgba(99,102,241,0.15)', color: '#4f46e5',
               fontSize: 10, fontWeight: 700, cursor: 'pointer',
-              fontFamily: 'system-ui,sans-serif', lineHeight: 1,
+              fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif", lineHeight: 1,
               whiteSpace: 'nowrap',
             }}
           >

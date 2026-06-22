@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import {
   History,
-  MessageSquareText,
+  MessageCircle,
   Library,
   BarChart3,
   Map,
@@ -16,7 +16,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Reveal } from '@/components/marketing/primitives/Reveal'
 
 /**
- * #workspace — modelled on the Attio/Slite "Ask beyond … across all your
+ * #workspace — a dark band with curved transitions and the eight real workspace surfaces
  * tools" section: a dark band with cream curved transitions top and bottom,
  * a left-aligned headline + CTA, and the eight real workspace surfaces
  * orbiting on dashed rings to the right.
@@ -34,7 +34,7 @@ type Orbit = {
 }
 
 const ORBITS: Orbit[] = [
-  { icon: MessageSquareText, title: 'Ask Inline', x: 250, y: 70, size: 56, accent: true },
+  { icon: MessageCircle, title: 'Ask Inline', x: 250, y: 70, size: 56, accent: true },
   { icon: LayoutDashboard, title: 'Home', x: 410, y: 120, size: 50 },
   { icon: Library, title: 'Library', x: 150, y: 175, size: 48 },
   { icon: History, title: 'Captures', x: 330, y: 215, size: 52 },

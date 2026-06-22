@@ -50,8 +50,8 @@ const FEATURES = [
   { href: (ws: string) => `/app/${ws}/history`,    icon: Clock,           label: 'Captures'        },
   { href: (ws: string) => `/app/${ws}/analytics`,  icon: BarChart2,       label: 'Analytics'       },
   { href: (ws: string) => `/app/${ws}/workflows`,  icon: Zap,             label: 'Workflows'       },
-  { href: (ws: string) => `/app/${ws}/map`,         icon: Map,             label: 'Spatial map'     },
-  { href: (ws: string) => `/app/${ws}/graph`,       icon: Share2,          label: 'Knowledge graph' },
+  { href: (ws: string) => `/app/${ws}/map`,         icon: Map,             label: 'Places'          },
+  { href: (ws: string) => `/app/${ws}/graph`,       icon: Share2,          label: 'Connections'     },
   { href: (ws: string) => `/app/${ws}/settings`,    icon: Settings,        label: 'Settings'        },
 ]
 

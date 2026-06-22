@@ -13,7 +13,8 @@ import { speakWithElevenLabs } from '../lib/elevenLabsTts'
 import { fetchViaBackground } from '../lib/backgroundFetch'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { saveAIReplacement } from './aiReplacements'
-import { TOOLBAR as TB, HIGHLIGHT_SWATCHES } from '../lib/extensionTheme'
+import { TOOLBAR as TB, HIGHLIGHT_SWATCHES, FONT, PANEL as C } from '../lib/extensionTheme'
+import { GUEST_AI_LIMIT, looksLikeJwt, reserveAiPrompt } from '../lib/aiAccess'
 
 type Pt = { x: number; y: number }
 type AnchorNote = { id: string; x: number; y: number; text: string }
@@ -39,12 +40,23 @@ async function tryWindowAi(task: string, text: string): Promise<string | null> {
 async function serverTask(
   apiBase: string, token: string, task: string, text: string, instruction?: string,
 ): Promise<string | null> {
+  const access = await reserveAiPrompt()
+  if (!access.allowed) {
+    return `[Error] Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`
+  }
   const h: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (token) h.Authorization = `Bearer ${token}`
+  if (access.signedIn && token) h.Authorization = `Bearer ${token}`
+  if (!access.signedIn) h['X-Inline-Device-Id'] = access.deviceId
   try {
     const res = await fetchViaBackground(`${apiBase}/api/ai/extension-light`, {
       method: 'POST', headers: h,
-      body: JSON.stringify({ task, text, instruction }),
+      body: JSON.stringify({
+        task,
+        text,
+        instruction,
+        guest: !access.signedIn,
+        deviceId: access.signedIn ? undefined : access.deviceId,
+      }),
     })
     if (!res.ok) {
       try {
@@ -60,14 +72,13 @@ async function serverTask(
   }
 }
 
-/* ─── Theme (Attio "New toolbar" — light) ─── */
-const DARK = '#0B1735'              // primary text / accent on light surfaces
-const CREAM = '#FFFFFF'             // popups are clean white (Attio pages are white)
-const SURFACE = '#FFFFFF'
-const BORDER = 'rgba(15,18,23,0.09)'
-const PANEL_BORDER = 'rgba(15,18,23,0.10)'
-const MUTED = '#8A8F98'
-const FONT = '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif'
+/* ─── Theme (floating toolbar — matches web chat) ─── */
+const DARK = C.text
+const CREAM = C.bg
+const SURFACE = C.bg
+const BORDER = C.border
+const PANEL_BORDER = C.border
+const MUTED = C.textMuted
 
 /* ─── SVG icons (stroke style, 16×16) ─── */
 const IHighlight = () => (
@@ -138,7 +149,7 @@ function ToolTip({ label, show }: { label: string; show: boolean }) {
         bottom: 'calc(100% + 8px)',
         left: '50%',
         transform: `translateX(-50%) translateY(${show ? '0' : '3px'})`,
-        background: '#0B1735',
+        background: C.text,
         color: '#fff',
         border: '1px solid rgba(255,255,255,0.16)',
         borderRadius: 8,
@@ -524,14 +535,27 @@ export default function SmartOverlay() {
     setRiskOpen(true); setRiskLoading(true); setRiskText('')
     void (async () => {
       const sample = (document.body?.innerText ?? '').slice(0, 12000)
+      const access = await reserveAiPrompt()
+      if (!access.allowed) {
+        setRiskText(`Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`)
+        setRiskLoading(false)
+        return
+      }
       const { apiBaseUrl, accessToken } = await loadSettings()
       const h: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (access.signedIn && accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (!access.signedIn) h['X-Inline-Device-Id'] = access.deviceId
       try {
         // Routed through the background worker — content scripts can't reach
         // localhost directly under Chrome's Private Network Access policy.
         const res = await fetchViaBackground(`${apiBaseUrl}/api/ai/page-risk`, {
-          method: 'POST', headers: h, body: JSON.stringify({ pageTextSample: sample }),
+          method: 'POST',
+          headers: h,
+          body: JSON.stringify({
+            pageTextSample: sample,
+            guest: !access.signedIn,
+            deviceId: access.signedIn ? undefined : access.deviceId,
+          }),
         })
         const j = await res.json()
         setRiskText((j as { analysis?: string }).analysis ?? (j as { error?: string }).error ?? 'No response')
@@ -541,7 +565,7 @@ export default function SmartOverlay() {
   }
 
   /** Highlight the current selection, optionally with a custom colour from
-   *  the Attio-style swatch row. Selection survives because the toolbar's
+   *  the toolbar swatch row. Selection survives because the toolbar's
    *  onMouseDown calls preventDefault. */
   function highlightWithColor(color?: string) {
     wrapSelectionWithHighlight('extract', color)
@@ -671,7 +695,7 @@ export default function SmartOverlay() {
             <TBtn isText onClick={addAnchor} title="Pin a note here">Note</TBtn>
           </div>
 
-          {/* ── Colour-swatch row (Attio second pill) ── */}
+          {/* ── Colour-swatch row ── */}
           {colorRow && (
             <div
               className="inline-toolbar"
@@ -964,7 +988,12 @@ export default function SmartOverlay() {
                   })
                 })
                 const h: Record<string, string> = { 'Content-Type': 'application/json' }
-                if (accessToken) h.Authorization = `Bearer ${accessToken}`
+                if (!looksLikeJwt(accessToken) || !workspaceId) {
+                  setAiResult({ title: 'Sign in required', body: 'Spatial saves require a synced workspace.', loading: false })
+                  setSpatialOpen(false); setSpatialAddr(''); setSpatialNote('')
+                  return
+                }
+                h.Authorization = `Bearer ${accessToken}`
                 try {
                   const res = await fetchViaBackground(`${apiBaseUrl}/api/spatial/save`, {
                     method: 'POST', headers: h,

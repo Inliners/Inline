@@ -1,9 +1,10 @@
 import Link from 'next/link'
+import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import {
   Highlighter,
   StickyNote,
   PenTool,
-  Sparkles,
+  MessageCircle,
   PenLine,
   FileText,
   Volume2,
@@ -21,7 +22,7 @@ const TOOLS = [
   { icon: Highlighter, label: 'Highlight' },
   { icon: StickyNote,  label: 'Note' },
   { icon: PenTool,     label: 'Draw' },
-  { icon: Sparkles,    label: 'Ask' },
+  { icon: MessageCircle, label: 'Ask' },
   { icon: PenLine,     label: 'Rewrite' },
   { icon: FileText,    label: 'Recap' },
   { icon: Volume2,     label: 'Speak' },
@@ -31,9 +32,7 @@ const TOOLS = [
 function CollapsedPillMock() {
   return (
     <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2 shadow-sm w-fit">
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0B1735]" aria-hidden>
-        <span className="block h-3 w-[3px] rounded-full bg-white -rotate-12" />
-      </span>
+      <InlineChatIcon size="md" variant="badge" />
       <span className="text-xs font-medium text-stone-600">Inline</span>
       <kbd className="rounded border border-stone-200 bg-stone-50 px-1.5 py-px font-mono text-[9px] text-stone-400">⌘⇧K</kbd>
     </div>
@@ -64,9 +63,7 @@ function ExpandedPanelMock() {
     <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
       <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0B1735]" aria-hidden>
-            <span className="block h-2.5 w-[2px] rounded-full bg-white -rotate-12" />
-          </span>
+          <InlineChatIcon size="sm" variant="badge" className="rounded-md" />
           <span className="text-xs font-semibold text-[#1C1E26]">Ask Inline</span>
         </div>
         <span className="rounded-full bg-[#EBF1F7] px-2 py-0.5 text-[9px] font-medium text-[#4B83C4]">

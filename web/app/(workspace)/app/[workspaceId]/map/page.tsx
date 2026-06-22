@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import SpatialMap from '@/components/map/SpatialMap'
 import { fetchMapCoordinates } from '@/lib/data'
 
-export const metadata: Metadata = { title: 'Map' }
+export const metadata: Metadata = { title: 'Places' }
 
 export default async function WorkspaceMapPage({
   params,

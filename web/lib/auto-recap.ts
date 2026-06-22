@@ -19,8 +19,10 @@ import { prettyNotePreview } from './note-preview'
 import {
   loadFolderDocuments,
   upsertFolderDocument,
+  deleteFolderDocument,
   type FolderDocument,
 } from './workspace-library'
+import { documentHref, isUnsafeDocId, recapDocIdForPageUrl } from './doc-routes'
 import {
   loadWorkspaceFolders,
   saveWorkspaceFolders,
@@ -171,10 +173,17 @@ export function ensurePageRecaps(
     if (pageUrl === '(no page)') continue
     if (pageNotes.length === 0) continue
 
-    const existing = findRecapDoc(workspaceId, pageUrl)
+    let existing = findRecapDoc(workspaceId, pageUrl)
     const pageTitle = titleOf(pageNotes, pageUrl)
     const content = composeRecapHtml(workspaceTitle, pageUrl, pageNotes)
     const now = Date.now()
+
+    if (existing && isUnsafeDocId(existing.id)) {
+      const newId = recapDocIdForPageUrl(pageUrl, existing.createdAt)
+      deleteFolderDocument(existing.id)
+      existing = { ...existing, id: newId }
+      upsertFolderDocument(existing)
+    }
 
     if (existing) {
       const sourceNewest = pageNotes.reduce((acc, n) => {
@@ -199,10 +208,10 @@ export function ensurePageRecaps(
         id: existing.id,
         title: pageTitle,
         updatedAt: new Date(now).toISOString(),
-        href: `/app/${workspaceId}/folder/${folderId}/doc/${existing.id}`,
+        href: documentHref(workspaceId, existing.id),
       }
     } else {
-      const id = `doc-recap-${encodeURIComponent(pageUrl).slice(0, 40)}-${now}`
+      const id = recapDocIdForPageUrl(pageUrl, now)
       const doc: FolderDocument = {
         id,
         workspaceId,
@@ -220,7 +229,7 @@ export function ensurePageRecaps(
         id,
         title: pageTitle,
         updatedAt: new Date(now).toISOString(),
-        href: `/app/${workspaceId}/folder/${folderId}/doc/${id}`,
+        href: documentHref(workspaceId, id),
       }
     }
   }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { FileText, Star, Sparkles } from 'lucide-react'
+import { documentHref } from '@/lib/doc-routes'
 import { cn, stripHtml } from '@/lib/utils'
 import { loadFolderDocuments, upsertFolderDocument, type FolderDocument } from '@/lib/workspace-library'
 import { loadWorkspaceFolders, findFolder, type WorkspaceFolder } from '@/lib/workspace-folders'
@@ -76,7 +77,7 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
   const orderedDocs = useMemo(() => {
     const pinned = docs.filter(d => pinnedIds.has(d.id))
     const rest = docs.filter(d => !pinnedIds.has(d.id))
-    return [...pinned, ...rest].slice(0, 12)
+    return [...pinned, ...rest]
   }, [docs, pinnedIds])
 
   function folderLabel(folderId: string) {
@@ -98,22 +99,24 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-      {orderedDocs.map((doc, i) => (
-        <DocLibraryCard
-          key={doc.id}
-          doc={doc}
-          workspaceId={workspaceId}
-          folderName={folderLabel(doc.folderId)}
-          pinned={isPinnedDocument(workspaceId, doc.id)}
-          onTogglePin={() => {
-            togglePinnedDocument(workspaceId, doc.id)
-            refresh()
-          }}
-          onRenamed={refresh}
-          index={i}
-        />
-      ))}
+    <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal">
+      <div className="flex w-max min-w-full snap-x snap-mandatory gap-4 pr-4">
+        {orderedDocs.map((doc, i) => (
+          <DocLibraryCard
+            key={doc.id}
+            doc={doc}
+            workspaceId={workspaceId}
+            folderName={folderLabel(doc.folderId)}
+            pinned={isPinnedDocument(workspaceId, doc.id)}
+            onTogglePin={() => {
+              togglePinnedDocument(workspaceId, doc.id)
+              refresh()
+            }}
+            onRenamed={refresh}
+            index={i}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -135,7 +138,7 @@ function DocLibraryCard({
   onRenamed: () => void
   index: number
 }) {
-  const href = `/app/${workspaceId}/folder/${doc.folderId}/doc/${doc.id}`
+  const href = documentHref(workspaceId, doc.id)
   const [title, setTitle] = useState(doc.title)
   const bg = PASTEL_BGS[index % PASTEL_BGS.length]
   const preview = stripHtml(doc.content) || 'Empty document'
@@ -153,7 +156,7 @@ function DocLibraryCard({
 
   return (
     <div className={cn(
-      'relative rounded-2xl p-5 flex flex-col justify-between h-40',
+      'relative shrink-0 w-[240px] sm:w-[260px] rounded-2xl p-5 flex flex-col justify-between h-40 snap-start',
       'border border-border transition-colors hover:border-stone-400/50',
       bg,
     )}>

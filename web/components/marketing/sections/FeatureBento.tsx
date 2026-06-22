@@ -1,6 +1,6 @@
 import {
   Highlighter,
-  MessageSquareText,
+  MessageCircle,
   FileText,
   PenLine,
   Volume2,
@@ -25,7 +25,7 @@ const FEATURES = [
     tint: 'bg-[#FEF3C7]',
   },
   {
-    icon: MessageSquareText,
+    icon: MessageCircle,
     title: 'Ask AI',
     body: 'Chat over your captures with source-grounded answers.',
     span: '',
@@ -54,7 +54,7 @@ const FEATURES = [
   },
   {
     icon: Share2,
-    title: 'Knowledge graph',
+    title: 'Connections',
     body: 'See pages, domains, and notes connect into one map of your research.',
     span: 'lg:col-span-2',
     tint: 'bg-[#E8F0EC]',
@@ -68,7 +68,7 @@ const FEATURES = [
   },
   {
     icon: Map,
-    title: 'Spatial map',
+    title: 'Places',
     body: 'Captures with place data, plotted on a real map.',
     span: '',
     tint: 'bg-[#E8F0EC]',

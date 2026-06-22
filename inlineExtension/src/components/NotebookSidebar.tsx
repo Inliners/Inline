@@ -160,8 +160,8 @@ export default function NotebookSidebar({ onClose }: NotebookSidebarProps) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, width: '100%',
                 padding: '6px 6px', border: 'none', background: 'transparent',
-                cursor: 'pointer', fontSize: 11, fontWeight: 600, color: S.textMuted,
-                textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: FONT,
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, color: S.textMuted,
+                textTransform: 'none', letterSpacing: 0, fontFamily: FONT,
               }}
             >
               {domain}

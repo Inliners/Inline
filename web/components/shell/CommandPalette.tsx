@@ -21,8 +21,8 @@ const NAV_COMMANDS = [
   { label: 'Home',            icon: LayoutDashboard, path: 'dashboard', shortcut: 'G D' },
   { label: 'Captures',        icon: Clock,           path: 'history',   shortcut: 'G H' },
   { label: 'Analytics',       icon: BarChart3,       path: 'analytics', shortcut: ''    },
-  { label: 'Spatial map',     icon: Map,             path: 'map',       shortcut: 'G M' },
-  { label: 'Knowledge graph', icon: Share2,          path: 'graph',     shortcut: 'G G' },
+  { label: 'Places',          icon: Map,             path: 'map',       shortcut: 'G M' },
+  { label: 'Connections',     icon: Share2,          path: 'graph',     shortcut: 'G G' },
   { label: 'Settings',        icon: Settings,        path: 'settings',  shortcut: ''    },
 ]
 

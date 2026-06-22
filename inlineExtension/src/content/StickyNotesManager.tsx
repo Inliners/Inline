@@ -14,6 +14,7 @@ import {
   type StickyNoteData,
 } from './storage'
 import { findMediaElements } from '../lib/mediaDetect'
+import { emitSaveToast } from '../lib/saveToast'
 
 const PAGE_URL = window.location.href
 const SAVE_DEBOUNCE_MS = 500
@@ -98,12 +99,10 @@ function StickyNotesProvider({ children }: { children: ReactNode }) {
             console.error('[Inline] Message failed:', chrome.runtime.lastError.message)
             return
           }
+          emitSaveToast(response)
           if (!response?.ok) {
             const err = String(response?.error ?? '')
             if (response?.queued || /queued|offline|unreachable/i.test(err)) {
-              document.dispatchEvent(
-                new CustomEvent('inline:saveResult', { detail: { error: err } }),
-              )
               return
             }
             console.error('[Inline] Backend sync failed:', response?.error)

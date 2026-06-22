@@ -8,6 +8,7 @@
 
 import { loadSettings } from './extensionSettings'
 import { fetchViaBackground } from './backgroundFetch'
+import { looksLikeJwt } from './aiAccess'
 
 type HistoryEntryKind =
   | 'ai-rephrase'
@@ -46,6 +47,7 @@ export async function saveAIResultToHistory(entry: HistoryEntry): Promise<void> 
 
     const workspaceId = entry.workspaceId ?? storage.inlineActiveWorkspaceId ?? ''
     const userId = storage.inlineUserId ?? ''
+    if (!looksLikeJwt(accessToken) || !workspaceId) return
 
     // The notes.type column has a CHECK constraint, so every AI action is
     // written as 'ai-summary' and differentiated via tags. UI filters and
@@ -81,7 +83,7 @@ export async function saveAIResultToHistory(entry: HistoryEntry): Promise<void> 
     }
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+    headers.Authorization = `Bearer ${accessToken}`
 
     await fetchViaBackground(`${apiBaseUrl}/api/clip`, {
       method: 'POST',

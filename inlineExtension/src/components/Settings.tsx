@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { PANEL as C, FONT } from '../lib/extensionTheme'
 import { PanelShell, Toggle, SectionLabel } from './panelKit'
+import { GUEST_AI_LIMIT, getAiAccessState, looksLikeJwt } from '../lib/aiAccess'
 
 const IExtLink = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -27,10 +28,22 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
   const [paused, setPaused] = useState(false)
   const [blockedDomains, setBlockedDomains] = useState<string[]>([])
   const [newDomain, setNewDomain] = useState('')
+  const [account, setAccount] = useState({
+    signedIn: false,
+    hasWorkspace: false,
+    name: '',
+    email: '',
+    avatarUrl: '',
+    guestRemaining: GUEST_AI_LIMIT,
+  })
 
   useEffect(() => {
     chrome.storage.local.get(
-      ['inlineBlockedDomains', 'inlineScreenReader', 'inlineFocusMode'],
+      [
+        'inlineBlockedDomains', 'inlineScreenReader', 'inlineFocusMode',
+        'inlineAccessToken', 'inlineActiveWorkspaceId', 'inlineUserId',
+        'inlineUserName', 'inlineUserEmail', 'inlineUserAvatarUrl',
+      ],
       (r) => {
         try {
           const raw = r.inlineBlockedDomains
@@ -41,6 +54,16 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
         } catch { /* keep default */ }
         setScreenReader(r.inlineScreenReader === 'true' || r.inlineScreenReader === true)
         setImmersiveReader(r.inlineFocusMode === 'true' || r.inlineFocusMode === true)
+        void getAiAccessState().then(access => {
+          setAccount({
+            signedIn: looksLikeJwt(r.inlineAccessToken),
+            hasWorkspace: typeof r.inlineActiveWorkspaceId === 'string' && r.inlineActiveWorkspaceId.length > 0,
+            name: typeof r.inlineUserName === 'string' ? r.inlineUserName : '',
+            email: typeof r.inlineUserEmail === 'string' ? r.inlineUserEmail : '',
+            avatarUrl: typeof r.inlineUserAvatarUrl === 'string' ? r.inlineUserAvatarUrl : '',
+            guestRemaining: Number.isFinite(access.remaining) ? access.remaining : GUEST_AI_LIMIT,
+          })
+        })
       },
     )
   }, [])
@@ -75,6 +98,9 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
     } catch { /* sandboxed */ }
   }, [])
 
+  const profileLabel = account.name || account.email || 'Connected account'
+  const profileInitial = (profileLabel.trim()[0] || 'I').toUpperCase()
+
   return (
     <PanelShell
       title="Settings"
@@ -87,7 +113,7 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
             display: 'flex', alignItems: 'center', gap: 7,
             border: `1px solid ${C.border}`, background: C.surfaceBubble, cursor: 'pointer',
             fontSize: 12.5, fontWeight: 650, color: C.text, padding: '9px 14px',
-            borderRadius: C.radiusPill, fontFamily: FONT, boxShadow: C.shadowSoft,
+            borderRadius: C.radiusPill, fontFamily: FONT, boxShadow: 'none',
           }}>
             All settings <IExtLink />
           </button>
@@ -95,7 +121,7 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 40, height: 40, borderRadius: 13, border: `1px solid ${paused ? 'rgba(220,38,38,0.25)' : C.border}`,
             background: paused ? '#FEF2F2' : C.surfaceBubble, cursor: 'pointer',
-            color: paused ? '#DC2626' : C.textMuted, boxShadow: C.shadowSoft,
+            color: paused ? '#DC2626' : C.textMuted, boxShadow: 'none',
           }}>
             <IPause />
           </button>
@@ -103,11 +129,83 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
       }
     >
       <div style={{ padding: '16px 18px 18px', fontFamily: FONT }}>
+        <SectionLabel>Account</SectionLabel>
+        <div style={{
+          border: `1px solid ${C.border}`,
+          borderRadius: 18,
+          padding: 14,
+          marginBottom: 18,
+          background: C.surfaceBubble,
+          boxShadow: 'none',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
+              {account.signedIn ? (
+                <span style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  background: C.accent,
+                  color: '#FFFFFF',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  flexShrink: 0,
+                }}>
+                  {account.avatarUrl
+                    ? <img src={account.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : profileInitial}
+                </span>
+              ) : (
+                <span style={{
+                  width: 9,
+                  height: 9,
+                  borderRadius: '50%',
+                  marginTop: 5,
+                  background: '#D97706',
+                  boxShadow: '0 0 0 3px rgba(217, 119, 6, 0.13)',
+                  flexShrink: 0,
+                }} />
+              )}
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: C.text, letterSpacing: '-0.01em' }}>
+                  {account.signedIn ? profileLabel : 'Guest mode'}
+                </span>
+                <span style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: C.textLight, lineHeight: 1.45 }}>
+                  {account.signedIn
+                    ? account.hasWorkspace
+                      ? 'Workspace sync is on. AI is fully unlocked.'
+                      : 'Open the dashboard to finish workspace sync.'
+                    : `Saved to this browser. ${account.guestRemaining} of ${GUEST_AI_LIMIT} guest AI prompts left.`}
+                </span>
+              </span>
+            </span>
+            <button type="button" onClick={onOpenDashboard} style={{
+              border: `1px solid ${C.border}`,
+              background: account.signedIn ? C.surfaceSunken : C.accent,
+              color: account.signedIn ? C.text : '#FFFFFF',
+              borderRadius: C.radiusPill,
+              padding: '7px 11px',
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: FONT,
+              boxShadow: 'none',
+              flexShrink: 0,
+            }}>
+              {account.signedIn ? 'Dashboard' : 'Sign in'}
+            </button>
+          </div>
+        </div>
+
         {/* Accessibility */}
         <SectionLabel>Accessibility</SectionLabel>
         <div style={{
           border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden',
-          marginBottom: 18, background: C.surfaceBubble, boxShadow: C.shadowCard,
+          marginBottom: 18, background: C.surfaceBubble, boxShadow: 'none',
         }}>
           <Row label="Screen reader" desc="Announce captured text" right={<Toggle checked={screenReader} onChange={toggleScreenReader} label="screen reader" />} />
           <Row label="High contrast" desc="Boost page contrast" border right={<Toggle checked={highContrast} onChange={toggleHighContrast} label="high contrast" />} />
@@ -123,7 +221,7 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 18,
-          background: C.surfaceBubble, boxShadow: C.shadowCard, marginBottom: 18,
+          background: C.surfaceBubble, boxShadow: 'none', marginBottom: 18,
         }}>
           <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>Interface language</span>
           <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
@@ -140,10 +238,10 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
             >
               <option value="en-US">English (US)</option>
               <option value="en-GB">English (UK)</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
+              <option value="es">Espanol</option>
+              <option value="fr">Francais</option>
               <option value="de">Deutsch</option>
-              <option value="pt">Português</option>
+              <option value="pt">Portugues</option>
             </select>
             <span style={{ position: 'absolute', right: 10, pointerEvents: 'none', color: C.textMuted, display: 'inline-flex' }}><IChevron /></span>
           </div>
@@ -153,7 +251,7 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
         <SectionLabel>Blocked sites</SectionLabel>
         <div style={{
           border: `1px solid ${C.border}`, borderRadius: 18,
-          background: C.surfaceBubble, boxShadow: C.shadowCard, padding: 14,
+          background: C.surfaceBubble, boxShadow: 'none', padding: 14,
         }}>
           {blockedDomains.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 11 }}>

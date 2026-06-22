@@ -30,7 +30,20 @@ function redirectRootDocId(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(url)
 }
 
+/** Nested folder/doc URLs can 404 in dev — serve the flat doc route instead. */
+function rewriteNestedFolderDocUrl(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl
+  const m = pathname.match(/^\/app\/([^/]+)\/folder\/[^/]+\/doc\/([^/]+)$/)
+  if (!m) return null
+  const url = request.nextUrl.clone()
+  url.pathname = `/app/${m[1]}/doc/${m[2]}`
+  return NextResponse.rewrite(url)
+}
+
 export async function proxy(request: NextRequest) {
+  const nestedDoc = rewriteNestedFolderDocUrl(request)
+  if (nestedDoc) return nestedDoc
+
   const fixed =
     redirectFolderSegmentIsDocId(request) ??
     redirectLegacyFlatDocUrl(request) ??

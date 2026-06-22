@@ -17,6 +17,7 @@ import { enableReaderMode, disableReaderMode } from '../lib/readerMode'
 import { loadLayers, type LayerVisibility } from '../lib/layerState'
 import { speakWithElevenLabs, stopSpeaking } from '../lib/elevenLabsTts'
 import cssText from './content.css?inline'
+import { FONT_FACE_CSS } from '../lib/extensionFonts'
 
 ;(async () => {
   const stored = await new Promise<Record<string, unknown>>(resolve =>
@@ -64,7 +65,7 @@ import cssText from './content.css?inline'
     const shadow = host.attachShadow({ mode: 'open' })
 
     const style = document.createElement('style')
-    style.textContent = cssText
+    style.textContent = FONT_FACE_CSS + '\n' + cssText
     shadow.appendChild(style)
 
     const mountPoint = document.createElement('div')
@@ -97,7 +98,7 @@ import cssText from './content.css?inline'
       'position:fixed', 'bottom:72px', 'right:24px',
       'padding:4px 12px', 'border-radius:9999px',
       'background:#ef4444', 'color:#fff',
-      'font:600 12px/1.4 system-ui,sans-serif',
+      'font:500 12px/1.4 Geist,ui-sans-serif,system-ui,sans-serif',
       'pointer-events:none', 'display:none', 'z-index:2147483647',
     ].join(';')
     shadow.appendChild(offlineBadge)
