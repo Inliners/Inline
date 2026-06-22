@@ -6,6 +6,8 @@ type InlineChatIconProps = {
   iconClassName?: string
   size?: 'sm' | 'md' | 'lg'
   variant?: 'plain' | 'badge'
+  /** Badge corner style — launcher-style square vs default circle. */
+  badgeShape?: 'circle' | 'square'
 }
 
 const SIZES = {
@@ -20,6 +22,7 @@ export function InlineChatIcon({
   iconClassName,
   size = 'sm',
   variant = 'plain',
+  badgeShape = 'circle',
 }: InlineChatIconProps) {
   const s = SIZES[size]
   const icon = <MessageCircle className={cn(s.icon, 'shrink-0', iconClassName)} />
@@ -28,7 +31,8 @@ export function InlineChatIcon({
     return (
       <span
         className={cn(
-          'inline-flex items-center justify-center rounded-full bg-[#12203f] text-white shadow-none',
+          'inline-flex items-center justify-center bg-[#12203f] text-white shadow-none',
+          badgeShape === 'square' ? 'rounded-[7px]' : 'rounded-full',
           s.wrap,
           className,
         )}

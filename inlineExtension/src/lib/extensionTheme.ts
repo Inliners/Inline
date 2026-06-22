@@ -33,6 +33,12 @@ export const TOOL_TILE = {
   radius: '50%',
 } as const
 
+/** Canonical popup header badge — matches Ask panel chrome. */
+export const PANEL_HEADER_ICON = {
+  badgeSize: 24,
+  glyphSize: 13,
+} as const
+
 export const PANEL = {
   bg: '#FFFFFF',
   headerBg: '#FFFFFF',

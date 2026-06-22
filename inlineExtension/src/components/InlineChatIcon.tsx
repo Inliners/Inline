@@ -1,5 +1,36 @@
 /** Canonical Inline chat glyph (lucide MessageCircle) for extension surfaces. */
 
+import type { ReactNode } from 'react'
+import { CHAT, PANEL_HEADER_ICON } from '../lib/extensionTheme'
+
+export function NavyHeaderBadge({
+  size = PANEL_HEADER_ICON.badgeSize,
+  background = CHAT.badge,
+  children,
+}: {
+  size?: number
+  background?: string
+  children: ReactNode
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background,
+        color: '#fff',
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
 export function InlineChatIcon({
   size = 18,
   strokeWidth = 1.75,
@@ -27,29 +58,17 @@ export function InlineChatIcon({
 }
 
 export function InlineChatBadge({
-  size = 20,
-  iconSize = 12,
-  background = '#12203f',
+  size = PANEL_HEADER_ICON.badgeSize,
+  iconSize = PANEL_HEADER_ICON.glyphSize,
+  background = CHAT.badge,
 }: {
   size?: number
   iconSize?: number
   background?: string
 }) {
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background,
-        color: '#fff',
-        flexShrink: 0,
-      }}
-    >
+    <NavyHeaderBadge size={size} background={background}>
       <InlineChatIcon size={iconSize} strokeWidth={2} color="#fff" />
-    </span>
+    </NavyHeaderBadge>
   )
 }

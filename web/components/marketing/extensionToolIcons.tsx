@@ -1,18 +1,27 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { InlineChatIcon, NavyHeaderBadge } from './InlineChatIcon'
-import { PANEL as C, PANEL_HEADER_ICON, TOOL_TILE } from '../lib/extensionTheme'
+/**
+ * Extension tool glyphs — mirrored from inlineExtension/src/components/toolIcons.tsx
+ * so the marketing hero uses the same icons as the Chrome extension.
+ */
+
+import type { ReactNode } from 'react'
+import { InlineChatIcon } from '@/components/marketing/InlineChatIcon'
 
 export type ToolId =
-  | 'rewrite' | 'ai' | 'notes' | 'settings' | 'highlighter' | 'draw'
-  | 'layers' | 'stamps' | 'search' | 'screenshot' | 'laser' | 'share' | 'handwriting'
+  | 'rewrite'
+  | 'ai'
+  | 'notes'
+  | 'settings'
+  | 'highlighter'
+  | 'draw'
+  | 'layers'
+  | 'stamps'
+  | 'search'
+  | 'screenshot'
+  | 'laser'
+  | 'share'
+  | 'handwriting'
 
-function Svg({
-  size = 18,
-  children,
-}: {
-  size?: number
-  children: ReactNode
-}) {
+function Svg({ size = 18, children }: { size?: number; children: ReactNode }) {
   return (
     <svg
       width={size}
@@ -162,7 +171,17 @@ export function IconNotebook({ size = 18 }: { size?: number }) {
 
 export function IconMore({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <circle cx="12" cy="12" r="1.5" />
       <circle cx="19" cy="12" r="1.5" />
       <circle cx="5" cy="12" r="1.5" />
@@ -170,7 +189,7 @@ export function IconMore({ size = 18 }: { size?: number }) {
   )
 }
 
-export function IconEyeOff({ size = 17 }: { size?: number }) {
+export function IconEyeOff({ size = 18 }: { size?: number }) {
   return (
     <Svg size={size}>
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
@@ -181,7 +200,35 @@ export function IconEyeOff({ size = 17 }: { size?: number }) {
   )
 }
 
-const TOOL_ICON_MAP: Record<ToolId, (props: { size?: number }) => ReactNode> = {
+export function IconCollapse({ size = 18 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <polyline points="4 14 10 14 10 20" />
+      <polyline points="20 10 14 10 14 4" />
+      <line x1="14" y1="10" x2="21" y2="3" />
+      <line x1="3" y1="21" x2="10" y2="14" />
+    </Svg>
+  )
+}
+
+export function IconPause({ size = 18 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
+    </Svg>
+  )
+}
+
+export type HeroToolIconId =
+  | ToolId
+  | 'notebook'
+  | 'more'
+  | 'eyeOff'
+  | 'collapse'
+  | 'pause'
+
+const HERO_ICON_MAP: Record<HeroToolIconId, (props: { size?: number }) => ReactNode> = {
   rewrite: IconRewrite,
   ai: IconAi,
   notes: IconNotes,
@@ -195,91 +242,14 @@ const TOOL_ICON_MAP: Record<ToolId, (props: { size?: number }) => ReactNode> = {
   laser: IconLaser,
   share: IconShare,
   handwriting: IconHandwriting,
+  notebook: IconNotebook,
+  more: IconMore,
+  eyeOff: IconEyeOff,
+  collapse: IconCollapse,
+  pause: IconPause,
 }
 
-export function renderToolIcon(tool: ToolId, size = 18) {
-  const Icon = TOOL_ICON_MAP[tool]
+export function renderHeroToolIcon(tool: HeroToolIconId, size = 32) {
+  const Icon = HERO_ICON_MAP[tool]
   return <Icon size={size} />
-}
-
-/** Light icon tile for dock flyout menus (Annotate, More tools) and mode pill. */
-export function DockMenuIcon({
-  children,
-  size = 28,
-  active,
-}: {
-  children: ReactNode
-  size?: number
-  active?: boolean
-}) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: C.radiusSm,
-        background: active ? C.toneSelectedBg : C.surfaceMuted,
-        border: `1px solid ${active ? C.borderStrong : C.border}`,
-        color: active ? C.text : C.textMuted,
-        flexShrink: 0,
-      }}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** Navy icon tile — tool panel headers and command palette only. */
-export function ToolIconTile({
-  children,
-  size = 24,
-  active,
-  style,
-}: {
-  children: ReactNode
-  size?: number
-  active?: boolean
-  style?: CSSProperties
-}) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: TOOL_TILE.radius,
-        background: TOOL_TILE.bg,
-        border: `1px solid ${active ? TOOL_TILE.borderActive : TOOL_TILE.border}`,
-        color: TOOL_TILE.fg,
-        flexShrink: 0,
-        boxShadow: active ? TOOL_TILE.activeRing : 'none',
-        ...style,
-      }}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** Header mark for tool panel popups — same navy circle as Ask. */
-export function ToolHeaderIcon({
-  tool,
-  size = PANEL_HEADER_ICON.badgeSize,
-}: {
-  tool: ToolId
-  size?: number
-}) {
-  const glyph = Math.round(size * (PANEL_HEADER_ICON.glyphSize / PANEL_HEADER_ICON.badgeSize))
-  return (
-    <NavyHeaderBadge size={size}>
-      {tool === 'ai'
-        ? <InlineChatIcon size={glyph} strokeWidth={2} color="#fff" />
-        : renderToolIcon(tool, glyph)}
-    </NavyHeaderBadge>
-  )
 }

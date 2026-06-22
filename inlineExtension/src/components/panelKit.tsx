@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type CSSProperties } from 'react'
 import { InlineChatBadge } from './InlineChatIcon'
 import { ToolHeaderIcon, type ToolId } from './toolIcons'
-import { PANEL as C, CHAT, FONT, BRAND_GRADIENT } from '../lib/extensionTheme'
+import { PANEL as C, CHAT, FONT, BRAND_GRADIENT, PANEL_HEADER_ICON } from '../lib/extensionTheme'
 
 /**
  * Inline panel design system.
@@ -119,10 +119,10 @@ export function PanelShell({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           {headerLeading}
           {useChatBrand
-            ? <InlineChatBadge size={24} iconSize={13} />
+            ? <InlineChatBadge />
             : tool
-              ? <ToolHeaderIcon tool={tool} size={24} />
-              : <BrandMark size={24} />}
+              ? <ToolHeaderIcon tool={tool} />
+              : <BrandMark size={PANEL_HEADER_ICON.badgeSize} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
               fontSize: 14,
@@ -368,7 +368,7 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
 }
 
 const IArrowUp = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 19V5M5 12l7-7 7 7" />
   </svg>
 )
@@ -441,7 +441,7 @@ export function Composer({
             aria-label="Send"
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 36, height: 36, borderRadius: C.radiusPill, border: 'none',
+              width: 30, height: 30, borderRadius: C.radiusPill, border: 'none',
               background: canSend ? CHAT.send : C.surfaceMuted,
               color: canSend ? '#fff' : C.textMuted,
               cursor: canSend ? 'pointer' : 'not-allowed', flexShrink: 0,

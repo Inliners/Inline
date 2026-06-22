@@ -1,4 +1,5 @@
 import { Reveal, SectionHeading } from '@/components/marketing/primitives/Reveal'
+import { mktCardSolid } from '@/components/marketing/marketingSurfaces'
 
 /**
  * #faq — native <details>/<summary> accordion: keyboard accessible, no JS,
@@ -38,17 +39,17 @@ const FAQS: { q: string; a: string }[] = [
 
 export default function FaqSection() {
   return (
-    <section id="faq" className="scroll-mt-24 bg-white py-24 md:py-32">
+    <section id="faq" className="scroll-mt-24 bg-[#EFE8DC] py-24 md:py-32">
       <div className="mx-auto max-w-3xl px-6 lg:px-10">
         <SectionHeading eyebrow="FAQ" title="Questions, answered plainly" />
         <Reveal className="mt-12" delay={0.08}>
-          <div className="divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white">
+          <div className={`divide-y divide-[#d6d3d1] ${mktCardSolid}`}>
             {FAQS.map(f => (
-              <details key={f.q} className="group px-6 py-4 open:bg-[#F7F7F5]">
+              <details key={f.q} className="group px-6 py-4 open:bg-[#F4F4F2]/60">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-[#1C1E26] [&::-webkit-details-marker]:hidden">
                   {f.q}
                   <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 text-stone-400 transition-transform group-open:rotate-45"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#d6d3d1] text-[#78716c] transition-transform group-open:rotate-45"
                     aria-hidden
                   >
                     +

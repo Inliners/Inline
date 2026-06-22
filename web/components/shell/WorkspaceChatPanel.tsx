@@ -928,13 +928,13 @@ export default function WorkspaceChatPanel() {
                       type="button"
                       onClick={() => void send()}
                       disabled={loading || !input.trim()}
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#2f80ed] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#2f80ed] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
                       aria-label="Send message"
                     >
                       {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <ArrowUp className="h-4 w-4" />
+                        <ArrowUp className="h-3.5 w-3.5" />
                       )}
                     </button>
                   </div>

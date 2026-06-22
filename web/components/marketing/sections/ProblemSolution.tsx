@@ -11,6 +11,7 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { Reveal, SectionHeading } from '@/components/marketing/primitives/Reveal'
+import { mktCard } from '@/components/marketing/marketingSurfaces'
 
 /**
  * Problem → Solution narrative. Anchored as #product (the "Product" nav link).
@@ -50,7 +51,7 @@ const SOLUTIONS = [
 
 export default function ProblemSolution() {
   return (
-    <section id="product" className="scroll-mt-24 bg-white py-24 md:py-32">
+    <section id="product" className="scroll-mt-24 bg-[#FAF5EE] py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <SectionHeading
           eyebrow="The problem"
@@ -61,8 +62,8 @@ export default function ProblemSolution() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PROBLEMS.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.06}>
-              <div className="h-full rounded-2xl border border-stone-200/80 bg-white p-6">
-                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[#F5EDE3] text-[#1C1E26]">
+              <div className={`h-full ${mktCard}`}>
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-[#d6d3d1] bg-[#F4F4F2] text-[#1C1E26]">
                   <p.icon className="h-4.5 w-4.5" aria-hidden />
                 </div>
                 <h3 className="text-sm font-semibold text-[#1C1E26]">{p.title}</h3>
@@ -83,7 +84,7 @@ export default function ProblemSolution() {
             {SOLUTIONS.map((s, i) => (
               <Reveal key={s.label} delay={i * 0.05}>
                 <div className="flex items-start gap-4">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C9DAF0] bg-[#EBF1F7] text-[#4B83C4]">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#d6d3d1] bg-white text-[#4B83C4]">
                     <s.icon className="h-4 w-4" aria-hidden />
                   </div>
                   <div>
@@ -97,7 +98,7 @@ export default function ProblemSolution() {
         </div>
 
         <Reveal className="mt-16 flex justify-center" delay={0.1}>
-          <p className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-600">
+          <p className="flex items-center gap-2 rounded-full border border-[#d6d3d1] bg-white px-5 py-2 text-sm text-[#78716c]">
             <Sparkles className="h-3.5 w-3.5 text-[#4B83C4]" aria-hidden />
             Turn scattered tabs into a searchable workspace.
           </p>

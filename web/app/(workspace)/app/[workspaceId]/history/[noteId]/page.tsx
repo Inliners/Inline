@@ -3,6 +3,7 @@ import { fetchNoteById, fetchExtractionsForNote } from '@/lib/data'
 import { ArrowLeft, Globe, Calendar, Tag, MapPin, FileText } from 'lucide-react'
 import CreateDocFromNoteCTA from './CreateDocFromNoteCTA'
 import { prettyNotePreview } from '@/lib/note-preview'
+import { truncateDisplayUrl } from '@/lib/utils'
 
 export default async function NoteDetailPage({
   params,
@@ -59,7 +60,17 @@ export default async function NoteDetailPage({
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
             {note.pageTitle || 'Untitled note'}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{note.pageUrl}</p>
+          {note.pageUrl && (
+            <a
+              href={note.pageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block max-w-full truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
+              title={note.pageUrl}
+            >
+              {truncateDisplayUrl(note.pageUrl)}
+            </a>
+          )}
         </div>
 
         {/* Metadata grid */}
