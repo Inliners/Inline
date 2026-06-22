@@ -49,7 +49,7 @@ function NoteCaptureCard({
 
   return (
     <div className={cn(
-      'relative shrink-0 w-full rounded-2xl p-5 flex flex-col justify-between h-40',
+      'relative shrink-0 w-[240px] sm:w-[260px] rounded-2xl p-5 flex flex-col justify-between h-40 snap-start',
       'cursor-pointer border border-border transition-colors hover:border-stone-400/50',
       bg,
     )}>
@@ -128,7 +128,7 @@ export default function PinnedCapturesRow({
       const { _effectivePin: _ignored, ...clean } = n as Note & { _effectivePin?: boolean }
       deduped.push(clean)
     }
-    return deduped.slice(0, 12)
+    return deduped
   }, [initialNotes, pinnedIds])
 
   if (!displayNotes.length) {
@@ -142,20 +142,22 @@ export default function PinnedCapturesRow({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-      {displayNotes.slice(0, 8).map((note, i) => (
-        <NoteCaptureCard
-          key={note.id}
-          note={note}
-          workspaceId={workspaceId}
-          pinned={isPinnedNote(workspaceId, note.id, note.is_pinned)}
-          onTogglePin={() => {
-            togglePinnedNote(workspaceId, note.id)
-            refreshPins()
-          }}
-          index={i}
-        />
-      ))}
+    <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal">
+      <div className="flex w-max min-w-full snap-x snap-mandatory gap-4 pr-4">
+        {displayNotes.map((note, i) => (
+          <NoteCaptureCard
+            key={note.id}
+            note={note}
+            workspaceId={workspaceId}
+            pinned={isPinnedNote(workspaceId, note.id, note.is_pinned)}
+            onTogglePin={() => {
+              togglePinnedNote(workspaceId, note.id)
+              refreshPins()
+            }}
+            index={i}
+          />
+        ))}
+      </div>
     </div>
   )
 }

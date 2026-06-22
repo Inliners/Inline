@@ -13,7 +13,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import {
-  LayoutDashboard, Clock, Map, Share2, Settings,
+  LayoutDashboard, Clock, Settings,
   FileText, Loader2, Download, BarChart3, UserRound,
 } from 'lucide-react'
 
@@ -21,8 +21,6 @@ const NAV_COMMANDS = [
   { label: 'Home',            icon: LayoutDashboard, path: 'dashboard', shortcut: 'G D' },
   { label: 'Captures',        icon: Clock,           path: 'history',   shortcut: 'G H' },
   { label: 'Analytics',       icon: BarChart3,       path: 'analytics', shortcut: ''    },
-  { label: 'Spatial map',     icon: Map,             path: 'map',       shortcut: 'G M' },
-  { label: 'Knowledge graph', icon: Share2,          path: 'graph',     shortcut: 'G G' },
   { label: 'Settings',        icon: Settings,        path: 'settings',  shortcut: ''    },
 ]
 

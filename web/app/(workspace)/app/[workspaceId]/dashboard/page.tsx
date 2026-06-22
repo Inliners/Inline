@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import {
   BarChart2, BookMarked, Globe, BrainCircuit, Flame,
-  Sparkles, ChevronRight,
+  ChevronRight,
 } from 'lucide-react'
 import NewDocumentButton from '@/components/dashboard/NewDocumentButton'
 import KpiCard from '@/components/dashboard/KpiCard'
@@ -90,13 +90,6 @@ export default async function WorkspaceDashboardPage({
             <p className="mt-0.5 text-sm text-muted-foreground">Here&apos;s what&apos;s happening in your workspace.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/app/${workspaceId}/workflows`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-stone-400/50 hover:bg-muted/60"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Workflows
-            </Link>
             <Link
               href={`/app/${workspaceId}/history`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"

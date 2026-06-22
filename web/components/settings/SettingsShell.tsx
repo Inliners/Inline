@@ -55,17 +55,17 @@ export default function SettingsShell({
   }, [groups, q])
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-      <div className="w-full max-w-none rounded-[1.75rem] border border-border bg-card overflow-hidden flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
+    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 dark:bg-[#0A1430]">
+      <div className="w-full max-w-none overflow-hidden rounded-2xl border border-border bg-card shadow-[0_18px_60px_-36px_rgba(28,30,38,0.35)] flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
         {/* Top bar */}
-        <header className="shrink-0 flex items-center justify-between gap-4 px-5 py-4 border-b border-border bg-card">
+        <header className="shrink-0 flex h-12 items-center justify-between gap-4 border-b border-border bg-card px-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-              <Settings className="w-5 h-5 text-primary" />
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Settings className="w-3.5 h-3.5 text-primary" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight text-foreground truncate">{title}</h1>
-              {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
+              <h1 className="text-sm font-semibold tracking-tight text-foreground truncate">{title}</h1>
+              {subtitle && <p className="hidden text-xs text-muted-foreground truncate sm:block">{subtitle}</p>}
             </div>
           </div>
           <Link
@@ -78,7 +78,7 @@ export default function SettingsShell({
 
         <div className="flex flex-1 min-h-0">
           {/* Navigation rail — matches app sidebar tokens */}
-          <aside className="w-[220px] shrink-0 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
+          <aside className="w-[240px] shrink-0 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
             <div className="p-3 border-b border-sidebar-border">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -86,7 +86,7 @@ export default function SettingsShell({
                   value={q}
                   onChange={e => setQ(e.target.value)}
                   placeholder="Search settings…"
-                  className="h-8 pl-8 text-xs bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40"
+                  className="h-8 bg-white pl-8 text-xs text-foreground shadow-[0_1px_2px_rgba(28,30,38,0.08)] placeholder:text-muted-foreground focus-visible:ring-primary/40 dark:bg-[#10214A]"
                 />
               </div>
             </div>
@@ -133,12 +133,11 @@ export default function SettingsShell({
           </aside>
 
           {/* Main content */}
-          <main className="flex-1 overflow-y-auto bg-background scrollbar-minimal">
-            <div className="w-full max-w-none px-6 py-8 lg:px-10 lg:py-10">{children}</div>
+          <main className="flex-1 overflow-y-auto bg-white scrollbar-minimal dark:bg-[#0A1430]">
+            <div className="w-full px-6 py-10 lg:px-10">{children}</div>
           </main>
         </div>
       </div>
     </div>
   )
 }
-

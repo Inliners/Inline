@@ -5,13 +5,11 @@
  * When provided, queries are scoped to that workspace via workspace_id = ?.
  * Falls back to MOCK_* data when NEXT_PUBLIC_SUPABASE_URL is not configured.
  */
-import type { Note, DashboardStats, GraphData, MapCoordinate } from './types'
+import type { Note, DashboardStats } from './types'
 import type { Database } from './supabase/types'
 import {
   MOCK_NOTES,
   MOCK_DASHBOARD_STATS,
-  MOCK_GRAPH_DATA,
-  MOCK_MAP_COORDINATES,
 } from './mock-data'
 
 export const HAS_SUPABASE = !!(
@@ -202,146 +200,6 @@ export async function fetchDashboardStats(workspaceId?: string): Promise<Dashboa
 }
 
 // ---------------------------------------------------------------------------
-// Map coordinates (workspace-scoped via note join)
-// ---------------------------------------------------------------------------
-export async function fetchMapCoordinates(workspaceId?: string): Promise<MapCoordinate[]> {
-  if (!HAS_SUPABASE) return MOCK_MAP_COORDINATES
-
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const sb = supabase as any
-  let q = sb.from('notes').select('id, domain, type, content, lat, lng, page_title').not('lat', 'is', null).not('lng', 'is', null)
-  if (workspaceId) q = q.eq('workspace_id', workspaceId)
-  /* eslint-enable @typescript-eslint/no-explicit-any */
-
-  const { data: notesWithGeo } = await q
-
-  if (notesWithGeo && notesWithGeo.length > 0) {
-    return (notesWithGeo as { id: string; domain: string; type: string; content: string; lat: number; lng: number; page_title: string | null }[])
-      .map(n => {
-        const fromTitle = n.page_title?.split('|')[0]?.trim()
-        const locationLabel =
-          fromTitle && fromTitle.length > 2 ? fromTitle.slice(0, 100) : `${n.lat.toFixed(4)}, ${n.lng.toFixed(4)}`
-        const body = n.content
-        return {
-          id:     n.id,
-          lat:    n.lat,
-          lng:    n.lng,
-          noteId: n.id,
-          type:   n.type as MapCoordinate['type'],
-          notePreview: body.length > 120 ? `${body.slice(0, 120)}…` : body,
-          locationLabel,
-          domain: n.domain,
-          color:  n.type === 'canvas' ? '#a855f7' : n.type === 'ai-summary' ? '#5FA8A1' : '#6C91C2',
-        }
-      })
-  }
-
-  // Fallback to spatial_entities table
-  const { data: seRows } = await supabase
-    .from('spatial_entities')
-    .select('id, note_id, raw_address, display_name, lat, lng')
-
-  if (!seRows) return MOCK_MAP_COORDINATES
-
-  return (seRows as { id: string; note_id: string | null; raw_address: string; display_name: string | null; lat: number; lng: number }[])
-    .map(se => {
-      const raw = (se.display_name || '').trim()
-      return {
-        id:     se.id,
-        lat:    se.lat,
-        lng:    se.lng,
-        noteId: se.note_id ?? '',
-        type:   'text' as const,
-        notePreview: raw.length > 120 ? `${raw.slice(0, 120)}…` : raw,
-        locationLabel: se.raw_address,
-        domain: '',
-        color:  '#6C91C2',
-      }
-    })
-}
-
-// ---------------------------------------------------------------------------
-// Graph data (workspace-scoped)
-// ---------------------------------------------------------------------------
-export async function fetchGraphData(workspaceId?: string): Promise<GraphData> {
-  if (!HAS_SUPABASE) return MOCK_GRAPH_DATA
-
-  const notes = await fetchNotes(workspaceId)
-
-  const domainMap: Record<string, number> = {}
-  for (const n of notes) {
-    domainMap[n.domain] = (domainMap[n.domain] ?? 0) + 1
-  }
-
-  const domainNodes = Object.entries(domainMap).map(([domain, count]) => ({
-    id: `url-${domain}`, label: domain, type: 'url' as const,
-    domain, size: Math.min(count * 2 + 8, 28), color: '#6C91C2',
-  }))
-
-  const tagMap: Record<string, number> = {}
-  for (const n of notes) {
-    for (const tag of n.tags) {
-      tagMap[tag] = (tagMap[tag] ?? 0) + 1
-    }
-  }
-  const tagNodes = Object.entries(tagMap).slice(0, 20).map(([tag, count]) => ({
-    id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const,
-    size: Math.min(count + 4, 14), color: '#5FA8A1',
-  }))
-
-  const TYPE_META: Record<string, { color: string; glyph: string; size: number }> = {
-    text:         { color: '#6C91C2', glyph: '📝', size: 5 },
-    canvas:       { color: '#8B5CF6', glyph: '🎨', size: 5 },
-    'ai-summary': { color: '#10B981', glyph: '✨', size: 6 },
-    sticky:       { color: '#F59E0B', glyph: '📌', size: 5 },
-    anchor:       { color: '#D97706', glyph: '⚓', size: 5 },
-    drawing:      { color: '#7C3AED', glyph: '✏️', size: 5 },
-    handwriting:  { color: '#DB2777', glyph: '✍️', size: 5 },
-    highlight:    { color: '#84CC16', glyph: '🖍️', size: 5 },
-    clip:         { color: '#0EA5E9', glyph: '📎', size: 5 },
-    stamp:        { color: '#F43F5E', glyph: '🏷️', size: 5 },
-    'paper-note': { color: '#EA580C', glyph: '📄', size: 5 },
-  }
-
-  const { prettyNotePreviewTruncated } = await import('./note-preview')
-  const noteNodes = notes.slice(0, 30).map(n => {
-    const meta = TYPE_META[n.type] ?? { color: n.color || '#6C91C2', glyph: '•', size: 5 }
-    return {
-      id: n.id,
-      label: prettyNotePreviewTruncated(n, 32),
-      type: 'note' as const,
-      noteType: n.type,
-      glyph: meta.glyph,
-      domain: n.domain,
-      size: meta.size,
-      color: meta.color,
-    }
-  })
-
-  const nodeIdSet = new Set([
-    ...domainNodes.map(n => n.id),
-    ...tagNodes.map(n => n.id),
-    ...noteNodes.map(n => n.id),
-  ])
-
-  const links = [
-    ...notes.slice(0, 30).map(n => ({
-      source: n.id, target: `url-${n.domain}`, strength: 1 as const,
-    })),
-    ...notes.slice(0, 30).flatMap(n =>
-      n.tags.slice(0, 3).map(tag => ({
-        source: n.id, target: `tag-${tag}`, strength: 0.5 as const,
-      })),
-    ),
-  ].filter(l => nodeIdSet.has(l.source) && nodeIdSet.has(l.target))
-
-  return { nodes: [...domainNodes, ...tagNodes, ...noteNodes], links }
-}
-
-// ---------------------------------------------------------------------------
 // Workspace-scoped analytics: daily captures for a rolling N-day window
 // ---------------------------------------------------------------------------
 export async function fetchCaptureTimeSeries(
@@ -402,12 +260,22 @@ export async function fetchNoteById(noteId: string, workspaceId?: string): Promi
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const sb = supabase as any
-  let q = sb.from('notes').select('*').eq('id', noteId)
-  if (workspaceId) q = q.eq('workspace_id', workspaceId)
+
+  async function load(withWorkspace: boolean) {
+    let q = sb.from('notes').select('*').eq('id', noteId)
+    if (withWorkspace && workspaceId) q = q.eq('workspace_id', workspaceId)
+    return q.maybeSingle()
+  }
+
+  let { data, error } = await load(true)
+  if ((!data || error) && workspaceId) {
+    ;({ data, error } = await load(false))
+  }
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  const { data, error } = await q.single()
-  if (error || !data) return null
+  if (error || !data) {
+    return MOCK_NOTES.find(n => n.id === noteId) ?? null
+  }
 
   type NoteRow = Database['public']['Tables']['notes']['Row']
   const n = data as NoteRow

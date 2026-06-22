@@ -26,7 +26,7 @@ export default function Highlighter({ onClose }: HighlighterProps) {
   const activeName = SWATCHES.find(s => s.value === active)?.name ?? 'Yellow'
 
   return (
-    <PanelShell title="Highlight" subtitle="Select text, then pick a colour" chip={activeName} width={296} onClose={onClose}>
+    <PanelShell title="Highlight" subtitle="Select text, then pick a colour" chip={activeName} width={296} tool="highlighter" onClose={onClose}>
       <div style={{ padding: '18px 18px 20px', fontFamily: FONT }}>
         <SectionLabel>Highlight colour</SectionLabel>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>

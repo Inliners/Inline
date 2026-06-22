@@ -51,20 +51,6 @@ export interface Drawing {
   updatedAt: string
 }
 
-export interface MapCoordinate {
-  id: string
-  lat: number
-  lng: number
-  noteId: string
-  type: NoteType
-  /** User note text for the popup body. */
-  notePreview: string
-  /** Place / address line (e.g. raw geocoded address). */
-  locationLabel: string
-  domain: string
-  color: string
-}
-
 export interface DomainStat {
   domain: string
   count: number
@@ -88,34 +74,4 @@ export interface DashboardStats {
   topDomains: DomainStat[]
   /** Counts per notes.type for the active workspace (for pie chart + KPIs). */
   typeCounts?: Partial<Record<NoteType, number>>
-}
-
-export interface GraphNode {
-  id: string
-  label: string
-  type: 'url' | 'note' | 'tag'
-  /** The underlying notes.type when `type === 'note'` — drives glyph/colour. */
-  noteType?: NoteType
-  /** Optional glyph (emoji or short symbol) to render inside the node. */
-  glyph?: string
-  domain?: string
-  size: number
-  color?: string
-  x?: number
-  y?: number
-  vx?: number
-  vy?: number
-  fx?: number
-  fy?: number
-}
-
-export interface GraphLink {
-  source: string | GraphNode
-  target: string | GraphNode
-  strength: number
-}
-
-export interface GraphData {
-  nodes: GraphNode[]
-  links: GraphLink[]
 }

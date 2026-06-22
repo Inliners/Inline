@@ -2,7 +2,7 @@
 /* Base styles for popup route (not used in content script shadow DOM) */
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-family: system-ui, 'Inter', sans-serif;
   margin: 0;
   background: #ffffff;
   color: #0f172a;
@@ -19,7 +19,7 @@ body {
   border-radius: 12px;
   box-shadow: none;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-family: system-ui, 'Inter', sans-serif;
 }
 
 /* Pastel header bar */

@@ -1,19 +1,7 @@
-import { DM_Sans, Caveat } from 'next/font/google'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-dm',
-})
-
-const caveat = Caveat({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  display: 'swap',
-  variable: '--font-handwritten',
-})
+import MarketingHashScroll from '@/components/marketing/MarketingHashScroll'
+import { mkt } from '@/components/marketing/marketingSurfaces'
 
 export default function MarketingLayout({
   children,
@@ -21,8 +9,12 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={`${dmSans.variable} ${caveat.variable} ${dmSans.className} bg-white text-[#1C1E26] min-h-screen antialiased`}>
+    <div
+      className="min-h-screen bg-[#FDFBF7] text-[#1C1E26] antialiased"
+      style={{ backgroundColor: mkt.creamLight }}
+    >
       <MarketingNav />
+      <MarketingHashScroll />
       <main>{children}</main>
       <MarketingFooter />
     </div>

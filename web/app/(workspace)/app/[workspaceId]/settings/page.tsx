@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import PageHeader from '@/components/shell/PageHeader'
+import SettingsShell, { type SettingsNavGroup } from '@/components/settings/SettingsShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -19,22 +19,13 @@ import {
 import {
   Check, Download, Loader2, AlertTriangle,
   Crown, ArrowRight, Folder, ArchiveRestore,
+  UserRound, FolderTree, UsersRound, Bell, Database, Trash2,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types & constants
 // ---------------------------------------------------------------------------
 type Tab = 'identity' | 'library' | 'members' | 'notifications' | 'data' | 'danger'
-
-/** Flat tab list for horizontal nav (order preserved) */
-const WS_TABS: { id: Tab; label: string; danger?: boolean }[] = [
-  { id: 'identity', label: 'General' },
-  { id: 'library', label: 'Folders & documents' },
-  { id: 'members', label: 'Members' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'data', label: 'Data' },
-  { id: 'danger', label: 'Archive & delete', danger: true },
-]
 
 // ---------------------------------------------------------------------------
 // Layout helpers
@@ -585,77 +576,54 @@ export default function WorkspaceSettingsPage() {
     danger:        <DangerTab workspaceId={workspaceId} workspaceName={workspaceName} />,
   }
 
-  const tabDescriptions: Partial<Record<Tab, string>> = {
-    identity: 'Workspace name and color.',
-    library: 'Folders and documents in this workspace.',
-    members: 'Who has access to this workspace.',
-    notifications: 'Email and activity alerts.',
-    data: 'Export and import workspace data.',
-    danger: 'Archive or permanently delete this workspace.',
-  }
+  const settingsGroups: SettingsNavGroup[] = [
+    {
+      label: 'Workspace',
+      items: [
+        { id: 'identity', label: 'General', icon: UserRound },
+        { id: 'library', label: 'Folders and documents', icon: FolderTree },
+        { id: 'members', label: 'Members', icon: UsersRound },
+      ],
+    },
+    {
+      label: 'Data',
+      items: [
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'data', label: 'Export and import', icon: Database },
+      ],
+    },
+    {
+      label: 'Advanced',
+      items: [
+        { id: 'danger', label: 'Archive and delete', icon: Trash2, danger: true },
+      ],
+    },
+  ]
 
   return (
-    <>
-      <PageHeader
-        crumbs={[{ label: workspaceName, href: `/app/${workspaceId}/dashboard` }, { label: 'Settings' }]}
-      />
+    <SettingsShell
+      title={`${workspaceName} Settings`}
+      subtitle="Manage workspace identity, documents, members, and data."
+      groups={settingsGroups}
+      activeId={activeTab}
+      onSelect={id => setActiveTab(id as Tab)}
+    >
+      <div className="mx-auto w-full max-w-3xl space-y-8">
 
-      <div className="px-6 pb-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground mt-4">
-          {workspaceName} Settings
-        </h1>
-
-        <p className="mt-4 rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">AI &amp; Voice, ElevenLabs, and the browser extension</span>{' '}
-          are configured in{' '}
+        <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground">AI, voice, and extension preferences</span>{' '}
+          live in{' '}
           <Link
             href="/app/settings?tab=ai-voice"
             className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
           >
-            Account settings → AI &amp; Voice
+            Account settings
           </Link>
-          . This page only covers options for <em>this workspace</em> (folders, members, etc.).
+          . These controls only affect this workspace.
         </p>
 
-        <nav
-          className="mt-6 flex gap-1 overflow-x-auto scrollbar-minimal border-b border-border -mb-px pb-px"
-          aria-label="Workspace settings sections"
-        >
-          {WS_TABS.map(tab => {
-            const active = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'shrink-0 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap',
-                  tab.danger
-                    ? active
-                      ? 'border-destructive text-destructive'
-                      : 'border-transparent text-destructive/80 hover:text-destructive'
-                    : active
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            )
-          })}
-        </nav>
-
-        <div className="mt-8 w-full space-y-2">
-          <h2 className="text-base font-semibold text-foreground">
-            {WS_TABS.find(t => t.id === activeTab)?.label}
-          </h2>
-          {tabDescriptions[activeTab] && (
-            <p className="text-sm text-muted-foreground">{tabDescriptions[activeTab]}</p>
-          )}
-        </div>
-
-        <div className="mt-6 w-full space-y-8">{TabContent[activeTab]}</div>
+        {TabContent[activeTab]}
       </div>
-    </>
+    </SettingsShell>
   )
 }

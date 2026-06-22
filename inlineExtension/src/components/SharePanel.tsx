@@ -72,6 +72,7 @@ export default function SharePanel({ onClose }: SharePanelProps) {
       title="Share"
       subtitle="Create a public view-only link"
       width={318}
+      tool="share"
       onClose={onClose}
       footer={!shareUrl ? (
         <div style={{ padding: '12px 16px' }}>

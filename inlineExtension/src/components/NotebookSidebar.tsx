@@ -111,7 +111,7 @@ export default function NotebookSidebar({ onClose }: NotebookSidebarProps) {
         padding: '16px 14px 12px', background: 'transparent',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 600, color: S.text, letterSpacing: '-0.01em' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, background: '#0B1735' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: '#0B1735' }}>
             <span style={{ display: 'block', width: 3, height: 11, borderRadius: 2, background: '#fff', transform: 'rotate(-12deg)' }} />
           </span>
           Notebooks
@@ -160,8 +160,8 @@ export default function NotebookSidebar({ onClose }: NotebookSidebarProps) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, width: '100%',
                 padding: '6px 6px', border: 'none', background: 'transparent',
-                cursor: 'pointer', fontSize: 11, fontWeight: 600, color: S.textMuted,
-                textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: FONT,
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, color: S.textMuted,
+                textTransform: 'none', letterSpacing: 0, fontFamily: FONT,
               }}
             >
               {domain}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { PANEL as C } from '../lib/extensionTheme'
 import { PanelShell, SectionLabel, Segmented } from './panelKit'
 import { ensureDrawCanvas, restoreDrawings, clearAllDrawings, setDrawHitTesting } from '../content/drawingsRestore'
+import { emitSaveToast } from '../lib/saveToast'
 
 type Tool = 'pen' | 'marker' | 'arrow' | 'rectangle' | 'ellipse' | 'eraser' | 'lasso'
 
@@ -521,7 +522,10 @@ export default function Draw({ onClose }: DrawProps) {
               clearedAt: serialized.length === 0 ? Date.now() : null,
             },
           },
-          () => { if (chrome.runtime.lastError) { /* ignore */ } },
+          (response) => {
+            if (chrome.runtime.lastError) return
+            emitSaveToast(response)
+          },
         )
       } catch { /* extension context unavailable */ }
     }
@@ -704,7 +708,7 @@ export default function Draw({ onClose }: DrawProps) {
   const activeLabel = tools.find(t => t.id === tool)?.label ?? 'Pen'
 
   return (
-    <PanelShell title="Draw" subtitle="Annotate directly on the page" chip={activeLabel} width={290} onClose={onClose}>
+    <PanelShell title="Draw" subtitle="Annotate directly on the page" chip={activeLabel} width={290} tool="draw" onClose={onClose}>
       <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Tools */}
         <div>

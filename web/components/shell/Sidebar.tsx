@@ -4,15 +4,21 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Clock, Map, Share2, Settings, LogOut,
+  LayoutDashboard, Clock, Settings, LogOut,
   Search, Plus, UserPlus, Zap, Megaphone, Package, TrendingUp,
   FolderKanban, Lightbulb, Star, X, Check, PanelLeftClose,
   ChevronDown, BarChart2, Folder, FolderPlus, ChevronRight,
-  FileText, FilePlus,
+  FileText, FilePlus, GripVertical, RefreshCw,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { DEFAULT_WORKSPACES } from '@/lib/workspaces'
 import { useSidebar } from '@/lib/sidebar-context'
 import { signOut } from '@/lib/actions/auth'
@@ -49,9 +55,6 @@ const FEATURES = [
   { href: (ws: string) => `/app/${ws}/dashboard`,  icon: LayoutDashboard, label: 'Home'            },
   { href: (ws: string) => `/app/${ws}/history`,    icon: Clock,           label: 'Captures'        },
   { href: (ws: string) => `/app/${ws}/analytics`,  icon: BarChart2,       label: 'Analytics'       },
-  { href: (ws: string) => `/app/${ws}/workflows`,  icon: Zap,             label: 'Workflows'       },
-  { href: (ws: string) => `/app/${ws}/map`,         icon: Map,             label: 'Spatial map'     },
-  { href: (ws: string) => `/app/${ws}/graph`,       icon: Share2,          label: 'Knowledge graph' },
   { href: (ws: string) => `/app/${ws}/settings`,    icon: Settings,        label: 'Settings'        },
 ]
 
@@ -72,6 +75,29 @@ function saveFavorites(favs: string[]) { localStorage.setItem('inline-favorites'
 function getActiveWorkspace(pathname: string): string {
   const m = pathname.match(/\/app\/(ws-[^/]+)/)
   return m ? m[1] : 'ws-1'
+}
+
+function isMacPlatform() {
+  if (typeof navigator === 'undefined') return true
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+}
+
+function workspaceShortcutLabel(index: number) {
+  return isMacPlatform() ? `⌘${index + 1}` : `Ctrl+${index + 1}`
+}
+
+function WorkspaceIcon({ ws, size = 'md' }: { ws: WorkspaceItem; size?: 'sm' | 'md' }) {
+  const Icon = ICON_MAP[ws.icon] ?? Zap
+  const box = size === 'sm' ? 'h-5 w-5' : 'h-6 w-6'
+  const icon = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3'
+  return (
+    <span
+      className={cn(box, 'flex shrink-0 items-center justify-center rounded-md')}
+      style={{ background: `${ws.color}22` }}
+    >
+      <Icon className={cn(icon, 'shrink-0')} style={{ color: ws.color }} />
+    </span>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -396,15 +422,14 @@ export default function Sidebar() {
   const [workspaces,         setWorkspaces]         = useState<WorkspaceItem[]>(DEFAULT_WORKSPACES)
   const [favorites,          setFavorites]          = useState<string[]>([])
   const [folders,            setFolders]            = useState<WorkspaceFolder[]>([])
-  const [addingWs,           setAddingWs]           = useState(false)
   const [newWsName,          setNewWsName]          = useState('')
   const [inviteOpen,         setInviteOpen]         = useState(false)
   const [addingFolderForWs,  setAddingFolderForWs]  = useState<string | null>(null)
   const [newFolderName,      setNewFolderName]      = useState('')
   const [addingSubfolderParentId, setAddingSubfolderParentId] = useState<string | null>(null)
   const [newSubfolderName,   setNewSubfolderName]   = useState('')
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<Record<string, boolean>>({})
   const [expandedFolders,   setExpandedFolders]   = useState<Record<string, boolean>>({})
+  const [creatingWorkspaceInMenu, setCreatingWorkspaceInMenu] = useState(false)
   const [libraryDocs,       setLibraryDocs]       = useState<FolderDocument[]>([])
   const [userName,  setUserName]  = useState('User')
   const [userEmail, setUserEmail] = useState('')
@@ -417,14 +442,24 @@ export default function Sidebar() {
 
   // Accordion expanded state per section
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    favorites: true, features: true, workspaces: true,
+    favorites: true, features: true, folders: true,
   })
   function toggleSection(key: string) {
     setExpandedSections(p => ({ ...p, [key]: !p[key] }))
   }
 
-  function toggleWsExpand(wsId: string) {
-    setExpandedWorkspaces(p => ({ ...p, [wsId]: !p[wsId] }))
+  const activeWorkspace = workspaces.find(ws => ws.id === activeWsId) ?? workspaces[0]
+
+  function switchWorkspace(wsId: string) {
+    if (wsId === activeWsId) return
+    const segments = pathname.split('/')
+    const appIdx = segments.indexOf('app')
+    if (appIdx >= 0 && segments[appIdx + 1]?.startsWith('ws-')) {
+      segments[appIdx + 1] = wsId
+      router.push(segments.join('/') || `/app/${wsId}/dashboard`)
+      return
+    }
+    router.push(`/app/${wsId}/dashboard`)
   }
 
   function refreshLibraryDocs() {
@@ -470,8 +505,8 @@ export default function Sidebar() {
     }
   }, [])
   useEffect(() => {
-    if (addingWs) setTimeout(() => newWsRef.current?.focus(), 50)
-  }, [addingWs])
+    if (creatingWorkspaceInMenu) setTimeout(() => newWsRef.current?.focus(), 50)
+  }, [creatingWorkspaceInMenu])
 
   function toggleFavorite(wsId: string) {
     setFavorites(prev => {
@@ -481,15 +516,35 @@ export default function Sidebar() {
     })
   }
 
-  function addWorkspace() {
+  function addWorkspace(andNavigate = false) {
     const name = newWsName.trim()
-    if (!name) { setAddingWs(false); return }
+    if (!name) {
+      setCreatingWorkspaceInMenu(false)
+      return
+    }
     const idx = workspaces.length % DEFAULT_ICON_KEYS.length
     const ws: WorkspaceItem = { id: `ws-${Date.now()}`, label: name, color: DEFAULT_COLORS[idx], icon: DEFAULT_ICON_KEYS[idx] }
     const next = [...workspaces, ws]
-    setWorkspaces(next); saveWorkspaces(next)
-    setNewWsName(''); setAddingWs(false)
+    setWorkspaces(next)
+    saveWorkspaces(next)
+    setNewWsName('')
+    setCreatingWorkspaceInMenu(false)
+    if (andNavigate) router.push(`/app/${ws.id}/dashboard`)
   }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return
+      const num = Number.parseInt(e.key, 10)
+      if (num < 1 || num > 9) return
+      const ws = workspaces[num - 1]
+      if (!ws) return
+      e.preventDefault()
+      switchWorkspace(ws.id)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [workspaces, pathname, activeWsId])
 
   useEffect(() => {
     if (addingFolderForWs) setTimeout(() => newFolderRef.current?.focus(), 50)
@@ -546,6 +601,88 @@ export default function Sidebar() {
   }
 
   const favoritedWorkspaces = workspaces.filter(ws => favorites.includes(ws.id))
+  const activeRootFolders = getRootFolders(folders, activeWsId)
+  const isAddingActiveFolder = addingFolderForWs === activeWsId
+
+  const workspaceMenuContent = (
+    <>
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {userEmail || 'Signed in'}
+        </span>
+        <Link
+          href="/app/account"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="Account settings"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <DropdownMenuSeparator className="mx-0" />
+      <div className="py-1">
+        {workspaces.map((ws, index) => {
+          const isActive = ws.id === activeWsId
+          return (
+            <button
+              key={ws.id}
+              type="button"
+              onClick={() => switchWorkspace(ws.id)}
+              className={cn(
+                'flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/70',
+                isActive && 'bg-muted/50',
+              )}
+            >
+              <GripVertical className="h-3.5 w-3.5 shrink-0 text-stone-300 dark:text-[#5A7BB5]" aria-hidden />
+              <WorkspaceIcon ws={ws} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-foreground">{ws.label}</span>
+              {isActive ? (
+                <Check className="h-4 w-4 shrink-0 text-foreground" />
+              ) : index < 9 ? (
+                <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {workspaceShortcutLabel(index)}
+                </kbd>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
+      <DropdownMenuSeparator className="mx-0" />
+      {creatingWorkspaceInMenu ? (
+        <div className="flex items-center gap-1.5 px-2 py-2">
+          <input
+            ref={newWsRef}
+            className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Workspace name…"
+            value={newWsName}
+            onChange={e => setNewWsName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') addWorkspace(true)
+              if (e.key === 'Escape') {
+                setCreatingWorkspaceInMenu(false)
+                setNewWsName('')
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => addWorkspace(true)}
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCreatingWorkspaceInMenu(true)}
+          className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+        >
+          <Plus className="h-4 w-4 shrink-0" />
+          <span>New workspace</span>
+        </button>
+      )}
+    </>
+  )
 
   return (
     <>
@@ -555,38 +692,55 @@ export default function Sidebar() {
         style={{ willChange: 'width' }}
         className="relative h-screen flex flex-col bg-[#FDFBF7] border-r border-stone-200/60 overflow-hidden shrink-0 select-none dark:bg-[#0D1B3C] dark:border-[#263E7A]"
       >
-        {/* ── Logo + sidebar collapse only (activity panel toggle lives on main content) ── */}
+        {/* ── Workspace switcher + sidebar collapse ── */}
         <div
           className={cn(
-            'h-[52px] flex shrink-0 items-center border-b border-stone-200 dark:border-[#263E7A]',
-            collapsed ? 'justify-center px-0' : 'gap-2 px-3',
+            'flex h-[52px] shrink-0 items-center border-b border-stone-200 dark:border-[#263E7A]',
+            collapsed ? 'justify-center px-0' : 'gap-1.5 px-2',
           )}
         >
-          {!collapsed && (
-            <div className="min-w-0 flex-1 overflow-hidden transition-[opacity,max-width] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]">
-              <Link href="/" className="flex cursor-pointer items-center gap-2 transition-opacity hover:opacity-80">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#1C1E26]">
-                  <span className="block h-3 w-0.5 -rotate-12 rounded-full bg-white" />
-                </div>
-                <span className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-stone-800 dark:text-white">
-                  inline
-                </span>
-              </Link>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <motion.div
-              animate={{ rotate: collapsed ? 180 : 0 }}
-              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+              title="Expand sidebar"
             >
-              <PanelLeftClose className="h-4 w-4" />
-            </motion.div>
-          </button>
+              <PanelLeftClose className="h-4 w-4 rotate-180" />
+            </button>
+          ) : (
+            <>
+              {activeWorkspace && (
+                <DropdownMenu onOpenChange={open => { if (!open) setCreatingWorkspaceInMenu(false) }}>
+                  <DropdownMenuTrigger
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-stone-100 dark:hover:bg-[#17296B]"
+                    aria-label="Switch workspace"
+                  >
+                    <WorkspaceIcon ws={activeWorkspace} />
+                    <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-stone-800 dark:text-white">
+                      {activeWorkspace.label}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-stone-400 dark:text-[#9BBCE5]" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    sideOffset={6}
+                    className="w-[min(280px,calc(100vw-24px))] rounded-lg border border-border bg-card p-0 shadow-[0_22px_70px_-42px_rgba(28,30,38,0.38)]"
+                  >
+                    {workspaceMenuContent}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* ── Search ── */}
@@ -594,7 +748,7 @@ export default function Sidebar() {
           {collapsed ? (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('inline-open-cmd'))}
-              className="w-10 h-10 aspect-square rounded-md flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+              className="w-10 h-10 aspect-square rounded-md flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:hover:bg-[#17296B] dark:hover:text-white"
               title="Search (Ctrl+K)"
             >
               <Search className="w-4 h-4" />
@@ -646,151 +800,81 @@ export default function Sidebar() {
             })}
           </nav>
 
-          {/* Workspaces — collapsible */}
+          {/* Folders — active workspace only */}
           <SectionLabel
-            label="Workspaces" collapsed={collapsed}
-            expanded={expandedSections.workspaces} onToggle={() => toggleSection('workspaces')}
+            label="Folders"
+            collapsed={collapsed}
+            expanded={expandedSections.folders}
+            onToggle={() => toggleSection('folders')}
             action={
-              <button className="w-5 h-5 rounded flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
-                onClick={() => setAddingWs(true)} title="New workspace">
-                <Plus className="w-3 h-3" />
-              </button>
+              !collapsed ? (
+                <button
+                  type="button"
+                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+                  onClick={() => setAddingFolderForWs(activeWsId)}
+                  title="New folder"
+                >
+                  <FolderPlus className="h-3 w-3" />
+                </button>
+              ) : undefined
             }
           />
-          <div className="overflow-hidden transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
-            style={{ maxHeight: (collapsed || expandedSections.workspaces) ? 900 : 0, opacity: (collapsed || expandedSections.workspaces) ? 1 : 0 }}>
-            {workspaces.map(ws => {
-              const Icon        = ICON_MAP[ws.icon] ?? Zap
-              const wsExpanded  = expandedWorkspaces[ws.id] ?? false
-              const wsRootFolders = getRootFolders(folders, ws.id)
-              const isActive    = activeWsId === ws.id
-              const isAddingHere = addingFolderForWs === ws.id
-
-              const canExpand = wsRootFolders.length > 0 || isAddingHere
-
-              return (
-                <div key={ws.id}>
-                  {/* Workspace row — clicking always navigates to the workspace
-                      Home. Folder disclosure is a separate chevron control so
-                      the row never behaves like a dropdown. */}
-                  <div className="group/row relative flex items-center">
-                    {/* Disclosure chevron (expanded view only). Reserves the
-                        same gutter even without folders so labels stay aligned. */}
-                    {!collapsed && (
-                      canExpand ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleWsExpand(ws.id)}
-                          aria-label={wsExpanded ? `Collapse ${ws.label} folders` : `Expand ${ws.label} folders`}
-                          className="w-4 h-7 shrink-0 flex items-center justify-center rounded text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-                        >
-                          <ChevronRight className={cn('w-3 h-3 transition-transform duration-150', wsExpanded && 'rotate-90')} />
-                        </button>
-                      ) : (
-                        <span className="w-4 shrink-0" aria-hidden />
-                      )
-                    )}
-                    <Link
-                      href={`/app/${ws.id}/home`}
-                      aria-current={isActive ? 'page' : undefined}
-                      className={cn(
-                        collapsed
-                          ? 'w-10 h-10 aspect-square rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0'
-                          : 'flex flex-1 items-center gap-2.5 px-2 py-[7px] rounded-lg text-sm transition-all cursor-pointer min-w-0',
-                        isActive
-                          ? 'bg-[#F1F1EF] text-[#37352F] font-semibold dark:bg-[#1B326D] dark:text-white'
-                          : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100 dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B]',
-                      )}
-                    >
-                      <span className="w-4 h-4 rounded-md flex items-center justify-center shrink-0" style={{ background: ws.color + '22' }}>
-                        <Icon className="w-3 h-3 shrink-0" style={{ color: ws.color }} />
-                      </span>
-                      <span
-                        className="flex-1 overflow-hidden whitespace-nowrap truncate min-w-0 transition-[opacity,max-width] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
-                        style={{ maxWidth: collapsed ? 0 : 120, opacity: collapsed ? 0 : 1 }}
-                      >
-                        {ws.label}
-                      </span>
-                    </Link>
-                    {!collapsed && (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity pr-1 shrink-0">
-                        {/* Add folder */}
-                        <button onClick={e => { e.preventDefault(); e.stopPropagation(); setAddingFolderForWs(ws.id); setExpandedWorkspaces(p => ({ ...p, [ws.id]: true })) }}
-                          className="w-5 h-5 flex items-center justify-center rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B]" title="New folder" aria-label={`New folder in ${ws.label}`}>
-                          <FolderPlus className="w-3 h-3" />
-                        </button>
-                        {/* Star */}
-                        <button onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(ws.id) }}
-                          className="w-5 h-5 flex items-center justify-center rounded transition-colors cursor-pointer"
-                          title={favorites.includes(ws.id) ? 'Unpin' : 'Pin to Favorites'}
-                          aria-label={favorites.includes(ws.id) ? `Unpin ${ws.label}` : `Pin ${ws.label} to favorites`}>
-                          <Star className={cn('w-3 h-3 transition-colors', favorites.includes(ws.id) ? 'fill-amber-400 text-amber-400' : 'text-stone-400 hover:text-amber-400')} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Folders sub-section */}
-                  {!collapsed && (wsRootFolders.length > 0 || isAddingHere) && (
-                    <div className="overflow-hidden transition-[max-height,opacity] duration-[200ms] ease-[cubic-bezier(.4,0,.2,1)] ml-3 pl-2 border-l border-stone-200/50"
-                      style={{ maxHeight: wsExpanded ? 400 : 0, opacity: wsExpanded ? 1 : 0 }}>
-                      {wsRootFolders.map(folder => (
-                        <SidebarFolderNode
-                          key={folder.id}
-                          folder={folder}
-                          wsId={ws.id}
-                          depth={0}
-                          allFolders={folders}
-                          libraryDocs={libraryDocs}
-                          expandedFolders={expandedFolders}
-                          toggleFolderExpand={toggleFolderExpand}
-                          folderDocsOpen={folderDocsOpen}
-                          newDocumentInFolder={newDocumentInFolder}
-                          deleteFolderCascade={deleteFolderCascade}
-                          addingSubfolderParentId={addingSubfolderParentId}
-                          setAddingSubfolderParentId={setAddingSubfolderParentId}
-                          newSubfolderName={newSubfolderName}
-                          setNewSubfolderName={setNewSubfolderName}
-                          newSubfolderRef={newSubfolderRef}
-                          addSubfolder={addSubfolder}
-                          ensureFolderOpen={ensureFolderOpen}
-                        />
-                      ))}
-                      {isAddingHere && (
-                        <div className="flex items-center gap-1 px-1 py-0.5">
-                          <Folder className="w-3 h-3 text-stone-300 shrink-0" />
-                          <input ref={newFolderRef}
-                            className="flex-1 text-xs h-6 px-1.5 rounded border border-[#D3D1CB] bg-white focus:outline-none focus:ring-1 focus:ring-[#C4D4E4]"
-                            placeholder="Folder name…"
-                            value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') addFolder(ws.id)
-                              if (e.key === 'Escape') { setAddingFolderForWs(null); setNewFolderName('') }
-                            }}
-                            onBlur={() => setTimeout(() => { setAddingFolderForWs(null); setNewFolderName('') }, 150)}
-                          />
-                          <button onClick={() => addFolder(ws.id)} className="w-5 h-5 flex items-center justify-center rounded text-[#37352F] hover:bg-[#F1F1EF] cursor-pointer">
-                            <Check className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-            {addingWs && !collapsed && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 mt-0.5">
-                <input ref={newWsRef}
-                  className="flex-1 text-xs h-7 px-2 rounded-md border border-[#D3D1CB] bg-white focus:outline-none focus:ring-2 focus:ring-[#C4D4E4]"
-                  placeholder="Workspace name…" value={newWsName} onChange={e => setNewWsName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') addWorkspace(); if (e.key === 'Escape') { setAddingWs(false); setNewWsName('') } }}
-                  onBlur={() => setTimeout(() => { setAddingWs(false); setNewWsName('') }, 150)} />
-                <button onClick={addWorkspace} className="w-6 h-6 flex items-center justify-center rounded text-[#37352F] hover:bg-[#F1F1EF] transition-colors cursor-pointer">
-                  <Check className="w-3 h-3" />
-                </button>
-                <button onClick={() => { setAddingWs(false); setNewWsName('') }} className="w-6 h-6 flex items-center justify-center rounded text-stone-400 hover:bg-stone-100 transition-colors cursor-pointer">
-                  <X className="w-3 h-3" />
+          <div
+            className="overflow-hidden transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{
+              maxHeight: (collapsed || expandedSections.folders) ? 900 : 0,
+              opacity: (collapsed || expandedSections.folders) ? 1 : 0,
+            }}
+          >
+            {!collapsed && activeRootFolders.map(folder => (
+              <SidebarFolderNode
+                key={folder.id}
+                folder={folder}
+                wsId={activeWsId}
+                depth={0}
+                allFolders={folders}
+                libraryDocs={libraryDocs}
+                expandedFolders={expandedFolders}
+                toggleFolderExpand={toggleFolderExpand}
+                folderDocsOpen={folderDocsOpen}
+                newDocumentInFolder={newDocumentInFolder}
+                deleteFolderCascade={deleteFolderCascade}
+                addingSubfolderParentId={addingSubfolderParentId}
+                setAddingSubfolderParentId={setAddingSubfolderParentId}
+                newSubfolderName={newSubfolderName}
+                setNewSubfolderName={setNewSubfolderName}
+                newSubfolderRef={newSubfolderRef}
+                addSubfolder={addSubfolder}
+                ensureFolderOpen={ensureFolderOpen}
+              />
+            ))}
+            {!collapsed && isAddingActiveFolder && (
+              <div className="mt-0.5 flex items-center gap-1 px-1 py-0.5">
+                <Folder className="h-3 w-3 shrink-0 text-stone-300" />
+                <input
+                  ref={newFolderRef}
+                  className="h-6 flex-1 rounded border border-[#D3D1CB] bg-white px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#C4D4E4]"
+                  placeholder="Folder name…"
+                  value={newFolderName}
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addFolder(activeWsId)
+                    if (e.key === 'Escape') {
+                      setAddingFolderForWs(null)
+                      setNewFolderName('')
+                    }
+                  }}
+                  onBlur={() => setTimeout(() => {
+                    setAddingFolderForWs(null)
+                    setNewFolderName('')
+                  }, 150)}
+                />
+                <button
+                  type="button"
+                  onClick={() => addFolder(activeWsId)}
+                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-[#37352F] hover:bg-[#F1F1EF]"
+                >
+                  <Check className="h-2.5 w-2.5" />
                 </button>
               </div>
             )}

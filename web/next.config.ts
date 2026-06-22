@@ -28,8 +28,6 @@ const nextConfig: NextConfig = {
     return [
       { source: '/dashboard',       destination: '/app/dashboard', permanent: false },
       { source: '/settings',        destination: '/app/settings',  permanent: false },
-      { source: '/map',             destination: '/app/map',       permanent: false },
-      { source: '/graph',           destination: '/app/graph',     permanent: false },
       { source: '/history',         destination: '/app/history',   permanent: false },
       { source: '/account',         destination: '/app/account',   permanent: false },
     ]

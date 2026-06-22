@@ -155,22 +155,12 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
 
   return (
     <div className="space-y-6">
-      <section id="activity" className="scroll-mt-28 space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-slate-700 dark:text-white">Activity</h2>
-          <p className="text-xs text-slate-400 mt-0.5 max-w-2xl dark:text-[#9BBCE5]">
-            Daily capture intensity plus a breakdown of totals, your busiest day, and a recent day-by-day log.
-          </p>
-        </div>
-        <div className="grid lg:grid-cols-5 gap-6 items-start">
-          <div className="lg:col-span-3 min-w-0">
-            <ActivityHeatmap data={stats.captureHistory} />
-          </div>
-          <div className="lg:col-span-2 min-w-0">
-            <ActivityDetailPanel data={stats.captureHistory} />
-          </div>
-        </div>
-      </section>
+      <div id="activity" className="scroll-mt-28">
+        <h2 className="text-base font-semibold text-slate-700 dark:text-white">Activity</h2>
+        <p className="text-xs text-slate-400 mt-0.5 max-w-2xl dark:text-[#9BBCE5]">
+          Daily capture intensity and a quick summary of totals and your busiest day.
+        </p>
+      </div>
 
       {/* ── KPI row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -185,6 +175,15 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
         <StatChip label="Drawings"   value={stats.typeCounts?.drawing ?? 0}   icon={Pencil}      iconColor="text-violet-500" />
         <StatChip label="Highlights" value={stats.typeCounts?.highlight ?? 0} icon={Highlighter} iconColor="text-lime-600" />
         <StatChip label="Anchors"    value={stats.typeCounts?.anchor ?? 0}    icon={Anchor}      iconColor="text-amber-600" />
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)] items-start">
+        <div className="min-w-0">
+          <ActivityHeatmap data={stats.captureHistory} />
+        </div>
+        <div className="min-w-0">
+          <ActivityDetailPanel data={stats.captureHistory} />
+        </div>
       </div>
 
       {/* ── Capture volume chart ── */}

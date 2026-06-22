@@ -1,53 +1,55 @@
 import Link from 'next/link'
+import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import {
   Highlighter,
   StickyNote,
   PenTool,
-  Sparkles,
+  MessageCircle,
   PenLine,
   FileText,
   Volume2,
   Paperclip,
 } from 'lucide-react'
 import { Reveal, SectionHeading } from '@/components/marketing/primitives/Reveal'
-
-/**
- * #extension — the floating tool, shown as a designed mockup of the three
- * real states: collapsed pill, command bar, expanded Ask AI panel. Every tool
- * pictured ships in the extension today.
- */
+import { mktBtnPrimary, mktPanelMock, product } from '@/components/marketing/marketingSurfaces'
 
 const TOOLS = [
   { icon: Highlighter, label: 'Highlight' },
-  { icon: StickyNote,  label: 'Note' },
-  { icon: PenTool,     label: 'Draw' },
-  { icon: Sparkles,    label: 'Ask' },
-  { icon: PenLine,     label: 'Rewrite' },
-  { icon: FileText,    label: 'Recap' },
-  { icon: Volume2,     label: 'Speak' },
-  { icon: Paperclip,   label: 'Save' },
+  { icon: StickyNote, label: 'Note' },
+  { icon: PenTool, label: 'Draw' },
+  { icon: MessageCircle, label: 'Ask' },
+  { icon: PenLine, label: 'Rewrite' },
+  { icon: FileText, label: 'Recap' },
+  { icon: Volume2, label: 'Speak' },
+  { icon: Paperclip, label: 'Save' },
 ]
 
 function CollapsedPillMock() {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2 shadow-sm w-fit">
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0B1735]" aria-hidden>
-        <span className="block h-3 w-[3px] rounded-full bg-white -rotate-12" />
-      </span>
-      <span className="text-xs font-medium text-stone-600">Inline</span>
-      <kbd className="rounded border border-stone-200 bg-stone-50 px-1.5 py-px font-mono text-[9px] text-stone-400">⌘⇧K</kbd>
+    <div
+      className="flex w-fit items-center gap-2 rounded-full border border-[#d6d3d1] bg-white px-3 py-2"
+      style={{ boxShadow: product.toolbarShadow }}
+    >
+      <InlineChatIcon size="md" variant="badge" />
+      <span className="text-xs font-medium text-[#78716c]">Inline</span>
+      <kbd className="rounded border border-[#d6d3d1] bg-[#F4F4F2] px-1.5 py-px font-mono text-[9px] text-[#78716c]">
+        ⌘⇧K
+      </kbd>
     </div>
   )
 }
 
 function CommandBarMock() {
   return (
-    <div className="flex items-center gap-1 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm w-fit">
+    <div
+      className="flex w-fit items-center gap-1 rounded-[10px] border border-[#d6d3d1] bg-white p-1.5"
+      style={{ boxShadow: product.toolbarShadow }}
+    >
       {TOOLS.map((t, i) => (
         <span
           key={t.label}
-          className={`flex h-8 w-8 items-center justify-center rounded-xl ${
-            i === 3 ? 'bg-[#0B1735] text-white' : 'text-stone-500'
+          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+            i === 3 ? 'bg-[#12203f] text-white' : 'text-[#78716c]'
           }`}
           title={t.label}
           aria-label={t.label}
@@ -61,30 +63,34 @@ function CommandBarMock() {
 
 function ExpandedPanelMock() {
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
+    <div className={`w-full max-w-sm ${mktPanelMock}`}>
+      <div className="flex items-center justify-between border-b border-[#d6d3d1]/60 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0B1735]" aria-hidden>
-            <span className="block h-2.5 w-[2px] rounded-full bg-white -rotate-12" />
-          </span>
+          <InlineChatIcon size="sm" variant="badge" />
           <span className="text-xs font-semibold text-[#1C1E26]">Ask Inline</span>
         </div>
-        <span className="rounded-full bg-[#EBF1F7] px-2 py-0.5 text-[9px] font-medium text-[#4B83C4]">
+        <span className="rounded-full bg-[#F4F4F2] px-2 py-0.5 text-[9px] font-medium text-[#78716c]">
           Context: selection
         </span>
       </div>
       <div className="space-y-2.5 px-4 py-3">
-        <p className="rounded-xl bg-stone-50 px-3 py-2 text-[11px] text-stone-700">
+        <p className="ml-auto w-fit max-w-[85%] rounded-full bg-[#1C1E26] px-3 py-1.5 text-[11px] text-white">
           What does this paragraph claim about cable-stayed bridges?
         </p>
-        <p className="rounded-xl border border-stone-100 px-3 py-2 text-[11px] leading-relaxed text-stone-600">
-          The selection argues cable-stayed designs carry deck loads through
-          towers rather than anchorages, which shortens construction time…
+        <p className="text-[11px] leading-relaxed text-[#78716c]">
+          The selection argues cable-stayed designs carry deck loads through towers rather than
+          anchorages, which shortens construction time…
         </p>
-        <div className="flex items-center gap-2 pt-1">
-          <span className="rounded-full border border-stone-200 px-2.5 py-1 text-[9px] font-medium text-stone-500">Copy</span>
-          <span className="rounded-full border border-stone-200 px-2.5 py-1 text-[9px] font-medium text-stone-500">Read aloud</span>
-          <span className="rounded-full bg-[#0B1735] px-2.5 py-1 text-[9px] font-medium text-white">Save to workspace</span>
+        <div className="flex items-center gap-2 border-t border-[#d6d3d1]/50 pt-2">
+          <span className="rounded-full border border-[#d6d3d1] px-2.5 py-1 text-[9px] font-medium text-[#78716c]">
+            Copy
+          </span>
+          <span className="rounded-full border border-[#d6d3d1] px-2.5 py-1 text-[9px] font-medium text-[#78716c]">
+            Read aloud
+          </span>
+          <span className="rounded-full bg-[#1C1E26] px-2.5 py-1 text-[9px] font-medium text-white">
+            Save to workspace
+          </span>
         </div>
       </div>
     </div>
@@ -93,7 +99,7 @@ function ExpandedPanelMock() {
 
 export default function ExtensionShowcase() {
   return (
-    <section id="extension" className="scroll-mt-24 bg-white py-24 md:py-32 border-y border-stone-200/60">
+    <section id="extension" className="scroll-mt-24 border-y border-[#E8DFD4] bg-[#F5EDE3] py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <div className="grid items-center gap-14 lg:grid-cols-2">
           <div>
@@ -114,7 +120,7 @@ export default function ExtensionShowcase() {
                 ].map(([title, detail]) => (
                   <li key={title} className="flex items-start gap-3">
                     <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4B83C4]" aria-hidden />
-                    <p className="text-sm leading-relaxed text-stone-600">
+                    <p className="text-sm leading-relaxed text-[#78716c]">
                       <span className="font-semibold text-[#1C1E26]">{title}.</span> {detail}
                     </p>
                   </li>
@@ -122,34 +128,39 @@ export default function ExtensionShowcase() {
               </ul>
             </Reveal>
             <Reveal delay={0.15}>
-              <Link
-                href="/install"
-                className="mt-8 inline-flex items-center justify-center rounded-full bg-[#1C1E26] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4B83C4]"
-              >
+              <Link href="/install" className={`mt-8 ${mktBtnPrimary}`}>
                 Install the extension
               </Link>
             </Reveal>
           </div>
 
-          {/* Three-state mockup column on a soft page backdrop */}
           <Reveal delay={0.1}>
-            <div className="relative rounded-3xl border border-stone-200/80 bg-[#F7F7F5] p-6 md:p-8">
-              <div className="absolute inset-x-8 top-6 space-y-2 opacity-50" aria-hidden>
-                <div className="h-2 rounded bg-stone-200/80 w-3/4" />
-                <div className="h-2 rounded bg-stone-200/80 w-full" />
-                <div className="h-2 rounded bg-stone-200/60 w-5/6" />
+            <div
+              className="relative rounded-xl border border-[#d6d3d1] bg-[#F7F7F5] p-6 md:p-8"
+              style={{ boxShadow: product.panelShadow }}
+            >
+              <div className="absolute inset-x-8 top-6 space-y-2 opacity-40" aria-hidden>
+                <div className="h-2 w-3/4 rounded bg-[#d6d3d1]/80" />
+                <div className="h-2 w-full rounded bg-[#d6d3d1]/80" />
+                <div className="h-2 w-5/6 rounded bg-[#d6d3d1]/60" />
               </div>
               <div className="relative space-y-6 pt-16">
                 <div>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-stone-400">1 · Collapsed</p>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#78716c]">
+                    1 · Collapsed
+                  </p>
                   <CollapsedPillMock />
                 </div>
                 <div>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-stone-400">2 · Command bar</p>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#78716c]">
+                    2 · Command bar
+                  </p>
                   <CommandBarMock />
                 </div>
                 <div>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-stone-400">3 · Expanded panel</p>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#78716c]">
+                    3 · Expanded panel
+                  </p>
                   <ExpandedPanelMock />
                 </div>
               </div>

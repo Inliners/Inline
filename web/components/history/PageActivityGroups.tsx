@@ -64,7 +64,8 @@ export default function PageActivityGroups({
         <span className="text-xs text-muted-foreground">{entries.length} pages</span>
       </div>
 
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal">
+        <div className="flex w-max min-w-full snap-x snap-mandatory gap-3 pr-4">
         {entries.map(({ pageUrl, items, last }) => {
           const title = titleOf(items, pageUrl)
           const counts = items.reduce<Record<string, number>>((acc, n) => {
@@ -76,7 +77,7 @@ export default function PageActivityGroups({
           return (
             <div
               key={pageUrl}
-              className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3"
+              className="flex h-44 w-[280px] shrink-0 snap-start flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:w-[320px]"
             >
               <div className="flex items-start gap-2 min-w-0">
                 <Globe className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
@@ -134,6 +135,7 @@ export default function PageActivityGroups({
             </div>
           )
         })}
+        </div>
       </div>
     </section>
   )

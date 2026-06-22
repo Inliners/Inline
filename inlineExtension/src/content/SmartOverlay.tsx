@@ -13,7 +13,9 @@ import { speakWithElevenLabs } from '../lib/elevenLabsTts'
 import { fetchViaBackground } from '../lib/backgroundFetch'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { saveAIReplacement } from './aiReplacements'
-import { TOOLBAR as TB, HIGHLIGHT_SWATCHES } from '../lib/extensionTheme'
+import { TOOLBAR as TB, HIGHLIGHT_SWATCHES, FONT, PANEL as C } from '../lib/extensionTheme'
+import FormattedAiText from '../components/FormattedAiText'
+import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
 
 type Pt = { x: number; y: number }
 type AnchorNote = { id: string; x: number; y: number; text: string }
@@ -39,12 +41,23 @@ async function tryWindowAi(task: string, text: string): Promise<string | null> {
 async function serverTask(
   apiBase: string, token: string, task: string, text: string, instruction?: string,
 ): Promise<string | null> {
+  const access = await reserveAiPrompt()
+  if (!access.allowed) {
+    return `[Error] Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`
+  }
   const h: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (token) h.Authorization = `Bearer ${token}`
+  if (access.signedIn && token) h.Authorization = `Bearer ${token}`
+  if (!access.signedIn) h['X-Inline-Device-Id'] = access.deviceId
   try {
     const res = await fetchViaBackground(`${apiBase}/api/ai/extension-light`, {
       method: 'POST', headers: h,
-      body: JSON.stringify({ task, text, instruction }),
+      body: JSON.stringify({
+        task,
+        text,
+        instruction,
+        guest: !access.signedIn,
+        deviceId: access.signedIn ? undefined : access.deviceId,
+      }),
     })
     if (!res.ok) {
       try {
@@ -60,14 +73,13 @@ async function serverTask(
   }
 }
 
-/* ─── Theme (Attio "New toolbar" — light) ─── */
-const DARK = '#0B1735'              // primary text / accent on light surfaces
-const CREAM = '#FFFFFF'             // popups are clean white (Attio pages are white)
-const SURFACE = '#FFFFFF'
-const BORDER = 'rgba(15,18,23,0.09)'
-const PANEL_BORDER = 'rgba(15,18,23,0.10)'
-const MUTED = '#8A8F98'
-const FONT = '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif'
+/* ─── Theme (floating toolbar — matches web chat) ─── */
+const DARK = C.text
+const CREAM = C.bg
+const SURFACE = C.bg
+const BORDER = C.border
+const PANEL_BORDER = C.border
+const MUTED = C.textMuted
 
 /* ─── SVG icons (stroke style, 16×16) ─── */
 const IHighlight = () => (
@@ -91,12 +103,6 @@ const IAlert = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
     <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-  </svg>
-)
-const IMapPin = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-    <circle cx="12" cy="10" r="3"/>
   </svg>
 )
 const ITag = () => (
@@ -138,7 +144,7 @@ function ToolTip({ label, show }: { label: string; show: boolean }) {
         bottom: 'calc(100% + 8px)',
         left: '50%',
         transform: `translateX(-50%) translateY(${show ? '0' : '3px'})`,
-        background: '#0B1735',
+        background: C.text,
         color: '#fff',
         border: '1px solid rgba(255,255,255,0.16)',
         borderRadius: 8,
@@ -255,9 +261,6 @@ export default function SmartOverlay() {
   const [riskOpen, setRiskOpen] = useState(false)
   const [riskText, setRiskText] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
-  const [spatialOpen, setSpatialOpen] = useState(false)
-  const [spatialAddr, setSpatialAddr] = useState('')
-  const [spatialNote, setSpatialNote] = useState('')
   const [anchors, setAnchors] = useState<AnchorNote[]>([])
   const [anchorsLoaded, setAnchorsLoaded] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<Pt | null>(null)
@@ -524,14 +527,27 @@ export default function SmartOverlay() {
     setRiskOpen(true); setRiskLoading(true); setRiskText('')
     void (async () => {
       const sample = (document.body?.innerText ?? '').slice(0, 12000)
+      const access = await reserveAiPrompt()
+      if (!access.allowed) {
+        setRiskText(`Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`)
+        setRiskLoading(false)
+        return
+      }
       const { apiBaseUrl, accessToken } = await loadSettings()
       const h: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (access.signedIn && accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (!access.signedIn) h['X-Inline-Device-Id'] = access.deviceId
       try {
         // Routed through the background worker — content scripts can't reach
         // localhost directly under Chrome's Private Network Access policy.
         const res = await fetchViaBackground(`${apiBaseUrl}/api/ai/page-risk`, {
-          method: 'POST', headers: h, body: JSON.stringify({ pageTextSample: sample }),
+          method: 'POST',
+          headers: h,
+          body: JSON.stringify({
+            pageTextSample: sample,
+            guest: !access.signedIn,
+            deviceId: access.signedIn ? undefined : access.deviceId,
+          }),
         })
         const j = await res.json()
         setRiskText((j as { analysis?: string }).analysis ?? (j as { error?: string }).error ?? 'No response')
@@ -541,7 +557,7 @@ export default function SmartOverlay() {
   }
 
   /** Highlight the current selection, optionally with a custom colour from
-   *  the Attio-style swatch row. Selection survives because the toolbar's
+   *  the toolbar swatch row. Selection survives because the toolbar's
    *  onMouseDown calls preventDefault. */
   function highlightWithColor(color?: string) {
     wrapSelectionWithHighlight('extract', color)
@@ -559,7 +575,7 @@ export default function SmartOverlay() {
     }])
   }
 
-  if (!toolbar && !riskOpen && !spatialOpen && !ctxMenu && !ctxRewrite && !aiResult && anchors.length === 0) return null
+  if (!toolbar && !riskOpen && !ctxMenu && !ctxRewrite && !aiResult && anchors.length === 0) return null
 
   const tbLeft = toolbar
     ? Math.max(8, Math.min(window.innerWidth - 500, toolbar.x - 230))
@@ -589,7 +605,6 @@ export default function SmartOverlay() {
     },
     { label: 'Add Note', icon: <INote />, action: addAnchor },
     { label: 'Read Aloud', icon: <IVolume />, action: () => { void speakWithElevenLabs(selRef.current.slice(0, 800)); setCtxMenu(null) } },
-    { label: 'Save to Map', icon: <IMapPin />, action: () => { setCtxMenu(null); setSpatialOpen(true) } },
     { label: 'Page Risk', icon: <IAlert />, action: () => { setCtxMenu(null); runPageRisk() } },
   ]
 
@@ -656,9 +671,6 @@ export default function SmartOverlay() {
             <TBtn onClick={() => { setToolbar(null); runPageRisk() }} title="Page risk">
               <IAlert />
             </TBtn>
-            <TBtn onClick={() => { setToolbar(null); setSpatialOpen(true) }} title="Save to map">
-              <IMapPin />
-            </TBtn>
 
             <Sep />
 
@@ -671,7 +683,7 @@ export default function SmartOverlay() {
             <TBtn isText onClick={addAnchor} title="Pin a note here">Note</TBtn>
           </div>
 
-          {/* ── Colour-swatch row (Attio second pill) ── */}
+          {/* ── Colour-swatch row ── */}
           {colorRow && (
             <div
               className="inline-toolbar"
@@ -941,49 +953,6 @@ export default function SmartOverlay() {
         />
       ))}
 
-      {/* ── Spatial save modal ── */}
-      {spatialOpen && (
-        <div className="inline-modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 2147483647, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto' }}>
-          <div style={{ width: 'min(100vw - 24px,380px)', background: CREAM, border: `1px solid ${PANEL_BORDER}`, borderRadius: 18, padding: 20, fontFamily: FONT, boxShadow: TB.shadow }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: DARK }}>Save spatial data</h3>
-            <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 4 }}>Location / address</label>
-            <input value={spatialAddr} onChange={e => setSpatialAddr(e.target.value)} placeholder="123 Main St, City"
-              style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '8px 10px', border: '1px solid rgba(15,18,23,0.10)', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff' }} />
-            <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 4 }}>Insight / note</label>
-            <textarea value={spatialNote} onChange={e => setSpatialNote(e.target.value)} placeholder="What did you notice here?"
-              style={{ width: '100%', boxSizing: 'border-box', minHeight: 72, marginBottom: 14, padding: '8px 10px', border: '1px solid rgba(15,18,23,0.10)', borderRadius: 8, fontSize: 12, resize: 'vertical', outline: 'none', fontFamily: FONT, background: '#fff' }} />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => { setSpatialOpen(false); setSpatialAddr(''); setSpatialNote('') }}
-                style={{ border: '1px solid rgba(15,18,23,0.10)', borderRadius: 8, padding: '7px 14px', background: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600, color: DARK }}>Cancel</button>
-              <button type="button" onClick={async () => {
-                const { apiBaseUrl, accessToken } = await loadSettings()
-                const workspaceId = await new Promise<string>(resolve => {
-                  chrome.storage.local.get(['inlineActiveWorkspaceId'], r => {
-                    resolve(typeof r.inlineActiveWorkspaceId === 'string' && r.inlineActiveWorkspaceId
-                      ? r.inlineActiveWorkspaceId : '')
-                  })
-                })
-                const h: Record<string, string> = { 'Content-Type': 'application/json' }
-                if (accessToken) h.Authorization = `Bearer ${accessToken}`
-                try {
-                  const res = await fetchViaBackground(`${apiBaseUrl}/api/spatial/save`, {
-                    method: 'POST', headers: h,
-                    body: JSON.stringify({ address: spatialAddr, insight: spatialNote, workspaceId, sourceUrl: window.location.href }),
-                  })
-                  const j = await res.json()
-                  if (!res.ok) setAiResult({ title: 'Save to map', body: (j as { error?: string }).error ?? 'Save failed', loading: false })
-                  else setAiResult({ title: 'Saved to map', body: spatialAddr || 'Pin saved.', loading: false })
-                } catch (e) {
-                  setAiResult({ title: 'Save failed', body: e instanceof Error ? e.message : 'Failed', loading: false })
-                }
-                setSpatialOpen(false); setSpatialAddr(''); setSpatialNote('')
-              }}
-                style={{ border: 'none', borderRadius: 8, padding: '7px 14px', background: DARK, color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Page risk panel ── */}
       {riskOpen && (
         <div style={{ position: 'fixed', right: 16, top: 16, width: 'min(100vw - 32px, 340px)', maxHeight: '70vh', overflow: 'auto', zIndex: 2147483646, background: CREAM, border: '1px solid rgba(15,18,23,0.10)', borderRadius: 16, padding: '14px 16px', pointerEvents: 'auto', fontFamily: FONT, fontSize: 12, boxShadow: TB.shadow }}>
@@ -1019,7 +988,7 @@ export default function SmartOverlay() {
           </div>
           {aiResult.loading
             ? <p style={{ color: '#6B7280', margin: 0 }}>Thinking…</p>
-            : <pre style={{ whiteSpace: 'pre-wrap', margin: 0, color: DARK, lineHeight: 1.5, fontFamily: FONT }}>{aiResult.body}</pre>}
+            : <FormattedAiText text={aiResult.body} style={{ fontSize: 12, lineHeight: 1.5, color: DARK }} />}
           {!aiResult.loading && aiResult.body && (
             <div style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
               <button type="button"

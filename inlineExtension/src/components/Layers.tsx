@@ -38,7 +38,7 @@ export default function Layers({ onClose }: LayersProps) {
   }, [])
 
   return (
-    <PanelShell title="Layers" subtitle="Show or hide annotation types" width={308} onClose={onClose}>
+    <PanelShell title="Layers" subtitle="Show or hide annotation types" width={308} tool="layers" onClose={onClose}>
       <div style={{ padding: '16px 18px 18px', fontFamily: FONT }}>
         <div style={{
           border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden',

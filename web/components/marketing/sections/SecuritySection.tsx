@@ -1,5 +1,6 @@
 import { ServerCog, ShieldCheck, KeyRound, UserCheck, Quote } from 'lucide-react'
 import { Reveal, SectionHeading } from '@/components/marketing/primitives/Reveal'
+import { mktCard } from '@/components/marketing/marketingSurfaces'
 
 /**
  * #security — concrete, implementation-level claims only. Each point maps to
@@ -37,7 +38,7 @@ const POINTS = [
 
 export default function SecuritySection() {
   return (
-    <section id="security" className="scroll-mt-24 bg-white py-24 md:py-32">
+    <section id="security" className="scroll-mt-24 bg-[#F9EFE4] py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <SectionHeading
           eyebrow="Security & privacy"
@@ -47,8 +48,8 @@ export default function SecuritySection() {
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {POINTS.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.05} className={i === 0 ? 'md:col-span-2 lg:col-span-1' : ''}>
-              <div className="h-full rounded-2xl border border-stone-200/80 bg-white p-6">
-                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[#0B1735] text-[#B5CDEF]">
+              <div className={`h-full ${mktCard}`}>
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-[#d6d3d1] bg-[#F4F4F2] text-[#12203f]">
                   <p.icon className="h-4.5 w-4.5" aria-hidden />
                 </div>
                 <h3 className="text-sm font-semibold text-[#1C1E26]">{p.title}</h3>

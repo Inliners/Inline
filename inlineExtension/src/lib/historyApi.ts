@@ -1,6 +1,6 @@
 /**
  * Save an AI result (summary / rephrase / shorten / custom) to the user's
- * History / Analytics / Graph so activity is never lost. Writes are routed
+ * History / Analytics so activity is never lost. Writes are routed
  * through the background service worker's CLIP_TO_WORKSPACE handler which
  * hits Next.js /api/clip — that route scopes the row to the authenticated
  * user (Bearer JWT) or userId fallback.
@@ -8,6 +8,7 @@
 
 import { loadSettings } from './extensionSettings'
 import { fetchViaBackground } from './backgroundFetch'
+import { looksLikeJwt } from './aiAccess'
 
 type HistoryEntryKind =
   | 'ai-rephrase'
@@ -46,6 +47,7 @@ export async function saveAIResultToHistory(entry: HistoryEntry): Promise<void> 
 
     const workspaceId = entry.workspaceId ?? storage.inlineActiveWorkspaceId ?? ''
     const userId = storage.inlineUserId ?? ''
+    if (!looksLikeJwt(accessToken) || !workspaceId) return
 
     // The notes.type column has a CHECK constraint, so every AI action is
     // written as 'ai-summary' and differentiated via tags. UI filters and
@@ -81,7 +83,7 @@ export async function saveAIResultToHistory(entry: HistoryEntry): Promise<void> 
     }
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+    headers.Authorization = `Bearer ${accessToken}`
 
     await fetchViaBackground(`${apiBaseUrl}/api/clip`, {
       method: 'POST',

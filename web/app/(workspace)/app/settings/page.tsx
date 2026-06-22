@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import PageHeader from '@/components/shell/PageHeader'
+import SettingsShell, { type SettingsNavGroup } from '@/components/settings/SettingsShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -17,7 +17,7 @@ import {
 import {
   Check, Mail,
   Play, Loader2, Plus, X, Globe, Shield,
-  AlertTriangle, LogOut,
+  AlertTriangle, LogOut, UserRound, Bell, Palette, MessageCircle, Puzzle, Trash2,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -790,16 +790,6 @@ function ExtensionTab() {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-const TAB_DESCRIPTIONS: Partial<Record<Tab, string>> = {
-  general: 'Your name, icon, and email.',
-  security: 'Password and session.',
-  notifications: 'Choose how Inline communicates with you.',
-  appearance: 'Theme and text size for the dashboard.',
-  'ai-voice': 'Voice selection, tuning, and copilot options.',
-  extension: 'Blocklist and extension preferences.',
-  danger: 'Permanently delete your account and data.',
-}
-
 function PersonalSettingsPageInner() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('general')
@@ -819,57 +809,43 @@ function PersonalSettingsPageInner() {
     danger:        <AccountDangerTab />,
   }
 
+  const settingsGroups: SettingsNavGroup[] = [
+    {
+      label: 'Personal',
+      items: [
+        { id: 'general', label: 'Profile', icon: UserRound },
+        { id: 'appearance', label: 'Appearance', icon: Palette },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'security', label: 'Security', icon: Shield },
+      ],
+    },
+    {
+      label: 'Tools',
+      items: [
+        { id: 'ai-voice', label: 'AI and voice', icon: MessageCircle },
+        { id: 'extension', label: 'Extension', icon: Puzzle },
+      ],
+    },
+    {
+      label: 'Advanced',
+      items: [
+        { id: 'danger', label: 'Delete account', icon: Trash2, danger: true },
+      ],
+    },
+  ]
+
   return (
-    <>
-      <PageHeader
-        crumbs={[{ label: 'Account', href: '/app/ws-1/dashboard' }, { label: 'Settings' }]}
-      />
-
-      <div className="px-6 pb-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground mt-4">
-          Account Settings
-        </h1>
-
-        <nav
-          className="mt-6 flex gap-1 overflow-x-auto scrollbar-minimal border-b border-border -mb-px pb-px"
-          aria-label="Account settings sections"
-        >
-          {PROFILE_TABS.map(tab => {
-            const active = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'shrink-0 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap',
-                  tab.danger
-                    ? active
-                      ? 'border-destructive text-destructive'
-                      : 'border-transparent text-destructive/80 hover:text-destructive'
-                    : active
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            )
-          })}
-        </nav>
-
-        <div className="mt-8 w-full space-y-2">
-          <h2 className="text-base font-semibold text-foreground">
-            {PROFILE_TABS.find(t => t.id === activeTab)?.label}
-          </h2>
-          {TAB_DESCRIPTIONS[activeTab] && (
-            <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
-          )}
-        </div>
-
-        <div className="mt-6 w-full space-y-8">{content[activeTab]}</div>
+    <SettingsShell
+      title="Account Settings"
+      subtitle="Manage profile, security, appearance, assistant, and extension preferences."
+      groups={settingsGroups}
+      activeId={activeTab}
+      onSelect={id => setActiveTab(id as Tab)}
+    >
+      <div className="mx-auto w-full max-w-3xl space-y-8">
+        {content[activeTab]}
       </div>
-    </>
+    </SettingsShell>
   )
 }
 

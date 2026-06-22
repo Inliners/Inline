@@ -24,7 +24,7 @@ export default function Stamps({ onClose }: StampsProps) {
   const cancelPlacing = useCallback(() => setPlacing(null), [])
 
   return (
-    <PanelShell title="Stamp" subtitle="Pick a stamp, then click the page" width={306} onClose={onClose}>
+    <PanelShell title="Stamp" subtitle="Pick a stamp, then click the page" width={306} tool="stamps" onClose={onClose}>
       {placing && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',

@@ -26,12 +26,17 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './editor-content.css'
+import { RecapParagraph } from './recap-paragraph'
+import { RecapBulletList } from './recap-bullet-list'
 
 /* ─── Props ─── */
 interface Props {
   content:   string
   onChange:  (html: string) => void
   className?: string
+  readOnly?: boolean
+  /** Preserve recap entry anchor attributes in the editor. */
+  recapMode?: boolean
 }
 
 /* ─── Handle state ─── */
@@ -147,7 +152,7 @@ function focusSelectionInBlock(editor: Editor, blockEl: HTMLElement | null) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-export default function FolderDocumentEditor({ content, onChange, className }: Props) {
+export default function FolderDocumentEditor({ content, onChange, className, readOnly = false, recapMode = false }: Props) {
   const wrapperRef      = useRef<HTMLDivElement>(null)
   const lastContent     = useRef(normalizeEditorContent(content))
   const hoverTimer      = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -182,8 +187,13 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
   /* ─── Editor ─── */
   const editor = useEditor({
     immediatelyRender: false,
+    editable: !readOnly,
     extensions: [
-      StarterKit.configure({ heading: false }),
+      StarterKit.configure({
+        heading: false,
+        ...(recapMode ? { paragraph: false, bulletList: false } : {}),
+      }),
+      ...(recapMode ? [RecapParagraph, RecapBulletList] : []),
       Heading.configure({ levels: [1, 2, 3] }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -356,6 +366,14 @@ export default function FolderDocumentEditor({ content, onChange, className }: P
   const slashGroups = [...new Set(filteredSlash.map(c => c.section))]
 
   if (!editor) return null
+
+  if (readOnly) {
+    return (
+      <div className={cn('relative folder-document-editor folder-document-editor--readonly', className)}>
+        <EditorContent editor={editor} />
+      </div>
+    )
+  }
 
   return (
     <div

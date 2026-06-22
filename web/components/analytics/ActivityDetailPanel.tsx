@@ -19,31 +19,15 @@ export default function ActivityDetailPanel({ data }: { data: DailyCapture[] }) 
     )
   }
 
-  const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date))
   const totalCaptures = data.reduce((s, d) => s + d.count, 0)
   const activeDays = data.filter(d => d.count > 0).length
   const maxEntry = data.reduce(
     (best, d) => (d.count > best.count ? d : best),
     data[0]!,
   )
-  const avgPerActiveDay =
-    activeDays > 0 ? (totalCaptures / activeDays).toFixed(1) : '—'
-  const longestGap = (() => {
-    let maxGap = 0
-    const withActivity = data.filter(d => d.count > 0).sort((a, b) => a.date.localeCompare(b.date))
-    for (let i = 1; i < withActivity.length; i++) {
-      const a = new Date(withActivity[i - 1]!.date).getTime()
-      const b = new Date(withActivity[i]!.date).getTime()
-      const days = Math.round((b - a) / 86400000)
-      maxGap = Math.max(maxGap, days - 1)
-    }
-    return maxGap
-  })()
-
-  const recent = sorted.slice(0, 14)
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 flex flex-col min-h-[280px] lg:min-h-0 dark:border-[#263E7A] dark:bg-[#15285C]">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#263E7A] dark:bg-[#15285C]">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Activity details</h3>
       <p className="text-xs text-slate-400 mt-0.5 mb-4 dark:text-[#9BBCE5]">
         Last {data.length} days of note captures in this workspace.
@@ -74,38 +58,7 @@ export default function ActivityDetailPanel({ data }: { data: DailyCapture[] }) 
             )}
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-[#1B326D] dark:border-[#263E7A]">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#9BBCE5]">Avg / active day</dt>
-          <dd className="text-base font-semibold tabular-nums mt-0.5 text-slate-800 dark:text-white">{avgPerActiveDay}</dd>
-        </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-[#1B326D] dark:border-[#263E7A]">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#9BBCE5]">Longest idle gap</dt>
-          <dd className="text-base font-semibold tabular-nums mt-0.5 text-slate-800 dark:text-white">
-            {activeDays <= 1 ? '—' : `${longestGap}d`}
-          </dd>
-        </div>
       </dl>
-
-      <div className="mt-4 pt-4 border-t border-slate-200 flex-1 flex flex-col min-h-0 dark:border-[#263E7A]">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2 dark:text-[#9BBCE5]">
-          Day-by-day (newest first)
-        </p>
-        <ul className="text-xs space-y-1.5 overflow-y-auto scrollbar-minimal flex-1 max-h-52 lg:max-h-none pr-1">
-          {recent.map(d => (
-            <li
-              key={d.date}
-              className="flex items-center justify-between gap-2 py-1 px-2 rounded-md hover:bg-slate-50 dark:hover:bg-[#1B326D]"
-            >
-              <span className="text-slate-400 tabular-nums dark:text-[#9BBCE5]">{formatShortDate(d.date)}</span>
-              <span className={d.count > 0
-                ? 'font-semibold text-slate-700 tabular-nums dark:text-white'
-                : 'text-slate-300 tabular-nums dark:text-[#4D6BA0]'}>
-                {d.count === 0 ? '—' : `${d.count} ${d.count === 1 ? 'note' : 'notes'}`}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   )
 }

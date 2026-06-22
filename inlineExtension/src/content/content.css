@@ -5,7 +5,7 @@
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(17, 24, 39, 0.12);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   user-select: none;
   transition: border-color 0.15s, transform 0.1s;
   box-shadow: none;
@@ -39,7 +39,7 @@
   flex: 1;
   font-size: 12px;
   font-weight: 700;
-  color: #111318;
+  color: #1c1e26;
   pointer-events: auto;
   cursor: pointer;
   user-select: none;
@@ -193,7 +193,7 @@
 
 .launcher-eye:hover {
   background: #FAFAFA;
-  color: #111318;
+  color: #1c1e26;
   border-color: rgba(17,24,39,0.20);
   box-shadow: none;
 }
@@ -212,7 +212,7 @@
   cursor: pointer;
   transition: background 0.15s, width 0.2s ease;
   box-shadow: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .launcher-add:hover {

@@ -52,3 +52,53 @@ export function stripHtml(html: string): string {
 
   return out.replace(/\s+/g, ' ').trim()
 }
+
+/** Plain-text document preview for cards and lists (strips HTML, then truncates). */
+export function previewText(content: string, max = 140): string {
+  const clean = stripHtml(content)
+  if (!clean) return ''
+  if (clean.length <= max) return clean
+  return `${clean.slice(0, max - 1).trimEnd()}…`
+}
+
+/**
+ * Compact URL for history lists — keeps host + path and collapses long queries.
+ */
+export function truncateDisplayUrl(url: string, maxLen = 72): string {
+  if (!url) return ''
+  if (url.length <= maxLen) return url
+
+  try {
+    const u = new URL(url)
+    const host = u.hostname
+    const path = u.pathname === '/' ? '' : u.pathname
+    const search = u.search
+
+    const primaryQuery =
+      u.searchParams.get('q') ??
+      u.searchParams.get('oq') ??
+      u.searchParams.get('query')
+
+    if (primaryQuery && /search/i.test(path)) {
+      const compact = `${host}${path}?q=${primaryQuery}`
+      if (compact.length <= maxLen) {
+        return search.length > `?q=${primaryQuery}`.length + 1 ? `${compact}&…` : compact
+      }
+      return `${compact.slice(0, maxLen - 1)}…`
+    }
+
+    const base = `${host}${path}`
+    if (!search && !u.hash) {
+      return base.length <= maxLen ? base : `${base.slice(0, maxLen - 1)}…`
+    }
+
+    const suffix = search || u.hash
+    const room = maxLen - base.length
+    if (room <= 6) return `${base.slice(0, maxLen - 1)}…`
+
+    const shortSuffix = suffix.length > room ? `${suffix.slice(0, room - 1)}…` : suffix
+    return `${base}${shortSuffix}`
+  } catch {
+    return `${url.slice(0, maxLen - 1)}…`
+  }
+}

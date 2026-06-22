@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import Hero from '@/components/marketing/Hero'
-import ProblemSolution from '@/components/marketing/sections/ProblemSolution'
-import ExtensionShowcase from '@/components/marketing/sections/ExtensionShowcase'
-import WorkspaceShowcase from '@/components/marketing/sections/WorkspaceShowcase'
-import RagSection from '@/components/marketing/sections/RagSection'
-import FeatureBento from '@/components/marketing/sections/FeatureBento'
-import SecuritySection from '@/components/marketing/sections/SecuritySection'
-import CredibilitySection from '@/components/marketing/sections/CredibilitySection'
+import DashboardShowcaseSection from '@/components/marketing/sections/DashboardShowcaseSection'
+import ValuePillarsSection from '@/components/marketing/sections/ValuePillarsSection'
+import ContextLayerSection from '@/components/marketing/sections/ContextLayerSection'
+import MaintainingPairSection from '@/components/marketing/sections/MaintainingPairSection'
+import StaleResearchSection from '@/components/marketing/sections/StaleResearchSection'
+import ReviewLoopSection from '@/components/marketing/sections/ReviewLoopSection'
+import AiSearchTabsSection from '@/components/marketing/sections/AiSearchTabsSection'
+import CitedAnswersSection from '@/components/marketing/sections/CitedAnswersSection'
 import FaqSection from '@/components/marketing/sections/FaqSection'
 import ClosingCta from '@/components/marketing/sections/ClosingCta'
 
@@ -20,13 +21,14 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <ProblemSolution />
-      <ExtensionShowcase />
-      <WorkspaceShowcase />
-      <RagSection />
-      <FeatureBento />
-      <SecuritySection />
-      <CredibilitySection />
+      <DashboardShowcaseSection />
+      <ValuePillarsSection />
+      <ContextLayerSection />
+      <MaintainingPairSection />
+      <StaleResearchSection />
+      <ReviewLoopSection />
+      <AiSearchTabsSection />
+      <CitedAnswersSection />
       <FaqSection />
       <ClosingCta />
     </>

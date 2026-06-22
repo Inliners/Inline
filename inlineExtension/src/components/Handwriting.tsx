@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { PANEL as C } from '../lib/extensionTheme'
 import { PanelShell, SectionLabel } from './panelKit'
 import { ensureHandwritingCanvas, restoreHandwriting } from '../content/handwritingRestore'
+import { emitSaveToast } from '../lib/saveToast'
 
 type HWTool = 'pen' | 'highlighter' | 'eraser'
 
@@ -188,7 +189,10 @@ export default function Handwriting({ onClose }: HandwritingProps) {
             clearedAt: data.length === 0 ? Date.now() : null,
           },
         },
-        () => { if (chrome.runtime.lastError) { /* ignore */ } },
+        (response) => {
+          if (chrome.runtime.lastError) return
+          emitSaveToast(response)
+        },
       )
     } catch { /* extension context unavailable */ }
   }, [])
@@ -288,7 +292,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
   const activeLabel = tools.find(t => t.id === tool)?.label ?? 'Pen'
 
   return (
-    <PanelShell title="Pen" subtitle="Handwrite & highlight freely" chip={activeLabel} width={290} onClose={onClose}>
+    <PanelShell title="Pen" subtitle="Handwrite & highlight freely" chip={activeLabel} width={290} tool="handwriting" onClose={onClose}>
       <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Tools */}
         <div>

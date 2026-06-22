@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import PageHeader from '@/components/shell/PageHeader'
@@ -9,7 +9,6 @@ import { getWorkspaceName } from '@/lib/workspaces'
 import {
   getDocumentsForFolder,
   createFolderDocument,
-  upsertFolderDocument,
   type FolderDocument,
 } from '@/lib/workspace-library'
 import {
@@ -27,69 +26,42 @@ import {
   ChevronRight,
   Folder,
 } from 'lucide-react'
+import { previewText } from '@/lib/utils'
 
 function FolderDocumentRow({
   doc,
   workspaceId,
   folderId,
-  onUpdated,
 }: {
   doc: FolderDocument
   workspaceId: string
   folderId: string
-  onUpdated: () => void
 }) {
-  const [title, setTitle] = useState(doc.title)
   const href = `/app/${workspaceId}/folder/${folderId}/doc/${doc.id}`
-
-  useEffect(() => {
-    setTitle(doc.title)
-  }, [doc.id, doc.title])
-
-  const saveTitle = useCallback(() => {
-    const t = title.trim() || 'Untitled'
-    if (t === doc.title) return
-    upsertFolderDocument({ ...doc, title: t, updatedAt: Date.now() })
-    onUpdated()
-  }, [doc, title, onUpdated])
+  const preview = previewText(doc.content) || 'Empty document'
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 hover:border-primary/25 transition-colors flex gap-3 items-start">
-      <Link
-        href={href}
-        className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/15 transition-colors cursor-pointer"
-        title="Open document"
-      >
+    <Link
+      href={href}
+      className="group flex gap-3 items-start rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/25 cursor-pointer"
+    >
+      <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
         <FileText className="w-5 h-5 text-primary" />
-      </Link>
+      </div>
       <div className="min-w-0 flex-1">
-        <input
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          onBlur={saveTitle}
-          onKeyDown={e => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-          }}
-          aria-label="Document name"
-          className="w-full font-medium text-foreground bg-transparent border-0 border-b border-transparent hover:border-border/80 focus:border-primary focus:outline-none focus:ring-0 rounded-none px-0 py-0.5 mb-1"
-        />
-        <Link href={href} className="block text-xs text-muted-foreground line-clamp-2 min-h-10 hover:text-foreground transition-colors cursor-pointer">
-          {doc.content.trim() || 'Empty document'}
-        </Link>
+        <p className="font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+          {doc.title}
+        </p>
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground group-hover:text-foreground/80 transition-colors">
+          {preview}
+        </p>
         <div className="flex items-center gap-1 mt-3 text-[11px] text-muted-foreground">
           <Clock className="w-3 h-3 shrink-0" />
           {new Date(doc.updatedAt).toLocaleString()}
         </div>
       </div>
-      <Link
-        href={href}
-        className="shrink-0 mt-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-        title="Open document"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </Link>
-    </div>
+      <ChevronRight className="w-4 h-4 shrink-0 mt-1 text-muted-foreground group-hover:text-foreground transition-colors" />
+    </Link>
   )
 }
 
@@ -245,7 +217,6 @@ export default function WorkspaceFolderLibraryPage() {
                   doc={doc}
                   workspaceId={workspaceId}
                   folderId={folderId}
-                  onUpdated={refresh}
                 />
               ))}
             </div>

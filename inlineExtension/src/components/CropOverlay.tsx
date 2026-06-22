@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { PANEL as C, FONT } from '../lib/extensionTheme'
 import { loadSettings } from '../lib/extensionSettings'
 import { fetchViaBackground } from '../lib/backgroundFetch'
+import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
 
 interface CropOverlayProps {
   screenshot: string
@@ -72,9 +73,16 @@ export default function CropOverlay({ screenshot, onClose }: CropOverlayProps) {
       )
       const croppedDataUrl = canvas.toDataURL('image/png')
 
+      const access = await reserveAiPrompt()
+      if (!access.allowed) {
+        setResult(`Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`)
+        return
+      }
+
       const { apiBaseUrl, accessToken } = await loadSettings()
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+      if (access.signedIn && accessToken) headers.Authorization = `Bearer ${accessToken}`
+      if (!access.signedIn) headers['X-Inline-Device-Id'] = access.deviceId
 
       const res = await fetchViaBackground(`${apiBaseUrl}/api/ai/extension-light`, {
         method: 'POST',
@@ -83,6 +91,8 @@ export default function CropOverlay({ screenshot, onClose }: CropOverlayProps) {
           task: 'analyze-image',
           text: 'Analyze this screenshot crop and describe what you see.',
           image: croppedDataUrl,
+          guest: !access.signedIn,
+          deviceId: access.signedIn ? undefined : access.deviceId,
         }),
       })
 

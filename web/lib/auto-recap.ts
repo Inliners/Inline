@@ -15,10 +15,29 @@
  */
 
 import type { Note } from './types'
-import { prettyNotePreview } from './note-preview'
+import {
+  buildOverviewHtml,
+  buildRecapEntryHtml,
+  type RecapOverviewAi,
+  formatRecapMinute,
+  recapEntryAnchorId,
+  captureTypeSlug,
+  actionLabelFor,
+  summarizeNotesForAi,
+  normalizeRecapListSections,
+} from './recap-format'
+
+export {
+  formatRecapMinute,
+  recapEntryAnchorId,
+  captureTypeSlug,
+  actionLabelFor,
+} from './recap-format'
+import { documentHref, isUnsafeDocId, recapDocIdForPageUrl } from './doc-routes'
 import {
   loadFolderDocuments,
   upsertFolderDocument,
+  deleteFolderDocument,
   type FolderDocument,
 } from './workspace-library'
 import {
@@ -65,22 +84,6 @@ function groupNotesByPageUrl(notes: Note[]): Record<string, Note[]> {
   }, {})
 }
 
-function tagLabel(tag: string): string {
-  return tag
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function sectionKeyFor(note: Note): string {
-  const priority = [
-    'summary', 'rephrase', 'shorten', 'rewrite', 'ai',
-    'drawing', 'handwriting', 'highlight', 'sticky', 'anchor',
-    'paper-note', 'stamp', 'clip',
-  ]
-  for (const p of priority) if (note.tags?.includes(p)) return p
-  return note.type || 'Other'
-}
-
 function htmlEscape(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -89,59 +92,113 @@ function htmlEscape(s: string): string {
 }
 
 /** Build a clean Tiptap-compatible HTML recap. */
-function composeRecapHtml(workspaceTitle: string, pageUrl: string, notes: Note[]): string {
+export function buildRecapHtml(
+  _workspaceTitle: string,
+  pageUrl: string,
+  notes: Note[],
+  aiOverview?: RecapOverviewAi | null,
+): string {
+  return composeRecapHtml(_workspaceTitle, pageUrl, notes, aiOverview)
+}
+
+function composeRecapHtml(
+  _workspaceTitle: string,
+  pageUrl: string,
+  notes: Note[],
+  aiOverview?: RecapOverviewAi | null,
+): string {
   const pageTitle = titleOf(notes, pageUrl)
   const domain = domainOf(pageUrl)
-  const first = notes.reduce((acc, n) => (n.createdAt < acc ? n.createdAt : acc), notes[0].createdAt)
-  const last = notes.reduce((acc, n) => {
-    const ts = n.updatedAt ?? n.createdAt
-    return ts > acc ? ts : acc
-  }, notes[0].updatedAt ?? notes[0].createdAt)
+  const sorted = [...notes].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )
 
-  const buckets: Record<string, Note[]> = {}
-  for (const n of notes) {
-    const k = sectionKeyFor(n)
-    ;(buckets[k] = buckets[k] ?? []).push(n)
+  const overview = buildOverviewHtml(notes, pageTitle, domain, aiOverview)
+  const entries = sorted.map(buildRecapEntryHtml).join('')
+  return `${overview}<h2>Activity</h2>${entries}`
+}
+
+async function fetchAiOverview(
+  pageTitle: string,
+  pageUrl: string,
+  notes: Note[],
+): Promise<RecapOverviewAi | null> {
+  if (typeof window === 'undefined' || notes.length === 0) return null
+  try {
+    const res = await fetch('/api/ai/recap-compose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pageTitle,
+        pageUrl,
+        captures: summarizeNotesForAi(notes),
+      }),
+    })
+    if (!res.ok) return null
+    const json = await res.json() as RecapOverviewAi
+    return json
+  } catch {
+    return null
   }
+}
 
-  const ORDER = ['summary', 'rephrase', 'shorten', 'rewrite', 'ai',
-    'highlight', 'sticky', 'anchor', 'paper-note',
-    'drawing', 'handwriting', 'stamp', 'clip']
-  const sectionKeys = [
-    ...ORDER.filter(k => buckets[k]?.length),
-    ...Object.keys(buckets).filter(k => !ORDER.includes(k)),
-  ]
+/** Remove legacy duplicate &lt;h1&gt; from stored recap HTML (title lives on the document). */
+export function stripRecapLeadingTitle(html: string): string {
+  return html.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/i, '')
+}
 
-  const totalCount = notes.length
-  const typeSummary = sectionKeys
-    .map(k => `${buckets[k].length} ${tagLabel(k)}`)
-    .join(' · ')
+/** Strip duplicate meta block shown in the page header (legacy + new recaps). */
+export function normalizeRecapContent(html: string, notes?: Note[]): string {
+  let out = stripRecapLeadingTitle(html)
+  out = out.replace(
+    /^\s*<p>\s*<em>\s*Auto-generated recap[\s\S]*?<\/p>\s*/i,
+    '',
+  )
+  out = out.replace(
+    /(class="recap-entry-meta"[^>]*>\s*<em>[^<]*)\s·\s([^<]*<\/em>)/gi,
+    '$1 — $2',
+  )
+  out = normalizeRecapListSections(out)
+  if (notes?.length) out = ensureRecapEntryAnchors(out, notes)
+  return out.trim()
+}
 
-  const overviewLines = [
-    `Captured <strong>${totalCount}</strong> item${totalCount === 1 ? '' : 's'} on <strong>${htmlEscape(pageTitle)}</strong> (<code>${htmlEscape(domain)}</code>).`,
-    `${htmlEscape(typeSummary)}.`,
-    `First interaction: ${new Date(first).toLocaleString()}. Most recent: ${new Date(last).toLocaleString()}.`,
-  ]
+/** Inject stable entry wrappers for legacy recaps (outline jump + margin markers). */
+export function ensureRecapEntryAnchors(html: string, notes: Note[]): string {
+  if (!html.trim() || notes.length === 0) return html
+  if (/data-recap-entry/i.test(html) && /<div[^>]*data-recap-entry/i.test(html)) return html
 
-  const head =
-    `<h1>${htmlEscape(pageTitle)}</h1>` +
-    `<p><em>Auto-generated recap for ${htmlEscape(workspaceTitle)}.</em> ` +
-    `<a href="${htmlEscape(pageUrl)}" target="_blank" rel="noreferrer">Open source page ↗</a></p>` +
-    `<h2>Overview</h2>` +
-    `<p>${overviewLines.join(' ')}</p>`
+  const activityMatch = html.match(/<h2[^>]*>\s*Activity\s*<\/h2>/i)
+  if (!activityMatch || activityMatch.index == null) return html
 
-  const sectionsHtml = sectionKeys.map(key => {
-    const items = buckets[key]
-    const heading = tagLabel(key)
-    const rows = items.map(n => {
-      const stamp = new Date(n.updatedAt ?? n.createdAt).toLocaleString()
-      const preview = htmlEscape(prettyNotePreview(n))
-      return `<li><strong>${stamp}</strong> — ${preview}</li>`
-    }).join('')
-    return `<h2>${htmlEscape(heading)}</h2><ul>${rows}</ul>`
-  }).join('')
+  const splitAt = activityMatch.index + activityMatch[0].length
+  const before = html.slice(0, splitAt)
+  let activity = html.slice(splitAt)
+  const sorted = [...notes].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )
+  let i = 0
 
-  return head + sectionsHtml
+  activity = activity.replace(
+    /(<p>\s*<em>[^<]*·[^<]*<\/em>\s*<\/p>)([\s\S]*?)(<hr\s*\/?>)/gi,
+    (_m, metaP: string, body: string, hr: string) => {
+      if (i >= sorted.length) return metaP + body + hr
+      const note = sorted[i]!
+      i += 1
+      const anchorId = recapEntryAnchorId(note.id)
+      const slug = captureTypeSlug(note)
+      const meta = metaP.replace(
+        /<p(\s[^>]*)?>/i,
+        `<p class="recap-entry-meta" data-note-id="${htmlEscape(note.id)}" data-capture-type="${htmlEscape(slug)}">`,
+      )
+      return (
+        `<div id="${anchorId}" data-recap-entry data-note-id="${htmlEscape(note.id)}" ` +
+        `data-capture-type="${htmlEscape(slug)}" class="recap-entry">${meta}${body}</div>${hr}`
+      )
+    },
+  )
+
+  return before + activity
 }
 
 /** Find an existing recap for a given page url. */
@@ -171,10 +228,17 @@ export function ensurePageRecaps(
     if (pageUrl === '(no page)') continue
     if (pageNotes.length === 0) continue
 
-    const existing = findRecapDoc(workspaceId, pageUrl)
+    let existing = findRecapDoc(workspaceId, pageUrl)
     const pageTitle = titleOf(pageNotes, pageUrl)
     const content = composeRecapHtml(workspaceTitle, pageUrl, pageNotes)
     const now = Date.now()
+
+    if (existing && isUnsafeDocId(existing.id)) {
+      const newId = recapDocIdForPageUrl(pageUrl, existing.createdAt)
+      deleteFolderDocument(existing.id)
+      existing = { ...existing, id: newId }
+      upsertFolderDocument(existing)
+    }
 
     if (existing) {
       const sourceNewest = pageNotes.reduce((acc, n) => {
@@ -183,7 +247,7 @@ export function ensurePageRecaps(
       }, 0)
       const shouldRegen =
         sourceNewest > existing.updatedAt ||
-        now - existing.updatedAt > RECAP_REGEN_INTERVAL_MS
+        (!existing.recapStale && now - existing.updatedAt > RECAP_REGEN_INTERVAL_MS)
       if (shouldRegen) {
         upsertFolderDocument({
           ...existing,
@@ -199,10 +263,10 @@ export function ensurePageRecaps(
         id: existing.id,
         title: pageTitle,
         updatedAt: new Date(now).toISOString(),
-        href: `/app/${workspaceId}/folder/${folderId}/doc/${existing.id}`,
+        href: documentHref(workspaceId, existing.id),
       }
     } else {
-      const id = `doc-recap-${encodeURIComponent(pageUrl).slice(0, 40)}-${now}`
+      const id = recapDocIdForPageUrl(pageUrl, now)
       const doc: FolderDocument = {
         id,
         workspaceId,
@@ -220,10 +284,42 @@ export function ensurePageRecaps(
         id,
         title: pageTitle,
         updatedAt: new Date(now).toISOString(),
-        href: `/app/${workspaceId}/folder/${folderId}/doc/${id}`,
+        href: documentHref(workspaceId, id),
       }
     }
   }
 
   return out
+}
+
+/** Rebuild recap body from source captures (clears stale flag). */
+export function regenerateRecapFromNotes(
+  doc: FolderDocument,
+  workspaceTitle: string,
+  notes: Note[],
+  aiOverview?: RecapOverviewAi | null,
+): FolderDocument {
+  if (!doc.pageUrl) return doc
+  const pageNotes = notes.filter(n => n.pageUrl === doc.pageUrl)
+  const content = composeRecapHtml(workspaceTitle, doc.pageUrl, pageNotes, aiOverview)
+  return {
+    ...doc,
+    title: titleOf(pageNotes, doc.pageUrl),
+    content,
+    updatedAt: Date.now(),
+    recapStale: false,
+  }
+}
+
+/** Rebuild with optional AI overview paragraph + bullets. */
+export async function regenerateRecapFromNotesAsync(
+  doc: FolderDocument,
+  workspaceTitle: string,
+  notes: Note[],
+): Promise<FolderDocument> {
+  if (!doc.pageUrl) return doc
+  const pageNotes = notes.filter(n => n.pageUrl === doc.pageUrl)
+  const pageTitle = titleOf(pageNotes, doc.pageUrl)
+  const aiOverview = await fetchAiOverview(pageTitle, doc.pageUrl, pageNotes)
+  return regenerateRecapFromNotes(doc, workspaceTitle, notes, aiOverview)
 }

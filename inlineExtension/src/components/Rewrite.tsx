@@ -7,7 +7,9 @@ import { fetchViaBackground } from '../lib/backgroundFetch'
 import { saveAIResultToHistory } from '../lib/historyApi'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { saveAIReplacement } from '../content/aiReplacements'
+import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
 import { PanelShell, Spinner, SectionLabel, ActionTile, Chip, Segmented, Composer } from './panelKit'
+import FormattedAiText from './FormattedAiText'
 import { setAiBusy } from '../lib/panelLock'
 
 const ICopy = () => (
@@ -90,13 +92,25 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
     setLastTask(task)
     setLastInstruction(instruction)
     try {
+      const access = await reserveAiPrompt()
+      if (!access.allowed) {
+        setResult(`Sign in to keep using AI. Guest mode includes ${GUEST_AI_LIMIT} free prompts on this browser.`)
+        return
+      }
       const text = selectedText.slice(0, 8000)
       const { apiBaseUrl, accessToken } = await loadSettings()
       const h: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (access.signedIn && accessToken) h.Authorization = `Bearer ${accessToken}`
+      if (!access.signedIn) h['X-Inline-Device-Id'] = access.deviceId
       const res = await fetchViaBackground(`${apiBaseUrl}/api/ai/extension-light`, {
         method: 'POST', headers: h,
-        body: JSON.stringify({ task, text, instruction }),
+        body: JSON.stringify({
+          task,
+          text,
+          instruction,
+          guest: !access.signedIn,
+          deviceId: access.signedIn ? undefined : access.deviceId,
+        }),
       })
       if (res.ok) {
         const j = await res.json<{ result?: string }>()
@@ -164,22 +178,23 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
         title="Rewrite"
         subtitle="Reword your selection with AI"
         chip={hasSelection ? 'Selection' : undefined}
-        width={358}
+        tool="rewrite"
+        width={342}
         onClose={onClose}
         footer={
-          <div style={{ padding: '12px 16px 14px' }}>
+          <div style={{ padding: '10px 14px 12px' }}>
             <Composer
               value={customPrompt}
               onChange={setCustomPrompt}
               onSubmit={() => { if (customPrompt.trim()) runTask('rewrite', customPrompt) }}
-              placeholder={hasSelection ? 'Describe how to rewrite it…' : 'Select text to rewrite'}
+              placeholder={hasSelection ? 'Describe how to rewrite it...' : 'Select text to rewrite'}
               sendDisabled={!hasSelection}
               modeLabel={tone}
             />
           </div>
         }
       >
-        <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Tone */}
           <div>
             <SectionLabel>Tone</SectionLabel>
@@ -228,12 +243,13 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
   return (
     <PanelShell
       title="Rewrite"
-      subtitle={loading ? 'Rewriting…' : 'Review & apply'}
+      subtitle={loading ? 'Rewriting...' : 'Review & apply'}
       chip={lastInstruction ? 'Custom' : (lastTask || undefined)}
-      width={364}
+      tool="rewrite"
+      width={342}
       onClose={onClose}
       footer={!loading ? (
-        <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <button type="button" onClick={() => { setResult(null); setShowDiff(false); setInserted(false) }} aria-label="Back" style={ghostBtn}>Back</button>
           <button type="button" onClick={() => setShowDiff(d => !d)} aria-label={showDiff ? 'Hide diff' : 'Show diff'} style={ghostBtn}>{showDiff ? 'Hide diff' : 'Diff'}</button>
           {!inserted ? (
@@ -248,17 +264,17 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
     >
       <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{
-          padding: 16, border: `1px solid ${C.border}`, borderRadius: 18,
-          fontSize: 13.5, lineHeight: 1.7, color: C.text, minHeight: 80,
-          background: C.surfaceBubble, boxShadow: C.shadowCard,
-          maxHeight: 280, overflowY: 'auto', whiteSpace: 'pre-wrap',
+          padding: 15, border: `1px solid ${C.border}`, borderRadius: 16,
+          minHeight: 80,
+          background: C.surfaceBubble, boxShadow: 'none',
+          maxHeight: 280, overflowY: 'auto',
         }}>
           {loading ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: C.textMuted }}>
-              <Spinner size={16} /><span style={{ fontStyle: 'italic' }}>Generating…</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: C.textMuted, fontSize: 13.5, lineHeight: 1.7 }}>
+              <Spinner size={16} /><span style={{ fontStyle: 'italic' }}>Generating...</span>
             </span>
           ) : showDiff && result ? (
-            <span>
+            <span style={{ fontSize: 13.5, lineHeight: 1.7, color: C.text }}>
               {computeWordDiff(selectedText, result).map((p, i) =>
                 p.type === 'del' ? (
                   <span key={i} style={{ color: '#ef4444', textDecoration: 'line-through', background: 'rgba(239,68,68,0.1)' }}>{p.text}</span>
@@ -269,7 +285,9 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
                 )
               )}
             </span>
-          ) : result}
+          ) : result ? (
+            <FormattedAiText text={result} style={{ fontSize: 13.5, lineHeight: 1.7 }} />
+          ) : null}
         </div>
 
         {!loading && (
@@ -277,7 +295,7 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
             value={customPrompt}
             onChange={setCustomPrompt}
             onSubmit={() => { if (customPrompt.trim()) runTask('rewrite', customPrompt) }}
-            placeholder="Refine with another instruction…"
+            placeholder="Refine with another instruction..."
             sendDisabled={!hasSelection}
             modeLabel={tone}
           />
@@ -288,19 +306,19 @@ export default function Rewrite({ selectedText, originalRange, onClose }: Rewrit
 }
 
 const ghostBtn: React.CSSProperties = {
-  padding: '9px 16px', borderRadius: C.radiusPill,
+  padding: '8px 13px', borderRadius: C.radiusPill,
   border: `1px solid ${C.border}`, background: C.surfaceBubble,
   fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color: C.text, fontFamily: FONT,
-  boxShadow: C.shadowSoft,
+  boxShadow: 'none',
 }
 const primaryBtn: React.CSSProperties = {
-  padding: '9px 20px', borderRadius: C.radiusPill, border: 'none',
+  padding: '8px 16px', borderRadius: C.radiusPill, border: 'none',
   background: C.accent, color: '#fff', fontSize: 12.5, fontWeight: 700,
   cursor: 'pointer', fontFamily: FONT, boxShadow: 'none',
 }
 const iconBtn: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-  width: 36, height: 36, border: `1px solid ${C.border}`, borderRadius: 12,
+  width: 34, height: 34, border: `1px solid ${C.border}`, borderRadius: 11,
   background: C.surfaceBubble, cursor: 'pointer', padding: 0, color: C.textMuted,
-  boxShadow: C.shadowSoft,
+  boxShadow: 'none',
 }

@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { FileText, Star, Sparkles } from 'lucide-react'
-import { cn, stripHtml } from '@/lib/utils'
-import { loadFolderDocuments, upsertFolderDocument, type FolderDocument } from '@/lib/workspace-library'
+import { documentHref } from '@/lib/doc-routes'
+import { cn, previewText } from '@/lib/utils'
+import { loadFolderDocuments, type FolderDocument } from '@/lib/workspace-library'
 import { loadWorkspaceFolders, findFolder, type WorkspaceFolder } from '@/lib/workspace-folders'
 import {
   getPinnedDocumentIds,
@@ -76,7 +77,7 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
   const orderedDocs = useMemo(() => {
     const pinned = docs.filter(d => pinnedIds.has(d.id))
     const rest = docs.filter(d => !pinnedIds.has(d.id))
-    return [...pinned, ...rest].slice(0, 12)
+    return [...pinned, ...rest]
   }, [docs, pinnedIds])
 
   function folderLabel(folderId: string) {
@@ -98,22 +99,23 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-      {orderedDocs.map((doc, i) => (
-        <DocLibraryCard
-          key={doc.id}
-          doc={doc}
-          workspaceId={workspaceId}
-          folderName={folderLabel(doc.folderId)}
-          pinned={isPinnedDocument(workspaceId, doc.id)}
-          onTogglePin={() => {
-            togglePinnedDocument(workspaceId, doc.id)
-            refresh()
-          }}
-          onRenamed={refresh}
-          index={i}
-        />
-      ))}
+    <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal">
+      <div className="flex w-max min-w-full snap-x snap-mandatory gap-4 pr-4">
+        {orderedDocs.map((doc, i) => (
+          <DocLibraryCard
+            key={doc.id}
+            doc={doc}
+            workspaceId={workspaceId}
+            folderName={folderLabel(doc.folderId)}
+            pinned={isPinnedDocument(workspaceId, doc.id)}
+            onTogglePin={() => {
+              togglePinnedDocument(workspaceId, doc.id)
+              refresh()
+            }}
+            index={i}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -124,7 +126,6 @@ function DocLibraryCard({
   folderName,
   pinned,
   onTogglePin,
-  onRenamed,
   index,
 }: {
   doc: FolderDocument
@@ -132,31 +133,21 @@ function DocLibraryCard({
   folderName: string
   pinned: boolean
   onTogglePin: () => void
-  onRenamed: () => void
   index: number
 }) {
-  const href = `/app/${workspaceId}/folder/${doc.folderId}/doc/${doc.id}`
-  const [title, setTitle] = useState(doc.title)
+  const href = documentHref(workspaceId, doc.id)
   const bg = PASTEL_BGS[index % PASTEL_BGS.length]
-  const preview = stripHtml(doc.content) || 'Empty document'
-
-  useEffect(() => {
-    setTitle(doc.title)
-  }, [doc.id, doc.title])
-
-  function saveTitle() {
-    const t = title.trim() || 'Untitled'
-    if (t === doc.title) return
-    upsertFolderDocument({ ...doc, title: t, updatedAt: Date.now() })
-    onRenamed()
-  }
+  const preview = previewText(doc.content) || 'Empty document'
 
   return (
-    <div className={cn(
-      'relative rounded-2xl p-5 flex flex-col justify-between h-40',
-      'border border-border transition-colors hover:border-stone-400/50',
-      bg,
-    )}>
+    <Link
+      href={href}
+      className={cn(
+        'relative flex h-40 w-[240px] shrink-0 snap-start flex-col justify-between rounded-2xl p-5',
+        'border border-border transition-colors hover:border-stone-400/50',
+        bg,
+      )}
+    >
       <button
         type="button"
         title={pinned ? 'Remove from favorites' : 'Add to favorites'}
@@ -171,23 +162,15 @@ function DocLibraryCard({
       </button>
 
       <div>
-        <input
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          onBlur={saveTitle}
-          onKeyDown={e => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-          }}
-          aria-label="Document name"
-          className="line-clamp-1 w-full truncate rounded-none border-0 bg-transparent px-0 py-0 pr-6 text-base font-semibold tracking-tight text-foreground focus:outline-none focus:ring-0"
-        />
-        <p className="text-xs text-slate-500 mt-1 line-clamp-2 dark:text-[#C9DAF0]/85">
+        <p className="line-clamp-1 w-full truncate pr-6 text-base font-semibold tracking-tight text-foreground">
+          {doc.title}
+        </p>
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-[#C9DAF0]/85">
           {preview}
         </p>
       </div>
 
-      <Link href={href} className="flex items-center justify-between gap-2 mt-4 cursor-pointer">
+      <div className="mt-4 flex items-center justify-between gap-2">
         {doc.autoGenerated ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
             <Sparkles className="w-2.5 h-2.5" aria-hidden /> Auto-recap
@@ -198,7 +181,7 @@ function DocLibraryCard({
           </span>
         )}
         <span className="truncate text-[10px] text-muted-foreground">{folderName} &middot; {relativeTime(doc.updatedAt)}</span>
-      </Link>
-    </div>
+      </div>
+    </Link>
   )
 }

@@ -109,8 +109,15 @@ The user is chatting from workspace "${workspaceId || 'unknown'}". ${retrievalNo
 
 # Citation rules (strict)
 - Cite a source inline as [n] ONLY when n appears in the numbered sources below. Never invent a source number, title, or quote.
+- Use at most one citation per bullet or sentence — never comma-separated lists like [1, 2, 3] or [1, 2, 3, 4, 5].
+- When listing websites or domains, use one bullet per unique domain. Omit inline citations on list items when possible — source cards appear below the answer.
 - If the sources do not contain the answer, say so plainly and answer from general knowledge only when clearly labeled as such.
-- General questions about Inline itself ("what are you?", "what can you do?") can be answered from the identity context above without citations.
+- General questions about Inline itself ("what are you?", "what can you do?", "how do I use Inline?") can be answered from the identity context above without citations.
+
+# Response format
+- Conversational plain text. Use "- " bullet lines when listing multiple items.
+- No markdown bold, asterisks, hashes, or headings.
+- Keep answers short unless the user asks for detail. Group related captures instead of dumping every source number.
 
 ${contextBlock ? `# Retrieved sources\n${contextBlock}` : '# Retrieved sources\n(none — the workspace has no matching captures)'}
 

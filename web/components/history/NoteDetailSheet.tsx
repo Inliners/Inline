@@ -5,6 +5,7 @@ import { ExternalLink, Clock, Globe, Tag, MapPin, FileText, PenTool, BrainCircui
 import type { Note, NoteType } from '@/lib/types'
 import { formatDistanceToNow, format } from 'date-fns'
 import { prettyNotePreview } from '@/lib/note-preview'
+import { truncateDisplayUrl } from '@/lib/utils'
 
 const TYPE_META: Record<NoteType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   text:         { label: 'Text Note',   icon: FileText,     color: '#6C91C2', bg: '#DCE6F4' },
@@ -91,10 +92,11 @@ export default function NoteDetailSheet({ note, onClose }: NoteDetailSheetProps)
                 href={note.pageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                title={note.pageUrl}
                 className="mt-3 flex items-center gap-1.5 text-[11px] text-[#37352F] hover:text-[#4B83C4] transition-colors truncate cursor-pointer group"
               >
                 <Globe className="w-3 h-3 shrink-0 text-slate-400 group-hover:text-[#4B83C4] transition-colors" />
-                <span className="truncate">{note.pageUrl.length > 64 ? note.pageUrl.slice(0, 64) + '…' : note.pageUrl}</span>
+                <span className="truncate">{truncateDisplayUrl(note.pageUrl)}</span>
                 <ExternalLink className="w-3 h-3 shrink-0" />
               </a>
             </div>

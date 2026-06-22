@@ -2,6 +2,25 @@ import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react
 import { motion, AnimatePresence } from 'framer-motion'
 import Rewrite from './Rewrite'
 import AI from './AI'
+import {
+  IconAi,
+  IconDraw,
+  IconEyeOff,
+  IconHandwriting,
+  IconHighlight,
+  IconLaser,
+  IconLayers,
+  IconMore,
+  IconNotebook,
+  IconNotes,
+  IconRewrite,
+  IconScreenshot,
+  IconSearch,
+  IconSettings,
+  IconShare,
+  IconStamp,
+  DockMenuIcon,
+} from './toolIcons'
 import Notes from './Notes'
 import Settings from './Settings'
 import Highlighter from './Highlighter'
@@ -34,98 +53,23 @@ function openDashboard(path = '/app/dashboard') {
 const spring = { type: 'spring' as const, stiffness: 380, damping: 30, mass: 0.6 }
 const panelSpring = { type: 'spring' as const, stiffness: 440, damping: 36, mass: 0.5 }
 
-/* ─── Tool glyphs ─── */
-const IRewrite = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-  </svg>
-)
-const IAi = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
-  </svg>
-)
-const INotes = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" />
-  </svg>
-)
-const IDraw = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-    <path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" />
-  </svg>
-)
-const IHighlight = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 11l-6 6v3h9l3-3" /><path d="M22 12l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" />
-  </svg>
-)
-const ISettings = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-  </svg>
-)
-const ILayers = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" />
-  </svg>
-)
-const IStamps = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-)
-const ISearch = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-)
-const IScreenshot = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
-  </svg>
-)
-const ILaser = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="2" fill="currentColor" />
-    <path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-  </svg>
-)
-const IShare = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-  </svg>
-)
-const IHandwriting = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-    <path d="M2 22c2-2 4-3.5 6-3.5s3 1 5 1 4-1.5 6-3.5" />
-  </svg>
-)
-const INotebook = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-  </svg>
-)
-const IEyeOff = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-)
-const IMore = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="1.5" />
-    <circle cx="19" cy="12" r="1.5" />
-    <circle cx="5" cy="12" r="1.5" />
-  </svg>
-)
+/* ─── Tool glyphs (shared with panel headers) ─── */
+const IRewrite = () => <IconRewrite />
+const IAi = () => <IconAi />
+const INotes = () => <IconNotes />
+const IDraw = () => <IconDraw />
+const IHighlight = () => <IconHighlight />
+const ISettings = () => <IconSettings />
+const ILayers = () => <IconLayers />
+const IStamps = () => <IconStamp />
+const ISearch = () => <IconSearch />
+const IScreenshot = () => <IconScreenshot />
+const ILaser = () => <IconLaser />
+const IShare = () => <IconShare />
+const IHandwriting = () => <IconHandwriting />
+const INotebook = () => <IconNotebook />
+const IEyeOff = () => <IconEyeOff />
+const IMore = () => <IconMore />
 
 /** The Inline brand glyph — the slanted tick from the web wordmark, in white. */
 /** Small dark keycap used inside the launcher tooltip. */
@@ -169,6 +113,16 @@ type PaperNote = {
   id: string; x: number; y: number; w: number; h: number
   content: string; paperStyle: 'Plain' | 'Ruled' | 'Grid' | 'Dotted'
   createdAt: number; updatedAt: number
+}
+
+type InlineToastTone = 'success' | 'local' | 'error'
+
+type InlineToast = {
+  id: number
+  message: string
+  tone: InlineToastTone
+  actionLabel?: string
+  onAction?: () => void
 }
 
 /** Tool definitions keyed by panel id — used to build the rail. */
@@ -233,20 +187,24 @@ function requestHaptic() {
   } catch { /* unavailable */ }
 }
 
-/** A single rail icon button with a custom navy tooltip to its left. */
+/** A single rail icon button with a custom tooltip to its left. */
 function RailButton({
-  icon, label, active, suppressTip, onClick,
+  icon, label, active, onClick,
 }: {
-  icon: React.ReactNode; label: string; active: boolean; suppressTip?: boolean
+  icon: React.ReactNode; label: string; active: boolean
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) {
   const [hov, setHov] = useState(false)
-  const showTip = hov && !suppressTip
+  const [focused, setFocused] = useState(false)
+  const tooltipId = `inline-rail-tip-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+  const showTip = hov || focused
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
       <AnimatePresence>
         {showTip && (
           <motion.span
+            id={tooltipId}
+            role="tooltip"
             initial={{ opacity: 0, x: 5, scale: 0.94 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 5, scale: 0.94 }}
@@ -273,15 +231,22 @@ function RailButton({
         onClick={onClick}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         aria-label={label}
+        aria-describedby={showTip ? tooltipId : undefined}
         aria-pressed={active}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: DOCK_BTN, height: DOCK_BTN, borderRadius: 11, border: 'none', padding: 0,
-          background: active ? C.accent : hov ? C.hoverBg : 'transparent',
-          color: active ? '#FFFFFF' : C.textMuted,
+          background: active ? C.toneSelectedBg : hov ? C.hoverBg : 'transparent',
+          color: active ? C.accent : C.textMuted,
           cursor: 'pointer', transition: 'background 0.14s, color 0.14s',
-          boxShadow: 'none',
+          boxShadow: active
+            ? `inset 0 0 0 1px ${C.borderStrong}${focused ? ', 0 0 0 3px rgba(19, 42, 79, 0.18)' : ''}`
+            : focused
+              ? '0 0 0 3px rgba(19, 42, 79, 0.18)'
+              : 'none',
         }}
       >{icon}</button>
     </div>
@@ -293,6 +258,7 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
   const [paperNotes, setPaperNotes] = useState<PaperNote[]>([])
   const [paperNotesLoaded, setPaperNotesLoaded] = useState(false)
   const paperSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const paperHydrated = useRef(false)
   const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false)
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
   const [laserActive, setLaserActive] = useState(false)
@@ -300,6 +266,9 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
   const [dockOpen, setDockOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<DockGroupId | null>(null)
   const [launcherHover, setLauncherHover] = useState(false)
+  const [launcherFocus, setLauncherFocus] = useState(false)
+  const [toast, setToast] = useState<InlineToast | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /* Main-panel geometry — the panel is anchored to the LEFT of the launcher,
      top-aligned with the rail, and never moves when tools are swapped. */
@@ -317,6 +286,33 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
   }, [])
 
   /* ─── Paper-note persistence ─── */
+  const showToast = useCallback((message: string, tone: InlineToastTone = 'success', actionLabel?: string, onAction?: () => void) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast({ id: Date.now(), message, tone, actionLabel, onAction })
+    toastTimer.current = setTimeout(() => setToast(null), 2600)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    const onToast = (e: Event) => {
+      const detail = (e as CustomEvent<{ message?: string; tone?: InlineToastTone; action?: 'dashboard' }>).detail
+      if (!detail?.message) return
+      showToast(
+        detail.message,
+        detail.tone ?? 'success',
+        detail.action === 'dashboard' ? 'Open →' : undefined,
+        detail.action === 'dashboard' ? () => openDashboard() : undefined,
+      )
+    }
+    document.addEventListener('inline:toast', onToast)
+    return () => document.removeEventListener('inline:toast', onToast)
+  }, [showToast])
+
   useEffect(() => {
     if (!chrome.runtime?.id) { setPaperNotesLoaded(true); return }
     chrome.runtime.sendMessage(
@@ -332,26 +328,52 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
 
   useEffect(() => {
     if (!paperNotesLoaded) return
+    if (!paperHydrated.current) {
+      paperHydrated.current = true
+      return
+    }
     if (paperSaveTimer.current) clearTimeout(paperSaveTimer.current)
     paperSaveTimer.current = setTimeout(() => {
       if (!chrome.runtime?.id) return
-      chrome.runtime.sendMessage(
-        {
-          type: 'SAVE_ANNOTATIONS',
-          payload: {
-            pageUrl: window.location.href,
-            featureKey: 'paperNotes',
-            data: paperNotes,
-            pageTitle: document.title,
-            domain: window.location.hostname,
-            clearedAt: paperNotes.length === 0 ? Date.now() : null,
+      chrome.storage.local.get(['inlineAccessToken', 'inlineActiveWorkspaceId'], auth => {
+        const syncReady = typeof auth?.inlineAccessToken === 'string' && auth.inlineAccessToken.split('.').length === 3 && typeof auth?.inlineActiveWorkspaceId === 'string' && auth.inlineActiveWorkspaceId.length > 0
+        chrome.runtime.sendMessage(
+          {
+            type: 'SAVE_ANNOTATIONS',
+            payload: {
+              pageUrl: window.location.href,
+              featureKey: 'paperNotes',
+              data: paperNotes,
+              pageTitle: document.title,
+              domain: window.location.hostname,
+              clearedAt: paperNotes.length === 0 ? Date.now() : null,
+            },
           },
-        },
-        () => { if (chrome.runtime.lastError) { /* ignore */ } },
-      )
+          (response) => {
+            if (chrome.runtime.lastError) {
+              showToast('Could not save. Try again.', 'error')
+              return
+            }
+            if (response?.ok) {
+              const synced = response.storageMode === 'workspace' || (response.storageMode !== 'local' && syncReady)
+              if (synced) {
+                showToast('Saved to Workspace', 'success', 'Open →', () => openDashboard())
+              } else {
+                showToast('Saved to browser.', 'local')
+              }
+              return
+            }
+            if (response?.queued) {
+              showToast('Saved to browser.', 'local')
+              return
+            }
+            showToast('Could not save. Try again.', 'error')
+          },
+        )
+      })
     }, 500)
     return () => { if (paperSaveTimer.current) clearTimeout(paperSaveTimer.current) }
-  }, [paperNotes, paperNotesLoaded])
+  }, [paperNotes, paperNotesLoaded, showToast])
 
   const updatePaperNote = useCallback((id: string, patch: Partial<PaperNote>) => {
     setPaperNotes(prev => prev.map(n => n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n))
@@ -404,7 +426,8 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
     requestHaptic()
     setDockOpen(v => {
       const next = !v
-      if (!next) setOpenGroup(null)
+      setOpenGroup(null)
+      setActivePanel(next ? 'ai' : null)
       return next
     })
   }, [])
@@ -500,7 +523,7 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
       case 'screenshot': captureScreenshot(); break
       case 'laser': setLaserActive(p => !p); break
       case 'notebooks': openDashboard(); break
-      case 'collapse': setDockOpen(v => { const next = !v; if (!next) setOpenGroup(null); return next }); break
+      case 'collapse': setDockOpen(v => { const next = !v; setOpenGroup(null); setActivePanel(next ? 'ai' : null); return next }); break
       case 'pause': toggleHidden(); break
     }
     setCmdPaletteOpen(false)
@@ -526,18 +549,22 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
     const handleKb = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        setCmdPaletteOpen(v => !v)
+        setDockOpen(true)
+        setOpenGroup(null)
+        setActivePanel('ai')
       }
     }
     document.addEventListener('keydown', handleKb)
     return () => document.removeEventListener('keydown', handleKb)
   }, [])
 
-  const modeLabel = laserActive
-    ? MODE_LABELS.laser
+  const activeModeId: PanelId | 'laser' | null = laserActive
+    ? 'laser'
     : activePanel && MODE_LABELS[activePanel]
-      ? MODE_LABELS[activePanel]
+      ? activePanel
       : null
+  const modeLabel = activeModeId ? MODE_LABELS[activeModeId] : null
+  const modeIcon = activeModeId ? TOOL_DEFS[activeModeId]?.icon : null
 
   const panelInner = activePanel ? (
     <AnimatePresence mode="wait">
@@ -565,7 +592,107 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
 
   return (
     <>
+      <AnimatePresence>
+        {!hidden && modeLabel && (
+          <motion.div
+            data-inline-interactive=""
+            key={activeModeId ?? modeLabel}
+            initial={{ opacity: 0, y: -6, x: '-50%', scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: -6, x: '-50%', scale: 0.96 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              top: 18,
+              left: '50%',
+              zIndex: 2147483647,
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: C.surfaceBubble,
+              color: C.text,
+              padding: '8px 14px',
+              borderRadius: C.radiusMd,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+              whiteSpace: 'nowrap',
+              border: `1px solid ${C.border}`,
+              boxShadow: C.shadowOuter,
+              fontFamily: FONT,
+            }}
+          >
+            {modeIcon && (
+              <DockMenuIcon size={24}>
+                {modeIcon}
+              </DockMenuIcon>
+            )}
+            {modeLabel}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ─── Main docked panel: anchored top-left of the launcher (stable) ─── */}
+      <AnimatePresence>
+        {!hidden && toast && (
+          <motion.div
+            data-inline-interactive=""
+            key={toast.id}
+            initial={{ opacity: 0, y: -6, x: '-50%', scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: -6, x: '-50%', scale: 0.96 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              top: modeLabel ? 56 : 18,
+              left: '50%',
+              zIndex: 2147483647,
+              pointerEvents: toast.onAction ? 'auto' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              background: toast.tone === 'error' ? '#FEF2F2' : C.surfaceBubble,
+              color: toast.tone === 'error' ? '#991B1B' : C.text,
+              padding: '8px 14px',
+              borderRadius: C.radiusMd,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+              whiteSpace: 'nowrap',
+              border: `1px solid ${toast.tone === 'error' ? '#FECACA' : C.border}`,
+              boxShadow: C.shadowOuter,
+              fontFamily: FONT,
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: toast.tone === 'error' ? '#DC2626' : toast.tone === 'local' ? '#D97706' : '#16A34A' }} />
+            {toast.message}
+            {toast.onAction && toast.actionLabel && (
+              <button
+                type="button"
+                onClick={() => {
+                  const action = toast?.onAction
+                  action?.()
+                  setToast(null)
+                }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '0 0 0 2px',
+                  color: C.accent,
+                  fontSize: 12,
+                  fontWeight: 750,
+                  cursor: 'pointer',
+                  fontFamily: FONT,
+                }}
+              >
+                {toast.actionLabel}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {!hidden && activePanel && !smallScreen && (
           <motion.div
@@ -650,35 +777,14 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
           ><BrandGlyph size={20} /></motion.button>
         ) : (
           <>
-            {/* Launcher (master) with mode toast floating directly above it */}
+            {/* Launcher (master) */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
-              {/* Tool-mode status toast — pinned above the launcher */}
-              <AnimatePresence>
-                {modeLabel && (
-                  <motion.div
-                    key={modeLabel}
-                    initial={{ opacity: 0, y: 6, scale: 0.94 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.94 }}
-                    transition={{ duration: 0.16, ease: 'easeOut' }}
-                    style={{
-                      position: 'absolute', bottom: 'calc(100% + 9px)', right: 0,
-                      pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 7,
-                      background: C.surfaceBubble, color: C.text, padding: '6px 12px', borderRadius: 11,
-                      fontSize: 11.5, fontWeight: 600, letterSpacing: '-0.01em', whiteSpace: 'nowrap',
-                      border: `1px solid ${C.border}`,
-                    }}
-                  >
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }} />
-                    {modeLabel}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               {/* Launcher hover tooltip */}
               <AnimatePresence>
-                {launcherHover && !dockOpen && !activePanel && (
+                {(launcherHover || launcherFocus) && !dockOpen && !activePanel && (
                   <motion.div
+                    id="inline-launcher-tooltip"
+                    role="tooltip"
                     initial={{ opacity: 0, x: 8, scale: 0.94 }}
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 8, scale: 0.94 }}
@@ -707,8 +813,11 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                 onClick={toggleLauncher}
                 onMouseEnter={() => setLauncherHover(true)}
                 onMouseLeave={() => setLauncherHover(false)}
+                onFocus={() => setLauncherFocus(true)}
+                onBlur={() => setLauncherFocus(false)}
                 aria-label={dockOpen ? 'Close Inline tools' : 'Open Inline tools'}
                 aria-expanded={dockOpen}
+                aria-describedby={(launcherHover || launcherFocus) && !dockOpen && !activePanel ? 'inline-launcher-tooltip' : undefined}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.05 }}
@@ -721,7 +830,7 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', padding: 0, outline: 'none',
                   color: '#FFFFFF',
-                  boxShadow: C.shadowOuter,
+                  boxShadow: `${C.shadowOuter}${launcherFocus ? ', 0 0 0 3px rgba(19, 42, 79, 0.18)' : ''}`,
                 }}
               >
                 <BrandGlyph size={21} />
@@ -754,7 +863,6 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                           icon={def.icon}
                           label={def.label}
                           active={isActive}
-                          suppressTip={isActive}
                           onClick={() => runTool(item.id)}
                         />
                       )
@@ -766,7 +874,6 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                         icon={item.icon}
                         label={item.label}
                         active={groupActive}
-                        suppressTip={groupActive}
                         onClick={() => {
                           requestHaptic()
                           setOpenGroup(g => g === item.id ? null : item.id)
@@ -793,17 +900,27 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                     right: 'calc(100% + 10px)',
                     top: LAUNCHER + 10,
                     pointerEvents: 'auto',
-                    width: 158,
-                    padding: 5,
-                    borderRadius: 15,
+                    width: 172,
+                    padding: 6,
+                    borderRadius: C.radiusMd,
                     border: `1px solid ${C.border}`,
                     background: C.bg,
                     boxShadow: C.shadowOuter,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 2,
+                    fontFamily: FONT,
                   }}
                 >
+                  <div style={{
+                    padding: '4px 8px 6px',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: C.textMuted,
+                    letterSpacing: '0.01em',
+                  }}>
+                    {openGroup === 'annotate' ? 'Annotate' : 'More tools'}
+                  </div>
                   {DOCK_FLYOUTS[openGroup].map((id) => {
                     const def = TOOL_DEFS[id]
                     const isActive = id === 'laser' ? laserActive : activePanel === id
@@ -819,20 +936,23 @@ export default function Home({ selectedText, originalRange }: HomeProps) {
                           alignItems: 'center',
                           gap: 10,
                           width: '100%',
-                          minHeight: 32,
+                          minHeight: 36,
                           padding: '6px 8px',
-                          borderRadius: 10,
+                          borderRadius: C.radiusSm,
                           border: 'none',
                           background: isActive ? C.toneSelectedBg : 'transparent',
                           color: isActive ? C.text : C.textMuted,
                           cursor: 'pointer',
                           fontFamily: FONT,
                           fontSize: 12,
-                          fontWeight: 600,
+                          fontWeight: 500,
                           textAlign: 'left',
+                          transition: 'background 0.14s',
                         }}
                       >
-                        <span style={{ display: 'inline-flex', color: isActive ? C.accent : C.textMuted }}>{def.icon}</span>
+                        <DockMenuIcon size={28} active={isActive}>
+                          {def.icon}
+                        </DockMenuIcon>
                         <span>{def.label}</span>
                       </button>
                     )

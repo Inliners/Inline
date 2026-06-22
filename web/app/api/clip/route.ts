@@ -5,7 +5,7 @@ import { indexNoteById } from '@/lib/ai/rag/indexer'
 
 /**
  * Save a captured clip / AI result / highlight bundle into public.notes so it
- * appears on the History, Graph, Analytics, and Map pages.
+ * appears on the History and Analytics pages.
  *
  * Auth: a verified Supabase session is required — either a Bearer JWT (the
  * extension forwards the dashboard-synced token) or the dashboard cookie
