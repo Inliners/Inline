@@ -12,20 +12,25 @@ import {
 import { cn } from '@/lib/utils'
 
 const DOCK_TOOLS = [
-  { icon: <IconAi size={16} />, active: true },
-  { icon: <IconRewrite size={16} />, active: false },
-  { icon: <IconHighlight size={16} />, active: false },
-  { icon: <IconSearch size={16} />, active: false },
-  { icon: <IconMore size={16} />, active: false },
-  { icon: <IconDraw size={16} />, active: false },
+  { id: 'ai', icon: <IconAi size={16} /> },
+  { id: 'rewrite', icon: <IconRewrite size={16} /> },
+  { id: 'highlight', icon: <IconHighlight size={16} /> },
+  { id: 'search', icon: <IconSearch size={16} /> },
+  { id: 'more', icon: <IconMore size={16} /> },
+  { id: 'draw', icon: <IconDraw size={16} /> },
 ] as const
 
 type ExtensionDockMockProps = {
   className?: string
   showNotebook?: boolean
+  activeIndex?: number
 }
 
-export default function ExtensionDockMock({ className, showNotebook = true }: ExtensionDockMockProps) {
+export default function ExtensionDockMock({
+  className,
+  showNotebook = true,
+  activeIndex = 0,
+}: ExtensionDockMockProps) {
   return (
     <div className={cn('flex flex-col items-center gap-1.5', className)}>
       <div
@@ -39,10 +44,10 @@ export default function ExtensionDockMock({ className, showNotebook = true }: Ex
       <div className="flex flex-col gap-0.5 rounded-[17px] border border-border bg-card p-1.5">
         {DOCK_TOOLS.map((tool, i) => (
           <div
-            key={i}
+            key={tool.id}
             className={cn(
-              'flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-muted-foreground',
-              tool.active && 'bg-muted text-foreground ring-1 ring-[#a8a29e]',
+              'flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-muted-foreground transition-colors duration-300',
+              i === activeIndex && 'bg-muted text-foreground ring-1 ring-[#a8a29e]',
             )}
           >
             {tool.icon}

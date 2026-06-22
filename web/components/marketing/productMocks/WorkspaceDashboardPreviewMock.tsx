@@ -88,9 +88,9 @@ export default function WorkspaceDashboardPreviewMock({ className }: WorkspaceDa
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                  N
+                  Y
                 </span>
-                <span className="truncate text-xs font-medium text-foreground">Ryan Lyncee</span>
+                <span className="truncate text-xs font-medium text-foreground">You</span>
               </div>
               <Moon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
             </div>

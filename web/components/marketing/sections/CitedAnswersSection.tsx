@@ -18,24 +18,23 @@ const DOMAINS = [
 
 export default function CitedAnswersSection() {
   return (
-    <section className="border-y border-[#E8DFD4] bg-[#F9EFE4] py-24 md:py-32">
+    <section className="bg-[#FDFBF7] py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-          <Reveal>
-            <p className="max-w-xl text-lg font-medium leading-snug text-[#1C1E26] md:text-xl">
-              Your captures, cited the same way in the workspace chat.
-            </p>
-          </Reveal>
-          <Reveal delay={0.06}>
-            <SectionLink
-              href="/#rag"
-              className="inline-flex items-center gap-1 rounded-full border border-[#1C1E26] px-5 py-2 text-sm font-medium text-[#1C1E26] transition-colors hover:bg-[#1C1E26] hover:text-white"
-            >
-              Explore AI search
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </SectionLink>
-          </Reveal>
-        </div>
+        <Reveal className="text-center">
+          <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
+            Your captures, cited the same way in the workspace chat.
+          </h2>
+        </Reveal>
+
+        <Reveal delay={0.06} className="mt-8 flex justify-center">
+          <SectionLink
+            href="/#rag"
+            className="inline-flex items-center gap-1 rounded-full border border-[#1C1E26] px-5 py-2 text-sm font-medium text-[#1C1E26] transition-colors hover:bg-[#1C1E26] hover:text-white"
+          >
+            Explore AI search
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </SectionLink>
+        </Reveal>
 
         <Reveal delay={0.08} className="mt-8">
           <div className="flex flex-wrap items-center justify-center gap-2">

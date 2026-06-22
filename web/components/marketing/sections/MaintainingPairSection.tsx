@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { Reveal } from '@/components/marketing/primitives/Reveal'
-import ExtensionAskPanelMock from '@/components/marketing/productMocks/ExtensionAskPanelMock'
-import ExtensionRecapResultMock from '@/components/marketing/productMocks/ExtensionRecapResultMock'
 import ExtensionRefreshRoutineMock from '@/components/marketing/productMocks/ExtensionRefreshRoutineMock'
 
 function PairCard({
@@ -53,13 +51,6 @@ export default function MaintainingPairSection() {
               title="Recaps that maintain themselves"
               description="Every page recap uses the same extension panel — updated as you add highlights and notes."
             >
-              <ExtensionAskPanelMock
-                className="w-full max-w-[342px]"
-                pageTitle="Cable-stayed bridge design"
-                domain="engineering.org · 4 highlights · 2 notes"
-                compact
-                elevated={false}
-              />
               <RecapStatusCard />
             </PairCard>
           </Reveal>
@@ -70,7 +61,6 @@ export default function MaintainingPairSection() {
               description="Review suggested recap changes in the extension before anything saves to your workspace."
             >
               <ExtensionRefreshRoutineMock className="w-full max-w-[342px]" />
-              <ExtensionRecapResultMock className="w-full max-w-[342px]" elevated={false} />
             </PairCard>
           </Reveal>
         </div>

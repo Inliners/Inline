@@ -11,7 +11,7 @@ export default function LibraryDocumentsMock({ className, limit = 4 }: LibraryDo
   const docs = DEMO_LIBRARY_DOCS.slice(0, limit)
 
   return (
-    <div className={cn('flex gap-4 overflow-x-auto pb-1', className)}>
+    <div className={cn('flex gap-4 overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal', className)}>
       {docs.map(doc => (
         <div
           key={doc.title}

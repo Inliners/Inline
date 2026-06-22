@@ -17,7 +17,7 @@ export default function DashboardCapturesMock({
   const compact = size === 'compact'
 
   return (
-    <div className={cn('flex gap-3 overflow-x-auto pb-1', className)}>
+    <div className={cn('flex gap-3 overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal', className)}>
       {captures.map(capture => (
         <div
           key={capture.title}

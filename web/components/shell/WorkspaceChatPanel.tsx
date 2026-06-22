@@ -463,6 +463,34 @@ export default function WorkspaceChatPanel() {
     if (open) setTimeout(() => inputRef.current?.focus(), 100)
   }, [open])
 
+  // Backfill workspace embeddings in the background so RAG can use semantic search
+  // for captures that existed before indexing ran (or before the pgvector migration).
+  useEffect(() => {
+    if (!open || !wsId) return
+    let cancelled = false
+
+    async function backfill() {
+      let remaining = 1
+      while (!cancelled && remaining > 0) {
+        try {
+          const res = await fetch('/api/ai/index', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workspaceId: wsId, batchSize: 25 }),
+          })
+          if (!res.ok) break
+          const data = (await res.json()) as { remaining?: number }
+          remaining = typeof data.remaining === 'number' ? data.remaining : 0
+        } catch {
+          break
+        }
+      }
+    }
+
+    void backfill()
+    return () => { cancelled = true }
+  }, [open, wsId])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])

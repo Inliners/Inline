@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { Reveal } from '@/components/marketing/primitives/Reveal'
 import { SectionLink } from '@/components/marketing/SectionLink'
 import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
-import ExtensionDockSceneMock from '@/components/marketing/productMocks/ExtensionDockSceneMock'
+import ExtensionDockSceneAnimated from '@/components/marketing/productMocks/ExtensionDockSceneAnimated'
 import { mktBtnSecondary } from '@/components/marketing/marketingSurfaces'
 
 const SITES = [
@@ -21,7 +21,6 @@ const SITES = [
 export default function StaleResearchSection() {
   return (
     <section className="relative overflow-hidden border-y border-[#E8DFD4] bg-[#FAF5EE] py-24 md:py-32">
-      <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-[#FDBA74]" aria-hidden />
 
       <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
         <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -55,7 +54,7 @@ export default function StaleResearchSection() {
           </Reveal>
 
           <Reveal delay={0.08}>
-            <ExtensionDockSceneMock showToolbar={false} className="mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none" />
+            <ExtensionDockSceneAnimated className="mx-auto w-full lg:mx-0" />
           </Reveal>
         </div>
       </div>

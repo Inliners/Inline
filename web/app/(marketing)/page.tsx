@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Hero from '@/components/marketing/Hero'
+import DashboardShowcaseSection from '@/components/marketing/sections/DashboardShowcaseSection'
 import ValuePillarsSection from '@/components/marketing/sections/ValuePillarsSection'
 import ContextLayerSection from '@/components/marketing/sections/ContextLayerSection'
 import MaintainingPairSection from '@/components/marketing/sections/MaintainingPairSection'
@@ -20,6 +21,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <DashboardShowcaseSection />
       <ValuePillarsSection />
       <ContextLayerSection />
       <MaintainingPairSection />

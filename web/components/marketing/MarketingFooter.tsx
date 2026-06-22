@@ -80,7 +80,7 @@ export default function MarketingFooter() {
 
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-stone-500">
-            Built through the INIT FIU Build Program.
+            Built with curiosity and coffee.
           </p>
           <p className="text-xs text-stone-500">&copy;{new Date().getFullYear()} Inline</p>
         </div>
