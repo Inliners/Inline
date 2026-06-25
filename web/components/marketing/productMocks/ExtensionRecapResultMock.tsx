@@ -3,6 +3,48 @@ import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import { product } from '@/components/marketing/marketingSurfaces'
 import { cn } from '@/lib/utils'
 
+type ExtensionAskHeaderMockProps = {
+  subtitle?: string
+  className?: string
+  iconSize?: 'sm' | 'md'
+  showClose?: boolean
+}
+
+/** Ask panel chrome — navy icon, title, subtitle, close. */
+export function ExtensionAskHeaderMock({
+  subtitle = 'Page recap update',
+  className,
+  iconSize = 'md',
+  showClose = true,
+}: ExtensionAskHeaderMockProps) {
+  return (
+    <header
+      className={cn(
+        'flex shrink-0 items-center justify-between',
+        iconSize === 'sm' ? 'min-h-10' : 'min-h-11',
+        className,
+      )}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <InlineChatIcon size={iconSize} variant="badge" />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">Ask</p>
+          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      {showClose && (
+        <button
+          type="button"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground"
+          aria-hidden
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </header>
+  )
+}
+
 type ExtensionRecapResultMockProps = {
   className?: string
   elevated?: boolean
@@ -23,23 +65,10 @@ export default function ExtensionRecapResultMock({
       )}
       style={elevated ? { boxShadow: product.panelShadow } : undefined}
     >
-      <header
-        className={cn(
-          'flex shrink-0 items-center justify-between px-4 pl-5',
-          compact ? 'min-h-11 pt-2' : 'min-h-14',
-        )}
-      >
-        <div className="flex items-center gap-2.5">
-          <InlineChatIcon size={compact ? 'sm' : 'md'} variant="badge" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Ask</p>
-            <p className="text-xs text-muted-foreground">Page recap update</p>
-          </div>
-        </div>
-        <button type="button" className="text-muted-foreground" aria-hidden>
-          <X className="h-4 w-4" />
-        </button>
-      </header>
+      <ExtensionAskHeaderMock
+        className={cn('px-4 pl-5', compact ? 'pt-2' : undefined)}
+        iconSize={compact ? 'sm' : 'md'}
+      />
 
       {compact ? (
         <div className="flex min-h-0 flex-1 flex-col justify-end px-4 pb-[15%]">

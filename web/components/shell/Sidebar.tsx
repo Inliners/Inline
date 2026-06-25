@@ -357,7 +357,7 @@ function SidebarFolderNode({
         </button>
       </div>
       {treeOpen && (
-        <div className="ml-4 pl-2 border-l border-stone-200/40 space-y-0.5 mt-0.5">
+        <div className="ml-4 pl-2 border-l border-stone-300 dark:border-border/60 space-y-0.5 mt-0.5">
           {childFolders.map(child => (
             <SidebarFolderNode
               key={child.id}
@@ -792,7 +792,7 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('inline-open-cmd'))}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200/70 shadow-[0_1px_2px_rgba(28,30,38,0.08)] cursor-pointer hover:border-stone-300 transition-colors text-left dark:bg-muted dark:border-sidebar-border dark:hover:border-border"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-stone-300 shadow-[0_1px_2px_rgba(28,30,38,0.08)] cursor-pointer hover:border-stone-400 transition-colors text-left dark:bg-muted dark:border-sidebar-border dark:hover:border-border"
             >
               <Search className="w-3.5 h-3.5 text-stone-400 shrink-0 dark:text-muted-foreground" />
               <span className="flex-1 text-xs text-stone-400 select-none dark:text-muted-foreground">Search…</span>

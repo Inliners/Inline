@@ -21,7 +21,7 @@ const PILLARS = [
     href: '/#extension',
     mockSlot: 'min-h-[200px] md:min-h-[220px]',
     mock: (
-      <div className="mx-auto w-full max-w-none overflow-hidden rounded-t-2xl border border-b-0 border-border bg-background px-3 pt-3 xl:w-[108%]">
+      <div className="ml-auto mr-0 w-full max-w-none translate-x-[10px] overflow-hidden rounded-t-2xl border border-b-0 border-border bg-background px-3 pt-3 pr-4 sm:translate-x-3 xl:w-[104%]">
         <p className="mb-2 px-1 text-sm font-semibold text-[#37352F]">Web Captures</p>
         <DashboardCapturesMock limit={2} size="compact" />
       </div>
@@ -51,16 +51,22 @@ const PILLARS = [
     cta: 'See it search',
     href: '/#rag',
     mockSlot: 'min-h-[280px] md:min-h-[300px]',
+    // Card position: anchored right with a fixed nudge — change only when requested
     mock: (
-      <div className="mx-auto flex min-h-[240px] w-full max-w-none flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-card px-3 py-4 sm:min-h-[280px] md:min-h-[300px] xl:w-[108%]">
+      <div className="ml-auto mr-0 flex min-h-[240px] w-full max-w-none translate-x-[10px] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-card py-4 pl-3 pr-5 sm:min-h-[280px] sm:translate-x-3 md:min-h-[300px] xl:w-[104%]">
         <WorkspaceChatMock
           variant="conversation"
           dense
+          userEndInset="pr-3"
           className="flex min-h-0 flex-1 flex-col"
           scenario={{
             userMessage: 'How do these two articles compare?',
             assistantMessage:
               'Your highlights emphasize the core claim in paragraph two [1].',
+            assistantMessageLgLines: [
+              'Your highlights emphasize the core claim in',
+              'paragraph two [1].',
+            ],
             sources: DEMO_BRIDGE_SOURCES.slice(0, 1),
           }}
         />

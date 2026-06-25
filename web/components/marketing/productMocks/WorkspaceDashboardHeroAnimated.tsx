@@ -51,7 +51,7 @@ export default function WorkspaceDashboardHeroAnimated({
         {scene.chatOpen ? (
           <motion.div
             key="panel"
-            className="w-full max-w-[min(100%,380px)] overflow-hidden rounded-2xl border border-border bg-card"
+            className="w-full max-w-[min(100%,420px)] overflow-hidden rounded-2xl border border-border bg-card"
             style={{ boxShadow: product.panelShadow }}
             initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -59,16 +59,17 @@ export default function WorkspaceDashboardHeroAnimated({
             transition={{ duration: reduceMotion ? 0 : 0.45, ease: EASE }}
           >
             <WorkspaceChatMock
-              dense
-              variant="conversation"
+              variant="panel"
+              compactPanel
               elevated={false}
+              sessionTitle="Reading session"
               scenario={{
                 userMessage: 'What did I save about the main argument?',
                 assistantMessage:
                   'Your highlights cover the core claim [1]. Your recap adds context from a sticky note [2].',
                 sources: DEMO_BRIDGE_SOURCES.slice(0, 2),
               }}
-              className="p-3"
+              hideSourceScrollbar
             />
           </motion.div>
         ) : (

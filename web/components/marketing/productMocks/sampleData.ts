@@ -108,6 +108,38 @@ export const DEMO_LIBRARY_DOCS = [
   },
 ] as const
 
+/** Structured recap preview content for marketing mocks. */
+export const DEMO_RECAP_OVERVIEW = {
+  range: '3/24/2026, 2:15 PM – 3/24/2026, 4:48 PM',
+  captureCount: 4,
+  summary:
+    'The recap reflects your latest highlights on the core claim and a supporting example from later in the article.',
+} as const
+
+export const DEMO_RECAP_TAKEAWAYS = [
+  'The author states the central point in section two.',
+  'Your highlight calls out the example that backs it up.',
+  'A sticky note compares this article to one you saved last week.',
+] as const
+
+export const DEMO_RECAP_CAPTURE_ENTRIES = [
+  {
+    time: '3/24/2026, 2:18 PM',
+    type: 'highlight',
+    quote: 'central point in section two',
+  },
+  {
+    time: '3/24/2026, 3:02 PM',
+    type: 'highlight',
+    quote: 'supporting example appears midway through the page',
+  },
+  {
+    time: '3/24/2026, 4:12 PM',
+    type: 'sticky',
+    body: 'Worth comparing with the related article you saved last week.',
+  },
+] as const
+
 /** Static HTML for marketing recap document preview — mirrors auto-recap editor output. */
 export const DEMO_RECAP_DOCUMENT_HTML = `
 <h2>Overview <span class="recap-overview-range">3/24/2026, 2:15 PM – 3/24/2026, 4:48 PM</span></h2>

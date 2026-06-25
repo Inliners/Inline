@@ -4,6 +4,7 @@ import { Reveal } from '@/components/marketing/primitives/Reveal'
 import { SectionLink } from '@/components/marketing/SectionLink'
 import { SourceCardRow } from '@/components/shell/SourceCard'
 import WorkspaceChatMock from '@/components/marketing/productMocks/WorkspaceChatMock'
+import { ExtensionAskHeaderMock } from '@/components/marketing/productMocks/ExtensionRecapResultMock'
 import {
   DEMO_BRIDGE_SOURCES,
   DEMO_DOMAIN,
@@ -18,24 +19,29 @@ const DOMAINS = DEMO_TOP_DOMAINS
 const SOURCE_CARD_WIDTH =
   '[--source-card-mobile-width:min(11rem,calc(100vw-6rem))] [&_.scrollbar-minimal>*]:w-[var(--source-card-mobile-width)] md:[&_.scrollbar-minimal>*]:w-40'
 
-/** White product mock — scrolls inside the fixed card height when content is tall. */
-const MOCK_SHELL_BASE =
-  'mr-auto flex w-full max-h-full flex-col overflow-x-hidden overflow-y-auto rounded-t-2xl border border-b-0 border-border bg-card px-3 pt-8 pb-4 sm:pt-10 xl:px-4'
+/** White product mock — inset to match tan frame padding on every card. */
+const MOCK_SHELL_INNER =
+  'flex w-full max-h-full flex-col overflow-x-hidden overflow-y-auto rounded-t-2xl border border-b-0 border-border bg-card px-2.5 pt-5 pb-3 sm:px-3 sm:pt-6 sm:pb-3.5'
 
 const CARD_HEIGHT = {
-  short: 'min-h-[200px] sm:min-h-[220px]',
-  medium: 'min-h-[220px] sm:min-h-[250px]',
-  tall: 'min-h-[280px] sm:min-h-[300px]',
+  short: 'min-h-[190px] sm:min-h-[210px]',
+  medium: 'min-h-[250px] sm:min-h-[270px]',
+  tall: 'min-h-[300px] sm:min-h-[320px]',
 } as const
 
 type CardHeight = keyof typeof CARD_HEIGHT
 
+/** White mock anchored to the bottom of the tan frame with a tiered height. */
+function mockInsetShell(height: CardHeight, children: ReactNode) {
+  return (
+    <div className="flex w-full shrink-0 flex-col px-3">
+      <div className={cn(MOCK_SHELL_INNER, CARD_HEIGHT[height])}>{children}</div>
+    </div>
+  )
+}
+
 /** Tan outer frame — same height for every card in the row. */
 const ARTICLE_SHELL = 'flex h-full min-h-[420px] w-full flex-col overflow-hidden rounded-[1.75rem] border border-[#E8DFD4] bg-[#F5EDE3] sm:min-h-[460px]'
-
-function mockShell(height: CardHeight) {
-  return cn(MOCK_SHELL_BASE, CARD_HEIGHT[height])
-}
 
 const CARDS: {
   label: string
@@ -53,8 +59,9 @@ const CARDS: {
     cta: 'See citations',
     href: '/#rag',
     height: 'medium',
-    mock: (
-      <div className={mockShell('medium')}>
+    mock: mockInsetShell(
+      'medium',
+      <>
         <WorkspaceChatMock
           dense
           variant="conversation"
@@ -66,13 +73,13 @@ const CARDS: {
             sources: DEMO_BRIDGE_SOURCES.slice(0, 2),
           }}
         />
-        <div className={cn('mt-2 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
+        <div className={cn('mt-1.5 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
           <SourceCardRow
             sources={DEMO_BRIDGE_SOURCES.slice(0, 2)}
             workspaceId={DEMO_WORKSPACE_ID}
           />
         </div>
-      </div>
+      </>,
     ),
   },
   {
@@ -82,8 +89,15 @@ const CARDS: {
     cta: 'Try cross-page ask',
     href: '/#rag',
     height: 'tall',
-    mock: (
-      <div className={mockShell('tall')}>
+    mock: mockInsetShell(
+      'tall',
+      <>
+        <ExtensionAskHeaderMock
+          subtitle="Across this site"
+          iconSize="sm"
+          showClose={false}
+          className="-mx-2.5 -mt-5 mb-2 px-2.5 pb-2.5 pt-4 sm:-mx-3 sm:-mt-6 sm:px-3"
+        />
         <WorkspaceChatMock
           dense
           variant="conversation"
@@ -96,13 +110,13 @@ const CARDS: {
             recencyNote: `Searching captures across ${DEMO_DOMAIN} in your workspace.`,
           }}
         />
-        <div className={cn('mt-2 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
+        <div className={cn('mt-1.5 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
           <SourceCardRow
             sources={DEMO_BRIDGE_SOURCES.slice(0, 2)}
             workspaceId={DEMO_WORKSPACE_ID}
           />
         </div>
-      </div>
+      </>,
     ),
   },
   {
@@ -112,12 +126,13 @@ const CARDS: {
     cta: 'How scope works',
     href: '/#rag',
     height: 'short',
-    mock: (
-      <div className={mockShell('short')}>
+    mock: mockInsetShell(
+      'short',
+      <>
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Retrieval scope
         </p>
-        <div className="mt-2 w-full space-y-2 text-xs">
+        <div className="mt-1.5 w-full space-y-1.5 text-xs">
           <div className="flex items-center justify-between gap-3">
             <span className="text-foreground">Your workspace</span>
             <span className="shrink-0 text-[#22C55E]">Full access</span>
@@ -130,10 +145,10 @@ const CARDS: {
             </span>
           </div>
         </div>
-        <div className={cn('mt-3 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
+        <div className={cn('mt-2 min-w-0 shrink-0', SOURCE_CARD_WIDTH)}>
           <SourceCardRow sources={[DEMO_BRIDGE_SOURCES[0]!]} workspaceId={DEMO_WORKSPACE_ID} />
         </div>
-      </div>
+      </>,
     ),
   },
 ]
@@ -189,7 +204,7 @@ export default function CitedAnswersSection() {
                   </SectionLink>
                 </div>
 
-                <div className="mt-auto flex min-h-0 flex-1 w-full flex-col items-start justify-end overflow-hidden">
+                <div className="mt-auto flex w-full shrink-0 flex-col justify-end overflow-hidden">
                   {card.mock}
                 </div>
               </article>

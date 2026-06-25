@@ -191,6 +191,16 @@
 }
 
 /* Auto-recap — subtle timeline metadata, content-first */
+.auto-recap-document.workspace-recap-preview .ProseMirror section {
+  margin-bottom: 0;
+}
+
+.auto-recap-document.workspace-recap-preview .ProseMirror .recap-entry + .recap-entry {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
 .auto-recap-document .ProseMirror h2 {
   display: flex;
   flex-wrap: wrap;

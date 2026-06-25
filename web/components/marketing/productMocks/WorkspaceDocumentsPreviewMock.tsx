@@ -17,8 +17,11 @@ import LibraryDocumentsMock from '@/components/marketing/productMocks/LibraryDoc
 import MarketingSidebarFolderList from '@/components/marketing/productMocks/MarketingSidebarFolderList'
 import {
   DEMO_DOMAIN,
+  DEMO_PAGE_TITLE,
   DEMO_PAGE_TITLE_RECAP,
-  DEMO_RECAP_DOCUMENT_HTML,
+  DEMO_RECAP_CAPTURE_ENTRIES,
+  DEMO_RECAP_OVERVIEW,
+  DEMO_RECAP_TAKEAWAYS,
 } from '@/components/marketing/productMocks/sampleData'
 import '@/components/documents/editor-content.css'
 import { cn } from '@/lib/utils'
@@ -39,11 +42,9 @@ const FOLDERS = [
   { label: 'Auto Recaps', active: true },
 ] as const
 
-const CAPTURES_ON_PAGE = [
-  { label: 'highlight', excerpt: 'central point in section two' },
-  { label: 'highlight', excerpt: 'supporting example appears midway' },
-  { label: 'sticky', excerpt: 'Worth comparing with the related article…' },
-] as const
+const CAPTURE_TAGS = ['highlight', 'sticky'] as const
+
+const DOC_PAD = 'px-6 sm:px-10 lg:px-12'
 
 export default function WorkspaceDocumentsPreviewMock({
   className,
@@ -118,35 +119,40 @@ export default function WorkspaceDocumentsPreviewMock({
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto scrollbar-minimal">
-            <div className="bg-card px-4 py-4 sm:px-6">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
+            <header className={cn('border-b border-border/60 bg-card py-5 sm:py-6', DOC_PAD)}>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800">
                   <Sparkles className="h-3 w-3" aria-hidden />
                   Auto-recap
                 </span>
-                <span className="inline-flex rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium capitalize text-muted-foreground">
-                  highlight
-                </span>
-                <span className="inline-flex rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium capitalize text-muted-foreground">
-                  sticky
-                </span>
+                <span className="text-xs text-muted-foreground sm:ml-auto">Updated 2h ago</span>
+              </div>
+
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                {CAPTURE_TAGS.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-medium capitalize text-muted-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
                   <ExternalLink className="h-3 w-3" aria-hidden />
                   Open source page
                 </span>
-                <span className="text-xs text-muted-foreground">Updated 2h ago</span>
               </div>
 
-              <h3 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                 {DEMO_PAGE_TITLE_RECAP}
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
                 A detailed log of what you captured on the source page. Editable like any document —
                 new captures still append on refresh.
               </p>
-            </div>
+            </header>
 
-            <div className="px-4 py-5 sm:px-6 sm:py-6">
+            <div className={cn('py-6 sm:py-8', DOC_PAD)}>
               <section className="mb-6 lg:hidden">
                 <div className="mb-3 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-foreground">Library Documents</h4>
@@ -155,17 +161,59 @@ export default function WorkspaceDocumentsPreviewMock({
                 <LibraryDocumentsMock limit={3} />
               </section>
 
-              <div
-                className="folder-document-editor auto-recap-document max-w-3xl"
+              <article
+                className="folder-document-editor auto-recap-document workspace-recap-preview mx-auto max-w-2xl"
                 aria-label="Recap document content"
               >
-                <div
-                  className="ProseMirror"
-                  dangerouslySetInnerHTML={{ __html: DEMO_RECAP_DOCUMENT_HTML }}
-                />
-              </div>
+                <div className="ProseMirror">
+                  <section className="mb-8">
+                    <h2>
+                      Overview{' '}
+                      <span className="recap-overview-range">{DEMO_RECAP_OVERVIEW.range}</span>
+                    </h2>
+                    <p>
+                      {DEMO_RECAP_OVERVIEW.captureCount} captures from{' '}
+                      <strong>{DEMO_PAGE_TITLE}</strong> ({DEMO_DOMAIN}).
+                    </p>
+                    <p>{DEMO_RECAP_OVERVIEW.summary}</p>
+                  </section>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5 text-sm text-muted-foreground">
+                  <section className="mb-8">
+                    <h3>Key takeaways</h3>
+                    <ul className="recap-bullets">
+                      {DEMO_RECAP_TAKEAWAYS.map(item => (
+                        <li key={item}>
+                          <p>{item}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h3>Capture log</h3>
+                    <div className="mt-3 space-y-5">
+                      {DEMO_RECAP_CAPTURE_ENTRIES.map(entry => (
+                        <div key={entry.time} className="recap-entry">
+                          <p>
+                            <em>
+                              {entry.time} — {entry.type}
+                            </em>
+                          </p>
+                          {'quote' in entry ? (
+                            <blockquote className="recap-quote">
+                              <p>{entry.quote}</p>
+                            </blockquote>
+                          ) : (
+                            <p>{entry.body}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </article>
+
+              <div className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center gap-3 border-t border-border pt-5 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5">
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                   {DEMO_DOMAIN}
@@ -183,16 +231,16 @@ export default function WorkspaceDocumentsPreviewMock({
               </div>
             </div>
             <div className="flex-1 space-y-2 overflow-hidden p-3">
-              {CAPTURES_ON_PAGE.map(item => (
+              {DEMO_RECAP_CAPTURE_ENTRIES.map(entry => (
                 <div
-                  key={item.excerpt}
+                  key={entry.time}
                   className="rounded-md bg-[#F7F6F3] px-2.5 py-2"
                 >
                   <p className="text-[10px] font-semibold capitalize tracking-wide text-muted-foreground">
-                    {item.label}
+                    {entry.type}
                   </p>
                   <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-foreground">
-                    {item.excerpt}
+                    {'quote' in entry ? entry.quote : entry.body}
                   </p>
                 </div>
               ))}
