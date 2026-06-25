@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 
 /**
  * Frosted, grainy mesh behind the hero — one blended field (not separate blobs).
- * Square full-bleed; color anchors match Jeff-style placement: amber TR, navy BL, gray center.
+ * Square full-bleed; color anchors: amber TR, navy BL, gray center.
  */
 export default function HeroAtmosphere() {
   const reduce = useReducedMotion()

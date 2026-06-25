@@ -1,5 +1,5 @@
 /**
- * Marketing homepage tokens — cream/tan atmosphere (Lindy/Notion-inspired)
+ * Marketing homepage tokens — warm cream/tan atmosphere
  * with UI constraints from the extension + workspace chat panel.
  *
  * Navy (#0B1735 / #12203f): logo & small emphasis only — not section fills.
