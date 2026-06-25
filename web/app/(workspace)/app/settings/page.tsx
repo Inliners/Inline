@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useEffect, useTransition, useRef, Suspense } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import SettingsShell, { type SettingsNavGroup } from '@/components/settings/SettingsShell'
+import SettingsShell, { SettingsRow, SettingsSection, type SettingsNavGroup } from '@/components/settings/SettingsShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
+import { DEFAULT_WORKSPACES } from '@/lib/workspaces'
+import { workspacePath } from '@/lib/workspace-routes'
 import { useConfirm, useToast } from '@/components/ui/notifications'
 import {
   DEFAULT_INLINE_VOICE_ID,
@@ -17,8 +20,19 @@ import {
 import {
   Check, Mail,
   Play, Loader2, Plus, X, Globe, Shield,
-  AlertTriangle, LogOut, UserRound, Bell, Palette, MessageCircle, Puzzle, Trash2,
+  AlertTriangle, LogOut, UserRound, Bell, Palette, MessageCircle, Puzzle, Trash2, Settings2,
+  FolderTree, UsersRound, Database,
 } from 'lucide-react'
+
+const SECTION_DESCRIPTIONS: Record<Tab, string> = {
+  general: 'Your name, icon, and email.',
+  security: 'Password, sessions, and sign out.',
+  notifications: 'Choose how Inline communicates with you.',
+  appearance: 'Light, dark, or system appearance.',
+  'ai-voice': 'Voice selection, tuning, and AI copilot behavior.',
+  extension: 'Domains, permissions, and extension preferences.',
+  danger: 'Permanently delete your account and data.',
+}
 
 // ---------------------------------------------------------------------------
 // Types & navigation (same shell pattern as workspace settings)
@@ -36,39 +50,8 @@ const PROFILE_TABS: { id: Tab; label: string; danger?: boolean }[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// Layout helpers (match workspace settings page)
+// Layout helpers
 // ---------------------------------------------------------------------------
-function SectionCard({ title, description, children, action }: {
-  title: string; description?: string; children: React.ReactNode; action?: React.ReactNode
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-foreground tracking-tight">{title}</h3>
-          {description && <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">{description}</p>}
-        </div>
-        {action}
-      </div>
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[1fr_1.8fr] gap-6 items-start">
-      <div className="pt-0.5">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{hint}</p>}
-      </div>
-      <div>{children}</div>
-    </div>
-  )
-}
-
 function ToggleRow({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-start justify-between gap-4">
@@ -79,7 +62,7 @@ function ToggleRow({ label, description, checked, onChange }: { label: string; d
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={cn('relative shrink-0 w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer', checked ? 'bg-primary' : 'bg-muted-foreground/30')}
+        className={cn('relative shrink-0 w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer', checked ? 'bg-toggle-active' : 'bg-muted-foreground/30')}
       >
         <span className={cn('absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background ring-1 ring-border/60 transition-transform duration-200', checked && 'translate-x-4')} />
       </button>
@@ -143,8 +126,8 @@ function GeneralTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Profile Identity" description="Customize your name and icon.">
-        <Row label="Icon / Logo">
+      <SettingsSection title="Profile Identity" description="Customize your name and icon.">
+        <SettingsRow label="Icon / Logo">
           <div className="flex items-center gap-4">
             <div
               onClick={() => fileRef.current?.click()}
@@ -163,18 +146,18 @@ function GeneralTab() {
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
           </div>
-        </Row>
+        </SettingsRow>
 
-        <Row label="Name" hint="How your name appears across Inline.">
+        <SettingsRow label="Name" hint="How your name appears across Inline.">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
-        </Row>
+        </SettingsRow>
 
-        <Row label="Email" hint="Your login email address. Managed by your auth provider.">
+        <SettingsRow label="Email" hint="Your login email address. Managed by your auth provider.">
           <div className="flex items-center gap-2 pt-1.5">
             <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{email || 'Not set'}</span>
           </div>
-        </Row>
+        </SettingsRow>
 
         <div className="flex items-center justify-between pt-1">
           <SaveBadge saved={saved} />
@@ -183,7 +166,7 @@ function GeneralTab() {
             Save Changes
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -194,18 +177,18 @@ function GeneralTab() {
 function SecurityTab() {
   return (
     <div className="space-y-8">
-      <SectionCard title="Password" description="Update your password to keep your account secure.">
-        <Row label="Password">
+      <SettingsSection title="Password" description="Update your password to keep your account secure.">
+        <SettingsRow label="Password">
           <a
             href="/auth/reset-password"
             className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent/30"
           >
             Change password
           </a>
-        </Row>
-      </SectionCard>
+        </SettingsRow>
+      </SettingsSection>
 
-      <SectionCard title="Session" description="Sign out of Inline on this device.">
+      <SettingsSection title="Session" description="Sign out of Inline on this device.">
         <div className="flex items-center justify-between gap-4 py-0.5">
           <div>
             <p className="text-sm font-medium text-foreground">Sign out</p>
@@ -218,7 +201,7 @@ function SecurityTab() {
             </Button>
           </form>
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -252,7 +235,7 @@ function AccountDangerTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Danger Zone" description="These actions are permanent and cannot be undone.">
+      <SettingsSection title="Danger Zone" description="These actions are permanent and cannot be undone.">
         <div className="flex items-center justify-between py-1">
           <div>
             <p className="text-sm font-medium text-destructive">Delete account</p>
@@ -262,13 +245,13 @@ function AccountDangerTab() {
             Delete
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteModal(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-card-foreground"
+            className="relative w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-card-foreground dark:border-sidebar-border dark:bg-secondary"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
@@ -376,7 +359,7 @@ function AppearanceTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Select theme" description="Switches the dashboard between warm-cream light and deep-navy dark." action={<SaveBadge saved={saved} />}>
+      <SettingsSection title="Select theme" description="Switches the dashboard between warm-cream light and dark charcoal." action={<SaveBadge saved={saved} />}>
         <div className="grid grid-cols-2 gap-3">
           {THEMES.map(t => (
             <button key={t.id} type="button" onClick={() => pickTheme(t.id)}
@@ -394,10 +377,10 @@ function AppearanceTab() {
             </button>
           ))}
         </div>
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard title="Text size" description="Scales typography instantly across the dashboard.">
-        <Row label="Size" hint={`Current: ${textSize}px`}>
+      <SettingsSection title="Text size" description="Scales typography instantly across the dashboard.">
+        <SettingsRow label="Size" hint={`Current: ${textSize}px`}>
           <div className="space-y-3">
             <input type="range" min={12} max={18} step={1} value={textSize}
               onChange={e => changeTextSize(Number(e.target.value))}
@@ -411,8 +394,8 @@ function AppearanceTab() {
               ))}
             </div>
           </div>
-        </Row>
-      </SectionCard>
+        </SettingsRow>
+      </SettingsSection>
     </div>
   )
 }
@@ -423,7 +406,7 @@ function AppearanceTab() {
 function NotificationsTab() {
   return (
     <div className="space-y-8">
-      <SectionCard
+      <SettingsSection
         title="Notifications"
         description="Email notifications aren't available yet."
       >
@@ -432,7 +415,7 @@ function NotificationsTab() {
           able to opt into product updates, weekly digests, and security alerts
           from this page.
         </p>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -583,7 +566,7 @@ function AIVoiceTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Voice selection" description="The voice used for AI read-aloud across the dashboard and extension." action={<SaveBadge saved={saved} />}>
+      <SettingsSection title="Voice selection" description="The voice used for AI read-aloud across the dashboard and extension." action={<SaveBadge saved={saved} />}>
         <div className="space-y-2">
           {INLINE_VOICE_PRESETS.map(v => (
             <button key={v.id} type="button" onClick={() => setVoiceId(v.id)}
@@ -606,28 +589,28 @@ function AIVoiceTab() {
           </Button>
           <Button size="sm" onClick={handleSave} className="cursor-pointer">Save voice</Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard title="Voice tuning" description="Adjust voice characteristics for ElevenLabs TTS.">
-        <Row label="Stability" hint="Higher = more consistent, lower = more expressive.">
+      <SettingsSection title="Voice tuning" description="Adjust voice characteristics for ElevenLabs TTS.">
+        <SettingsRow label="Stability" hint="Higher = more consistent, lower = more expressive.">
           <div className="flex items-center gap-3">
             <input type="range" min="0" max="1" step="0.05" value={stability}
               onChange={e => { const v = parseFloat(e.target.value); setStability(v); localStorage.setItem('inline_voice_stability', String(v)) }}
               className="flex-1 accent-primary cursor-pointer" />
             <span className="w-8 text-right text-xs font-mono text-muted-foreground">{stability.toFixed(2)}</span>
           </div>
-        </Row>
-        <Row label="Similarity boost" hint="Higher = closer to original voice, lower = more variation.">
+        </SettingsRow>
+        <SettingsRow label="Similarity boost" hint="Higher = closer to original voice, lower = more variation.">
           <div className="flex items-center gap-3">
             <input type="range" min="0" max="1" step="0.05" value={similarity}
               onChange={e => { const v = parseFloat(e.target.value); setSimilarity(v); localStorage.setItem('inline_voice_similarity', String(v)) }}
               className="flex-1 accent-primary cursor-pointer" />
             <span className="w-8 text-right text-xs font-mono text-muted-foreground">{similarity.toFixed(2)}</span>
           </div>
-        </Row>
-      </SectionCard>
+        </SettingsRow>
+      </SettingsSection>
 
-      <SectionCard title="Voice behavior">
+      <SettingsSection title="Voice behavior">
         <ToggleRow
           label="Voice replies in chat"
           description="Automatically speak AI responses in the workspace chat panel."
@@ -645,16 +628,16 @@ function AIVoiceTab() {
             if (_chrome?.storage?.local) _chrome.storage.local.set({ inlineScreenReader: String(v) })
           }}
         />
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard title="AI Copilot">
+      <SettingsSection title="AI Copilot">
         <ToggleRow
           label="Context autocomplete"
           description="Ghost-text suggestions in sticky notes."
           checked={autocomp}
           onChange={v => { setAutocomp(v); localStorage.setItem('inline_autocomplete', String(v)) }}
         />
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -730,14 +713,14 @@ function ExtensionTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard
+      <SettingsSection
         title="Domain blocklist"
         description={extensionConfigured
           ? 'Inline disables itself on these domains. Synced to the extension automatically.'
           : 'Inline disables itself on these domains. Set NEXT_PUBLIC_CHROME_EXTENSION_ID to sync this list to the extension, or manage it from the extension panel directly.'}
         action={<SaveBadge saved={saved} />}
       >
-        <Row label="Add domain">
+        <SettingsRow label="Add domain">
           <div className="flex gap-2">
             <Input value={newDomain} onChange={e => setNewDomain(e.target.value)}
               placeholder="internal.company.com" onKeyDown={e => e.key === 'Enter' && add()} />
@@ -745,7 +728,7 @@ function ExtensionTab() {
               <Plus className="w-3.5 h-3.5" />Add
             </Button>
           </div>
-        </Row>
+        </SettingsRow>
         {blocklist.map(d => (
           <div key={d} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/40 border border-border">
             <div className="flex items-center gap-2 text-sm">
@@ -761,9 +744,9 @@ function ExtensionTab() {
         {blocklist.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-3">No domains blocked.</p>
         )}
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard title="Extension info">
+      <SettingsSection title="Extension info">
         <div className="space-y-2 text-sm">
           {[{ label: 'Version', value: '1.1' }, { label: 'Manifest', value: 'MV3' }, { label: 'Storage', value: 'IndexedDB + chrome.storage.local' }].map(r => (
             <div key={r.label} className="flex justify-between">
@@ -782,7 +765,7 @@ function ExtensionTab() {
           </Button>
           {cleared && <span className="text-xs font-medium text-accent">Local preferences cleared</span>}
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -793,6 +776,7 @@ function ExtensionTab() {
 function PersonalSettingsPageInner() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('general')
+  const workspaceSettingsBase = workspacePath(DEFAULT_WORKSPACES[0]!, 'settings')
 
   useEffect(() => {
     const t = searchParams.get('tab')
@@ -820,6 +804,15 @@ function PersonalSettingsPageInner() {
       ],
     },
     {
+      label: 'Workspace',
+      items: [
+        { id: 'ws-general', label: 'General', icon: Settings2, href: workspaceSettingsBase },
+        { id: 'ws-library', label: 'Folders and documents', icon: FolderTree, href: `${workspaceSettingsBase}?tab=library` },
+        { id: 'ws-members', label: 'Members', icon: UsersRound, href: `${workspaceSettingsBase}?tab=members` },
+        { id: 'ws-data', label: 'Export and import', icon: Database, href: `${workspaceSettingsBase}?tab=data` },
+      ],
+    },
+    {
       label: 'Tools',
       items: [
         { id: 'ai-voice', label: 'AI and voice', icon: MessageCircle },
@@ -836,22 +829,20 @@ function PersonalSettingsPageInner() {
 
   return (
     <SettingsShell
-      title="Account Settings"
-      subtitle="Manage profile, security, appearance, assistant, and extension preferences."
       groups={settingsGroups}
       activeId={activeTab}
       onSelect={id => setActiveTab(id as Tab)}
+      sectionDescriptions={SECTION_DESCRIPTIONS}
+      exitHref={workspacePath(DEFAULT_WORKSPACES[0]!, 'dashboard')}
     >
-      <div className="mx-auto w-full max-w-3xl space-y-8">
-        {content[activeTab]}
-      </div>
+      {content[activeTab]}
     </SettingsShell>
   )
 }
 
 export default function PersonalSettingsPage() {
   return (
-    <Suspense fallback={<div className="px-6 pb-12 pt-8 text-sm text-muted-foreground">Loading settings…</div>}>
+    <Suspense fallback={<div className="flex h-full items-center justify-center bg-background text-sm text-muted-foreground">Loading settings…</div>}>
       <PersonalSettingsPageInner />
     </Suspense>
   )

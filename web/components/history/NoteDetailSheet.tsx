@@ -119,7 +119,7 @@ export default function NoteDetailSheet({ note, onClose }: NoteDetailSheetProps)
               {note.pageContext && (
                 <div className="mt-4 mb-1">
                   <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Selected Text</p>
-                  <blockquote className="border-l-[3px] border-[#E3E2DE] pl-3 text-[12.5px] text-slate-400 leading-relaxed italic bg-slate-50 rounded-r-lg py-2 pr-3">
+                  <blockquote className="rounded-r-lg border border-border border-l-[3px] border-l-primary/40 bg-secondary py-2 pl-3 pr-3 text-[12.5px] italic leading-relaxed text-muted-foreground">
                     {note.pageContext}
                   </blockquote>
                 </div>

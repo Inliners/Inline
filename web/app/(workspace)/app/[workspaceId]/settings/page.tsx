@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useTransition, useMemo } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect, useTransition, useMemo, Suspense } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import SettingsShell, { type SettingsNavGroup } from '@/components/settings/SettingsShell'
+import SettingsShell, { SettingsRow, SettingsSection, type SettingsNavGroup } from '@/components/settings/SettingsShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -21,6 +21,7 @@ import {
   Check, Download, Loader2, AlertTriangle,
   Crown, ArrowRight, Folder, ArchiveRestore,
   UserRound, FolderTree, UsersRound, Bell, Database, Trash2,
+  Palette, MessageCircle, Puzzle,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -28,36 +29,13 @@ import {
 // ---------------------------------------------------------------------------
 type Tab = 'identity' | 'library' | 'members' | 'notifications' | 'data' | 'danger'
 
-// ---------------------------------------------------------------------------
-// Layout helpers
-// ---------------------------------------------------------------------------
-function SectionCard({ title, description, children, action }: { title: string; description?: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-foreground tracking-tight">{title}</h3>
-          {description && <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xl">{description}</p>}
-        </div>
-        {action}
-      </div>
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[1fr_1.8fr] gap-6 items-start">
-      <div className="pt-0.5">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{hint}</p>}
-      </div>
-      <div>{children}</div>
-    </div>
-  )
+const SECTION_DESCRIPTIONS: Record<Tab, string> = {
+  identity: 'Customize your workspace name, icon, and accent color.',
+  library: 'Review folders and documents stored in this workspace.',
+  members: 'Manage who has access to this workspace.',
+  notifications: 'Choose which workspace events trigger notifications.',
+  data: 'Export captures or import data into this workspace.',
+  danger: 'Archive or permanently delete this workspace.',
 }
 
 function SaveBadge({ saved }: { saved: boolean }) {
@@ -93,8 +71,8 @@ function IdentityTab({ workspaceId, initialName, initialColor }: { workspaceId: 
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Workspace Identity" description="Customize your workspace name and color.">
-        <Row label="Icon" hint="Workspaces use a colored monogram of the first letter.">
+      <SettingsSection title="Workspace Identity" description="Customize your workspace name and color.">
+        <SettingsRow label="Icon" hint="Workspaces use a colored monogram of the first letter.">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shrink-0"
             style={{ backgroundColor: color }}
@@ -102,13 +80,13 @@ function IdentityTab({ workspaceId, initialName, initialColor }: { workspaceId: 
           >
             {wsName.charAt(0).toUpperCase()}
           </div>
-        </Row>
+        </SettingsRow>
 
-        <Row label="Name">
+        <SettingsRow label="Name">
           <Input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="Workspace name" />
-        </Row>
+        </SettingsRow>
 
-        <Row label="Color" hint="Used for sidebar indicators and icons.">
+        <SettingsRow label="Color" hint="Used for sidebar indicators and icons.">
           <div className="flex flex-wrap gap-2">
             {PALETTE.map(c => (
               <button
@@ -120,7 +98,7 @@ function IdentityTab({ workspaceId, initialName, initialColor }: { workspaceId: 
               />
             ))}
           </div>
-        </Row>
+        </SettingsRow>
 
         <div className="flex items-center justify-between pt-1">
           <SaveBadge saved={saved} />
@@ -129,7 +107,7 @@ function IdentityTab({ workspaceId, initialName, initialColor }: { workspaceId: 
             Save Changes
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -156,7 +134,7 @@ function MembersTab() {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Members" description="People with access to this workspace.">
+      <SettingsSection title="Members" description="People with access to this workspace.">
         {loading ? (
           <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
@@ -180,9 +158,9 @@ function MembersTab() {
             Sign in to see workspace membership.
           </p>
         )}
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard
+      <SettingsSection
         title="Invites"
         description="Shared workspaces with roles aren't available yet."
       >
@@ -195,7 +173,7 @@ function MembersTab() {
             Invite
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -231,7 +209,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Export Data" description="Download all notes, extractions, and metadata as a CSV file.">
+      <SettingsSection title="Export Data" description="Download all notes, extractions, and metadata as a CSV file.">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Notes Export</p>
@@ -246,9 +224,9 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
             }
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
 
-      <SectionCard title="Import Data" description="Bring notes from external sources into this workspace.">
+      <SettingsSection title="Import Data" description="Bring notes from external sources into this workspace.">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium">Import from CSV / JSON</p>
@@ -260,7 +238,7 @@ function DataTab({ workspaceId }: { workspaceId: string }) {
             Browse File
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -335,7 +313,7 @@ function DangerTab({ workspaceId, workspaceName }: { workspaceId: string; worksp
 
   return (
     <div className="space-y-8">
-      <SectionCard title="Danger Zone" description="Archiving hides the workspace; deleting removes it from your list.">
+      <SettingsSection title="Danger Zone" description="Archiving hides the workspace; deleting removes it from your list.">
         <div className="flex items-center justify-between py-1">
           <div>
             <p className="text-sm font-medium">Archive workspace</p>
@@ -359,10 +337,10 @@ function DangerTab({ workspaceId, workspaceName }: { workspaceId: string; worksp
             Delete
           </Button>
         </div>
-      </SectionCard>
+      </SettingsSection>
 
       {archived.length > 0 && (
-        <SectionCard title="Archived workspaces" description="Restore a previously archived workspace to the sidebar.">
+        <SettingsSection title="Archived workspaces" description="Restore a previously archived workspace to the sidebar.">
           <ul className="space-y-1">
             {archived.map((w, i) => (
               <li key={w.id}>
@@ -383,14 +361,14 @@ function DangerTab({ workspaceId, workspaceName }: { workspaceId: string; worksp
               </li>
             ))}
           </ul>
-        </SectionCard>
+        </SettingsSection>
       )}
 
       {/* ── Delete confirmation modal ── */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteModal(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-card text-card-foreground rounded-2xl border border-border p-6 w-full max-w-sm space-y-4"
+          <div className="relative w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-card-foreground dark:border-sidebar-border dark:bg-secondary"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
@@ -503,7 +481,7 @@ function LibraryTab({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="space-y-8">
-      <SectionCard
+      <SettingsSection
         title="Workspace library"
         description="Folders belong only to this workspace. Nest subfolders from the sidebar; each folder can hold documents and more folders."
       >
@@ -530,7 +508,7 @@ function LibraryTab({ workspaceId }: { workspaceId: string }) {
             ))}
           </ul>
         )}
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -541,7 +519,7 @@ function LibraryTab({ workspaceId }: { workspaceId: string }) {
 function NotificationsTab() {
   return (
     <div className="space-y-8">
-      <SectionCard
+      <SettingsSection
         title="Email Notifications"
         description="Email notifications aren't available yet."
       >
@@ -550,7 +528,7 @@ function NotificationsTab() {
           able to opt into a weekly capture digest and workspace activity alerts
           from this page.
         </p>
-      </SectionCard>
+      </SettingsSection>
     </div>
   )
 }
@@ -558,8 +536,9 @@ function NotificationsTab() {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function WorkspaceSettingsPage() {
+function WorkspaceSettingsPageInner() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const workspaceId = resolveWorkspaceIdFromBrowserPath(pathname)
   const [workspaceName,  setWorkspaceName]  = useState(() => getWorkspaceName(workspaceId))
   const workspaceColor = getWorkspaceColor(workspaceId)
@@ -567,6 +546,12 @@ export default function WorkspaceSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('identity')
 
   useEffect(() => { setWorkspaceName(getWorkspaceName(workspaceId)) }, [workspaceId])
+
+  useEffect(() => {
+    const t = searchParams.get('tab')
+    const valid: Tab[] = ['identity', 'library', 'members', 'notifications', 'data', 'danger']
+    if (t && valid.includes(t as Tab)) setActiveTab(t as Tab)
+  }, [searchParams])
 
   const TabContent: Record<Tab, React.ReactNode> = {
     identity:      <IdentityTab workspaceId={workspaceId} initialName={workspaceName} initialColor={workspaceColor} />,
@@ -579,6 +564,16 @@ export default function WorkspaceSettingsPage() {
 
   const settingsGroups: SettingsNavGroup[] = [
     {
+      label: 'Personal',
+      items: [
+        { id: 'personal-profile', label: 'Profile', icon: UserRound, href: '/app/settings?tab=general' },
+        { id: 'personal-appearance', label: 'Appearance', icon: Palette, href: '/app/settings?tab=appearance' },
+        { id: 'personal-notifications', label: 'Notifications', icon: Bell, href: '/app/settings?tab=notifications' },
+        { id: 'personal-ai', label: 'AI and voice', icon: MessageCircle, href: '/app/settings?tab=ai-voice' },
+        { id: 'personal-extension', label: 'Extension', icon: Puzzle, href: '/app/settings?tab=extension' },
+      ],
+    },
+    {
       label: 'Workspace',
       items: [
         { id: 'identity', label: 'General', icon: UserRound },
@@ -589,7 +584,7 @@ export default function WorkspaceSettingsPage() {
     {
       label: 'Data',
       items: [
-        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'notifications', label: 'Workspace notifications', icon: Bell },
         { id: 'data', label: 'Export and import', icon: Database },
       ],
     },
@@ -603,28 +598,21 @@ export default function WorkspaceSettingsPage() {
 
   return (
     <SettingsShell
-      title={`${workspaceName} Settings`}
-      subtitle="Manage workspace identity, documents, members, and data."
       groups={settingsGroups}
       activeId={activeTab}
       onSelect={id => setActiveTab(id as Tab)}
+      sectionDescriptions={SECTION_DESCRIPTIONS}
+      exitHref={workspacePath(workspaceId, 'dashboard')}
     >
-      <div className="mx-auto w-full max-w-3xl space-y-8">
-
-        <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">AI, voice, and extension preferences</span>{' '}
-          live in{' '}
-          <Link
-            href="/app/settings?tab=ai-voice"
-            className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
-          >
-            Account settings
-          </Link>
-          . These controls only affect this workspace.
-        </p>
-
-        {TabContent[activeTab]}
-      </div>
+      {TabContent[activeTab]}
     </SettingsShell>
+  )
+}
+
+export default function WorkspaceSettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full items-center justify-center bg-background text-sm text-muted-foreground">Loading settings…</div>}>
+      <WorkspaceSettingsPageInner />
+    </Suspense>
   )
 }

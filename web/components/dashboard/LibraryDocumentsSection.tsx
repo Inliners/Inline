@@ -14,10 +14,10 @@ import {
 } from '@/lib/dashboard-favorites'
 
 const PASTEL_BGS = [
-  'bg-card dark:bg-[#15285C]',
-  'bg-card dark:bg-[#1B326D]',
-  'bg-card dark:bg-[#17296B]',
-  'bg-card dark:bg-[#1E3878]',
+  'bg-card',
+  'bg-card dark:bg-secondary',
+  'bg-card dark:bg-muted',
+  'bg-card dark:bg-accent',
 ]
 
 function relativeTime(ts: number) {
@@ -88,7 +88,7 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
     return (
       <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
         <div className="mx-auto w-12 h-12 rounded-xl bg-[#EBF1F7] flex items-center justify-center mb-3">
-          <FileText className="h-6 w-6 text-stone-600 dark:text-[#9BBCE5]" />
+          <FileText className="h-6 w-6 text-stone-600 dark:text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-foreground">No documents yet</p>
         <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
@@ -144,7 +144,7 @@ function DocLibraryCard({
       href={href}
       className={cn(
         'relative flex h-40 w-[240px] shrink-0 snap-start flex-col justify-between rounded-2xl p-5',
-        'border border-border transition-colors hover:border-stone-400/50',
+        'border border-border transition-colors hover:border-stone-400/50 dark:border-sidebar-border',
         bg,
       )}
     >
@@ -165,7 +165,7 @@ function DocLibraryCard({
         <p className="line-clamp-1 w-full truncate pr-6 text-base font-semibold tracking-tight text-foreground">
           {formatDisplayTitle(doc.title)}
         </p>
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-[#C9DAF0]/85">
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-muted-foreground">
           {preview}
         </p>
       </div>

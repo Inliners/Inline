@@ -55,17 +55,27 @@ export default function ContextLayerSection() {
         </div>
 
         <Reveal delay={0.14} className="mt-10">
-          <div className="w-full overflow-hidden rounded-2xl border border-[#E8DFD4] bg-[#F5EDE3] p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <ExtensionAskPanelMock
-                compact
-                elevated={false}
-                className="w-full max-w-[342px] shrink-0"
-              />
-              <AskThoughtTrace className="w-full max-w-sm lg:flex-1 lg:px-6" />
-              <p className="text-center text-sm text-muted-foreground lg:max-w-[12rem] lg:shrink-0 lg:text-left">
-                Same Ask panel on the page
-              </p>
+          <div className="overflow-hidden rounded-2xl border border-[#E8DFD4]">
+            <div className="flex flex-col lg:flex-row lg:items-stretch">
+              <div
+                className="flex flex-1 flex-col items-center gap-5 p-4 sm:p-6 md:p-8 lg:flex-row lg:items-center lg:justify-between"
+                style={{ backgroundColor: mkt.tan }}
+              >
+                <ExtensionAskPanelMock
+                  compact
+                  elevated={false}
+                  className="w-full max-w-[342px] shrink-0"
+                />
+                <AskThoughtTrace className="w-full max-w-sm lg:flex-1 lg:px-6" />
+              </div>
+              <div
+                className="flex items-center justify-center px-6 py-4 lg:w-[12rem] lg:shrink-0 lg:justify-start lg:py-8"
+                style={{ backgroundColor: mkt.espressoDark }}
+              >
+                <p className="text-center text-sm font-medium leading-snug text-[#F5EDE3]/90 lg:text-left">
+                  Page-grounded answers
+                </p>
+              </div>
             </div>
           </div>
         </Reveal>

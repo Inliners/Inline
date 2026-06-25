@@ -41,7 +41,7 @@ export default function CreateDocFromNoteCTA({ workspaceId, noteTitle, noteConte
   }
 
   return (
-    <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+    <div className="workspace-surface rounded-2xl border-2 border-dashed p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
       <div className="flex-1">
         <h3 className="text-sm font-semibold text-foreground">Create a document from this note</h3>
         <p className="text-xs text-muted-foreground mt-1">
@@ -51,7 +51,7 @@ export default function CreateDocFromNoteCTA({ workspaceId, noteTitle, noteConte
       <button
         onClick={handleCreate}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-[#1e4fa3] transition-colors disabled:opacity-60 cursor-pointer shrink-0"
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer shrink-0"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
         Create document

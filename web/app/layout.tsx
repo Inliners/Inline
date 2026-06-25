@@ -4,6 +4,7 @@ import './globals.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { NotificationsProvider } from '@/components/ui/notifications'
 import { ThemeScript } from '@/components/shell/ThemeScript'
+import { ThemeRouteSync } from '@/components/shell/ThemeRouteSync'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-full bg-background text-foreground">
+        <ThemeRouteSync />
         <TooltipProvider>
           <NotificationsProvider>{children}</NotificationsProvider>
         </TooltipProvider>

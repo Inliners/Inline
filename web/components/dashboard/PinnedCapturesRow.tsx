@@ -14,10 +14,10 @@ import { prettyNotePreviewTruncated } from '@/lib/note-preview'
 import { workspacePath } from '@/lib/workspace-routes'
 
 const PASTEL_BGS = [
-  'bg-card dark:bg-[#15285C]',
-  'bg-card dark:bg-[#17296B]',
-  'bg-card dark:bg-[#1B326D]',
-  'bg-card dark:bg-[#1E3878]',
+  'bg-card',
+  'bg-card dark:bg-secondary',
+  'bg-card dark:bg-muted',
+  'bg-card dark:bg-accent',
 ]
 
 function relativeTime(iso: string) {
@@ -51,7 +51,7 @@ function NoteCaptureCard({
   return (
     <div className={cn(
       'relative shrink-0 w-[240px] sm:w-[260px] rounded-2xl p-5 flex flex-col justify-between h-40 snap-start',
-      'cursor-pointer border border-border transition-colors hover:border-stone-400/50',
+      'cursor-pointer border border-border transition-colors hover:border-stone-400/50 dark:border-sidebar-border',
       bg,
     )}>
       <button
@@ -81,11 +81,11 @@ function NoteCaptureCard({
         </div>
 
         <div className="flex items-center justify-between gap-2 mt-4">
-          <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-slate-500 dark:text-[#9BBCE5]">
+          <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-slate-500 dark:text-muted-foreground">
             <Globe className="w-3 h-3 shrink-0" aria-hidden />
             <span className="truncate">{note.domain}</span>
           </span>
-          <span className="shrink-0 text-[10px] text-slate-400 dark:text-[#9BBCE5]">{time}</span>
+          <span className="shrink-0 text-[10px] text-slate-400 dark:text-muted-foreground">{time}</span>
         </div>
       </Link>
     </div>

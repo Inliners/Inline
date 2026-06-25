@@ -13,7 +13,7 @@ function formatShortDate(iso: string) {
 export default function ActivityDetailPanel({ data }: { data: DailyCapture[] }) {
   if (!data.length) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-200 bg-white/80 p-6 text-sm text-slate-400 dark:border-[#263E7A] dark:bg-[#15285C] dark:text-[#9BBCE5]">
+      <div className="rounded-xl border border-dashed border-slate-200 bg-white/80 p-6 text-sm text-slate-400 dark:border-border dark:bg-card dark:text-muted-foreground">
         No activity data for this period.
       </div>
     )
@@ -27,34 +27,34 @@ export default function ActivityDetailPanel({ data }: { data: DailyCapture[] }) 
   )
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#263E7A] dark:bg-[#15285C]">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-border dark:bg-card">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Activity details</h3>
-      <p className="text-xs text-slate-400 mt-0.5 mb-4 dark:text-[#9BBCE5]">
+      <p className="text-xs text-slate-400 mt-0.5 mb-4 dark:text-muted-foreground">
         Last {data.length} days of note captures in this workspace.
       </p>
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-[#1B326D] dark:border-[#263E7A]">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#9BBCE5]">Total captures</dt>
+        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-muted dark:border-border">
+          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-muted-foreground">Total captures</dt>
           <dd className="text-lg font-bold tabular-nums mt-0.5 text-slate-800 dark:text-white">{totalCaptures}</dd>
         </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-[#1B326D] dark:border-[#263E7A]">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#9BBCE5]">Active days</dt>
+        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 dark:bg-muted dark:border-border">
+          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-muted-foreground">Active days</dt>
           <dd className="text-lg font-bold tabular-nums mt-0.5 text-slate-800 dark:text-white">
             {activeDays}
-            <span className="text-xs font-normal text-slate-400 dark:text-[#9BBCE5]"> / {data.length}</span>
+            <span className="text-xs font-normal text-slate-400 dark:text-muted-foreground"> / {data.length}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 col-span-2 dark:bg-[#1B326D] dark:border-[#263E7A]">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#9BBCE5]">Busiest day</dt>
+        <div className="rounded-lg bg-slate-50 px-3 py-2 border border-slate-200 col-span-2 dark:bg-muted dark:border-border">
+          <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-muted-foreground">Busiest day</dt>
           <dd className="text-sm font-semibold mt-0.5 text-slate-800 dark:text-white">
             {maxEntry.count > 0 ? (
               <>
                 {maxEntry.count} notes on{' '}
-                <span className="text-slate-700 dark:text-[#C9DAF0]">{formatShortDate(maxEntry.date)}</span>
+                <span className="text-slate-700 dark:text-foreground">{formatShortDate(maxEntry.date)}</span>
               </>
             ) : (
-              <span className="text-slate-400 dark:text-[#9BBCE5]">No activity yet</span>
+              <span className="text-slate-400 dark:text-muted-foreground">No activity yet</span>
             )}
           </dd>
         </div>

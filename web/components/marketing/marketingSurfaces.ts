@@ -17,6 +17,7 @@ export const mkt = {
   borderWarm: '#E8DFD4',
   borderSoft: '#E5D9CC',
   espresso: '#4A3228',
+  espressoDark: '#3A2720',
   burntRed: '#8B3329',
   burntOrange: '#C45A2E',
   /** 2-tone marketing cards — distinct from navy, brown, and burnt red */

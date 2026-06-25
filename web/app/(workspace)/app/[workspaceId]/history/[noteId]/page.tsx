@@ -93,7 +93,7 @@ export default async function NoteDetailPage({
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Original Text
           </h2>
-          <div className="rounded-xl border border-border bg-slate-50 p-4">
+          <div className="workspace-surface p-4">
             <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
               {prettyNotePreview(note) || '(no content)'}
             </p>
@@ -108,7 +108,7 @@ export default async function NoteDetailPage({
             </h2>
             <div className="space-y-3">
               {extractions.map(ext => (
-                <div key={ext.id} className="rounded-xl border border-border bg-white p-4">
+                <div key={ext.id} className="workspace-surface p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -128,7 +128,7 @@ export default async function NoteDetailPage({
         )}
 
         {/* CTA */}
-        <div className="border-t border-dashed border-slate-200 pt-8">
+        <div className="border-t border-dashed border-border pt-8">
           <CreateDocFromNoteCTA
             workspaceId={workspaceId}
             noteContent={note.content}
@@ -143,7 +143,7 @@ export default async function NoteDetailPage({
 
 function MetaCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div className="workspace-surface rounded-lg p-3">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>

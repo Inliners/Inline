@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity } from 'lucide-react'
+import { PanelRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/lib/sidebar-context'
 
@@ -16,16 +16,16 @@ export default function WorkspaceActivityPanelToggle() {
       type="button"
       onClick={toggleRightPanel}
       className={cn(
-        'pointer-events-auto absolute right-4 top-16 z-800 flex h-10 w-10 items-center justify-center rounded-full border border-stone-200/80 bg-white shadow-[0_8px_24px_-16px_rgba(28,30,38,0.35)] transition-colors',
+        'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none',
         rightPanelOpen
-          ? 'text-stone-800 ring-1 ring-stone-300/80'
-          : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800',
+          ? 'bg-muted text-foreground'
+          : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
       )}
-      title={rightPanelOpen ? 'Close activity panel' : 'Activity & insights'}
+      title={rightPanelOpen ? 'Close activity & insights' : 'Activity & insights'}
       aria-expanded={rightPanelOpen}
-      aria-label={rightPanelOpen ? 'Close activity panel' : 'Open activity panel'}
+      aria-label={rightPanelOpen ? 'Close activity & insights panel' : 'Open activity & insights panel'}
     >
-      <Activity className="h-4 w-4" />
+      <PanelRight className="h-4 w-4" />
     </button>
   )
 }

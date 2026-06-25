@@ -12,7 +12,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payl
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm dark:border-sidebar-border dark:bg-secondary">
       <p className="mb-1 font-medium text-foreground">{d.domain}</p>
       <p className="text-muted-foreground">
         {d.count} notes &middot; {d.percentage}%
@@ -27,7 +27,7 @@ interface TopDomainsChartProps {
 
 export default function TopDomainsChart({ data }: TopDomainsChartProps) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5 dark:border-sidebar-border dark:bg-secondary">
       <div className="mb-5">
         <p className="text-sm font-semibold text-foreground">Top Domains</p>
         <p className="mt-0.5 text-xs text-muted-foreground">Notes by website</p>

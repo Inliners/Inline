@@ -243,7 +243,7 @@ export async function backfillWorkspace(
     .from('notes')
     .select('id, workspace_id, page_url, page_title, domain, content, type, tags')
     .eq('user_id', userId)
-    .eq('workspace_id', workspaceId)
+    .or(`workspace_id.eq.${workspaceId},workspace_id.is.null`)
     .order('created_at', { ascending: false })
     .limit(500)
 
@@ -261,7 +261,8 @@ export async function backfillWorkspace(
   let processed = 0
   for (const note of pendingNotes) {
     if (processed >= batchSize) break
-    const r = await upsertEmbeddingChunks(supabase, userId, noteToSource(note))
+    const scoped = { ...note, workspace_id: note.workspace_id ?? workspaceId }
+    const r = await upsertEmbeddingChunks(supabase, userId, noteToSource(scoped))
     total.indexed += r.indexed
     total.skipped += r.skipped
     total.errors.push(...r.errors)
@@ -277,5 +278,26 @@ export async function backfillWorkspace(
   }
 
   total.remaining = Math.max(0, pendingNotes.length + pendingDocs.length - processed)
+  return total
+}
+
+/** Index any unembedded notes/documents for a workspace before RAG queries. */
+export async function ensureWorkspaceIndexed(
+  supabase: AnyClient,
+  userId: string,
+  workspaceId: string,
+  { maxBatches = 12, batchSize = 30 }: { maxBatches?: number; batchSize?: number } = {},
+): Promise<IndexResult> {
+  const total: IndexResult = { indexed: 0, skipped: 0, errors: [] }
+
+  for (let i = 0; i < maxBatches; i++) {
+    const batch = await backfillWorkspace(supabase, userId, workspaceId, batchSize)
+    total.indexed += batch.indexed
+    total.skipped += batch.skipped
+    total.errors.push(...batch.errors)
+    if (batch.remaining === 0) break
+    if (batch.indexed === 0 && batch.errors.length > 0) break
+  }
+
   return total
 }
