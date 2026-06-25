@@ -79,30 +79,61 @@ export const DEMO_CAPTURES = [
 
 export const DEMO_LIBRARY_DOCS = [
   {
-    title: DEMO_PAGE_TITLE,
-    preview: 'Auto-recap: key claims, highlights, and notes in one doc.',
+    title: DEMO_PAGE_TITLE_RECAP,
+    preview: '4 captures from Source page title — overview, highlights, and sticky notes.',
     autoRecap: true,
+    folder: 'Auto Recaps',
     time: '2h ago',
   },
   {
-    title: 'Follow-up reading',
-    preview: 'Highlights from a related section merged into one recap.',
+    title: DEMO_PAGE_TITLE,
+    preview: 'The recap now reflects your highlights on the core claim and a supporting example.',
     autoRecap: true,
+    folder: 'Auto Recaps',
     time: '1d ago',
   },
   {
     title: DEMO_PAGE_TITLE_ALT,
     preview: 'Captures summarized with your notes on the main takeaways.',
     autoRecap: true,
+    folder: 'Auto Recaps',
     time: '3d ago',
   },
   {
-    title: 'Reading list notes',
+    title: 'Follow-up reading',
     preview: 'Compared two articles you saved during the same session.',
     autoRecap: true,
+    folder: 'Auto Recaps',
     time: '5d ago',
   },
 ] as const
+
+/** Static HTML for marketing recap document preview — mirrors auto-recap editor output. */
+export const DEMO_RECAP_DOCUMENT_HTML = `
+<h2>Overview</h2>
+<p>4 captures from <strong>${DEMO_PAGE_TITLE}</strong> (${DEMO_DOMAIN}). 3/24/2026, 2:15 PM – 3/24/2026, 4:48 PM.</p>
+<p>The recap reflects your latest highlights on the core claim and a supporting example from later in the article.</p>
+<h3>Key takeaways</h3>
+<ul class="recap-bullets">
+<li><p>The author states the central point in section two.</p></li>
+<li><p>Your highlight calls out the example that backs it up.</p></li>
+<li><p>A sticky note compares this article to one you saved last week.</p></li>
+</ul>
+<div class="recap-entry">
+<p><em>3/24/2026, 2:18 PM — highlight</em></p>
+<blockquote class="recap-quote"><p>central point in section two</p></blockquote>
+</div>
+<hr>
+<div class="recap-entry">
+<p><em>3/24/2026, 3:02 PM — highlight</em></p>
+<blockquote class="recap-quote"><p>supporting example appears midway through the page</p></blockquote>
+</div>
+<hr>
+<div class="recap-entry">
+<p><em>3/24/2026, 4:12 PM — sticky</em></p>
+<p>Worth comparing with the related article you saved last week.</p>
+</div>
+`.trim()
 
 /** Domains shown in “cited answers” and analytics mocks */
 export const DEMO_TOP_DOMAINS = [DEMO_DOMAIN, 'notes-archive.test', 'reading-list.test'] as const

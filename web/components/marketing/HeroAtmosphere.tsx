@@ -1,139 +1,110 @@
 'use client'
 
-import { motion, useReducedMotion, type Transition } from 'framer-motion'
-
-/** Barely perceptible drift — long cycles, small travel, linear flow */
-const drift = (
-  x: [string, string, string],
-  y: [string, string, string],
-  duration: number,
-  delay = 0,
-): { animate: { x: string[]; y: string[] }; transition: Transition } => ({
-  animate: { x, y },
-  transition: {
-    duration,
-    delay,
-    repeat: Infinity,
-    repeatType: 'mirror',
-    ease: 'linear',
-  },
-})
+import { motion, useReducedMotion } from 'framer-motion'
 
 /**
- * Full-bleed color wash behind the hero — slow glassmorphic mesh drift.
- * Sits behind content; grid is untouched.
+ * Frosted, grainy mesh behind the hero — one blended field (not separate blobs).
+ * Square full-bleed; color anchors match Jeff-style placement: amber TR, navy BL, gray center.
  */
 export default function HeroAtmosphere() {
   const reduce = useReducedMotion()
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      {/* Cream base — page tone at edges */}
+      <div className="absolute inset-0 bg-[#FDFBF7]" />
+
+      {/* Blurred mesh field — saturated anchors blur into a single frosted wash */}
       <motion.div
-        className="absolute inset-[-20%] opacity-90"
+        className="absolute inset-[-8%]"
         style={{
-          background:
-            'linear-gradient(168deg, #E8E4FF 0%, #F3EEFF 14%, #FDF6F0 38%, #FDFBF7 58%, #F8F1E8 100%)',
-          backgroundSize: '140% 140%',
+          filter: 'blur(72px) saturate(1.05) contrast(1.04)',
+          willChange: reduce ? undefined : 'transform',
         }}
         animate={
           reduce
             ? undefined
             : {
-                backgroundPosition: ['0% 40%', '100% 60%', '0% 40%'],
+                scale: [1, 1.03, 1],
+                x: ['0%', '1.2%', '0%'],
+                y: ['0%', '-0.8%', '0%'],
               }
         }
         transition={
           reduce
             ? undefined
-            : { duration: 110, repeat: Infinity, ease: 'linear' }
+            : { duration: 28, repeat: Infinity, ease: 'easeInOut' }
         }
-      />
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: [
+              'radial-gradient(circle at 92% 6%, #FCA311 0%, rgba(252, 163, 17, 0.55) 22%, transparent 52%)',
+              'radial-gradient(circle at 78% 18%, rgba(255, 190, 90, 0.45) 0%, transparent 38%)',
+              'radial-gradient(circle at 6% 94%, #0B1735 0%, rgba(18, 69, 89, 0.65) 28%, transparent 54%)',
+              'radial-gradient(circle at 18% 72%, rgba(89, 131, 146, 0.5) 0%, transparent 42%)',
+              'radial-gradient(ellipse 95% 80% at 48% 44%, #E8E8E8 0%, #D6D6D6 38%, rgba(210, 210, 210, 0.35) 62%, transparent 88%)',
+              'radial-gradient(ellipse 70% 55% at 55% 52%, rgba(245, 245, 245, 0.9) 0%, transparent 70%)',
+              'linear-gradient(160deg, #C5CCD4 0%, #E2E2E2 48%, #EDE8E2 100%)',
+            ].join(', '),
+          }}
+        />
+      </motion.div>
 
-      <motion.div
-        className="absolute -left-[14%] -top-[10%] h-[min(92vh,780px)] w-[min(92vh,780px)] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(125, 181, 255, 0.52) 0%, rgba(147, 197, 253, 0.18) 40%, transparent 68%)',
-          filter: 'blur(52px)',
-        }}
-        {...(reduce
-          ? {}
-          : drift(['0vw', '14vw', '2vw'], ['0vh', '6vh', '-2vh'], 78))}
-      />
-
-      <motion.div
-        className="absolute -right-[12%] top-[2%] h-[min(78vh,680px)] w-[min(78vh,680px)] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(186, 168, 255, 0.46) 0%, rgba(196, 181, 253, 0.16) 44%, transparent 70%)',
-          filter: 'blur(56px)',
-        }}
-        {...(reduce
-          ? {}
-          : drift(['0vw', '-12vw', '-4vw'], ['0vh', '8vh', '3vh'], 92, 6))}
-      />
-
-      <motion.div
-        className="absolute left-[22%] top-[28%] h-[min(70vh,620px)] w-[min(88vw,920px)] rounded-full"
-        style={{
-          background:
-            'radial-gradient(ellipse, rgba(255, 183, 130, 0.38) 0%, rgba(251, 191, 136, 0.14) 38%, transparent 72%)',
-          filter: 'blur(44px)',
-        }}
-        {...(reduce
-          ? {}
-          : drift(['-6vw', '10vw', '-2vw'], ['0vh', '-5vh', '4vh'], 68, 3))}
-      />
-
-      <motion.div
-        className="absolute left-1/2 top-[42%] h-[min(65vh,560px)] w-[min(75vw,800px)] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            'radial-gradient(ellipse, rgba(99, 130, 210, 0.24) 0%, rgba(75, 131, 196, 0.08) 45%, transparent 72%)',
-          filter: 'blur(40px)',
-        }}
-        {...(reduce
-          ? {}
-          : drift(['-8vw', '8vw', '0vw'], ['-3vh', '5vh', '2vh'], 84, 12))}
-      />
-
-      <motion.div
-        className="absolute -bottom-[18%] left-1/2 h-[min(55vh,480px)] w-[min(110vw,1200px)] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            'radial-gradient(ellipse, rgba(255, 207, 224, 0.32) 0%, rgba(237, 220, 255, 0.12) 50%, transparent 72%)',
-          filter: 'blur(48px)',
-        }}
-        {...(reduce
-          ? {}
-          : drift(['-5vw', '6vw', '-1vw'], ['0vh', '-6vh', '2vh'], 96, 18))}
-      />
-
-      <motion.div
-        className="absolute inset-0 opacity-[0.32]"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 72% at 50% 38%, transparent 42%, rgba(253, 251, 247, 0.55) 100%)',
-        }}
-        animate={
-          reduce
-            ? undefined
-            : {
-                opacity: [0.28, 0.36, 0.28],
-              }
-        }
-        transition={
-          reduce
-            ? undefined
-            : { duration: 72, repeat: Infinity, ease: 'easeInOut' }
-        }
-      />
-
+      {/* Matte frost — pulls mesh into a single tactile plane */}
       <div
-        className="absolute inset-x-0 bottom-0 h-40"
+        className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, transparent 0%, rgba(253, 251, 247, 0.85) 55%, #FDFBF7 100%)',
+            'radial-gradient(ellipse 100% 85% at 50% 40%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 45%, transparent 72%)',
+          mixBlendMode: 'soft-light',
+        }}
+      />
+
+      {/* Coarse film grain */}
+      <svg
+        className="absolute inset-0 h-full w-full opacity-[0.48] mix-blend-overlay"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+      >
+        <filter id="hero-frost-grain-coarse" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.68"
+            numOctaves="4"
+            stitchTiles="stitch"
+            result="noise"
+          />
+          <feColorMatrix type="saturate" values="0" in="noise" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#hero-frost-grain-coarse)" />
+      </svg>
+
+      {/* Fine grain — adds the sandblasted-glass grit */}
+      <svg
+        className="absolute inset-0 h-full w-full opacity-[0.22] mix-blend-soft-light"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+      >
+        <filter id="hero-frost-grain-fine" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="1.35"
+            numOctaves="2"
+            stitchTiles="stitch"
+          />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#hero-frost-grain-fine)" />
+      </svg>
+
+      {/* Gentle center lift for headline legibility — not a white wash */}
+      <div
+        className="absolute inset-0 opacity-[0.35]"
+        style={{
+          background:
+            'radial-gradient(ellipse 72% 58% at 50% 46%, rgba(253, 251, 247, 0.55) 0%, transparent 68%)',
         }}
       />
     </div>

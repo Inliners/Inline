@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { PANEL as C, FONT } from '../lib/extensionTheme'
-import { PanelShell, Toggle, SectionLabel } from './panelKit'
+import { PanelShell, Toggle, SectionLabel, PanelSection, panelBodyStyle } from './panelKit'
 import { GUEST_AI_LIMIT, getAiAccessState, looksLikeJwt } from '../lib/aiAccess'
 
 const IExtLink = () => (
@@ -129,16 +129,10 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
         </div>
       }
     >
-      <div style={{ padding: '16px 18px 18px', fontFamily: FONT }}>
-        <SectionLabel>Account</SectionLabel>
-        <div style={{
-          border: `1px solid ${C.border}`,
-          borderRadius: 18,
-          padding: 14,
-          marginBottom: 18,
-          background: C.surfaceBubble,
-          boxShadow: 'none',
-        }}>
+      <div style={{ ...panelBodyStyle, fontFamily: FONT }}>
+        <div>
+          <SectionLabel>Account</SectionLabel>
+          <PanelSection>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
               {account.signedIn ? (
@@ -200,14 +194,12 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
               {account.signedIn ? 'Dashboard' : 'Sign in'}
             </button>
           </div>
+          </PanelSection>
         </div>
 
-        {/* Accessibility */}
+        <div>
         <SectionLabel>Accessibility</SectionLabel>
-        <div style={{
-          border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden',
-          marginBottom: 18, background: C.surfaceBubble, boxShadow: 'none',
-        }}>
+        <PanelSection list>
           <Row label="Screen reader" desc="Announce captured text" right={<Toggle checked={screenReader} onChange={toggleScreenReader} label="screen reader" />} />
           <Row label="High contrast" desc="Boost page contrast" border right={<Toggle checked={highContrast} onChange={toggleHighContrast} label="high contrast" />} />
           <Row label="Immersive reader" desc="Distraction-free reading" border right={<Toggle checked={immersiveReader} onChange={v => {
@@ -215,14 +207,14 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
             chrome.storage.local.set({ inlineFocusMode: String(v) })
             document.dispatchEvent(new CustomEvent('inline:focusMode', { detail: { enabled: v } }))
           }} label="immersive reader" />} />
+        </PanelSection>
         </div>
 
-        {/* Language */}
+        <div>
         <SectionLabel>Language</SectionLabel>
-        <div style={{
+        <PanelSection style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 18,
-          background: C.surfaceBubble, boxShadow: 'none', marginBottom: 18,
+          padding: '10px 12px',
         }}>
           <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>Interface language</span>
           <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
@@ -246,14 +238,12 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
             </select>
             <span style={{ position: 'absolute', right: 10, pointerEvents: 'none', color: C.textMuted, display: 'inline-flex' }}><IChevron /></span>
           </div>
+        </PanelSection>
         </div>
 
-        {/* Blocked sites */}
+        <div>
         <SectionLabel>Blocked sites</SectionLabel>
-        <div style={{
-          border: `1px solid ${C.border}`, borderRadius: 18,
-          background: C.surfaceBubble, boxShadow: 'none', padding: 14,
-        }}>
+        <PanelSection>
           {blockedDomains.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 11 }}>
               {blockedDomains.map(d => (
@@ -292,6 +282,7 @@ export default function Settings({ onClose, onOpenDashboard }: SettingsProps) {
               fontFamily: FONT, boxShadow: 'none',
             }}>Add</button>
           </div>
+        </PanelSection>
         </div>
       </div>
     </PanelShell>
@@ -302,7 +293,7 @@ function Row({ label, desc, right, border }: { label: string; desc?: string; rig
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-      padding: '13px 14px',
+      padding: '10px 12px',
       ...(border ? { borderTop: `1px solid ${C.divider}` } : {}),
     }}>
       <span style={{ minWidth: 0 }}>

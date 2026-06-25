@@ -45,7 +45,7 @@ function UserBubble({ content, dense }: { content: string; dense?: boolean }) {
           ? 'max-w-[95%] rounded-2xl px-3 py-1.5 text-[12px] leading-snug'
           : cn(
               'ml-auto max-w-[82%] bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground',
-              multiline ? 'rounded-2xl' : 'rounded-full',
+              multiline ? 'rounded-2xl' : 'rounded-2xl sm:rounded-full',
             ),
       )}
     >

@@ -1,6 +1,7 @@
 import { Reveal } from '@/components/marketing/primitives/Reveal'
 import AskThoughtTrace from '@/components/marketing/AskThoughtTrace'
 import { mkt } from '@/components/marketing/marketingSurfaces'
+import ExtensionStaticHighlightSceneMock from '@/components/marketing/productMocks/ExtensionStaticHighlightSceneMock'
 import {
   ExtensionAskPanelMock,
   ExtensionDockSceneHighlightAnimated,
@@ -29,7 +30,12 @@ export default function ContextLayerSection() {
             >
               Chrome extension
             </p>
-            <ExtensionDockSceneHighlightAnimated className="h-full" />
+            <div className="sm:hidden">
+              <ExtensionStaticHighlightSceneMock className="mx-auto w-full" />
+            </div>
+            <div className="hidden h-full sm:block">
+              <ExtensionDockSceneHighlightAnimated className="h-full" />
+            </div>
           </Reveal>
 
           <Reveal delay={0.1} className="flex h-full min-w-0 flex-col">

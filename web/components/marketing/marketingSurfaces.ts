@@ -17,6 +17,9 @@ export const mkt = {
   borderWarm: '#E8DFD4',
   borderSoft: '#E5D9CC',
   espresso: '#4A3228',
+  burntRed: '#8B3329',
+  /** 2-tone marketing cards — distinct from navy, brown, and burnt red */
+  deepTeal: '#2A5F58',
 } as const
 
 /** Extension + chat panel (canonical product chrome) */

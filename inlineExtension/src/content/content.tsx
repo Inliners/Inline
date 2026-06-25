@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client'
 import ContentShell from './ContentShell'
 import { enableReaderMode, disableReaderMode } from '../lib/readerMode'
 import { loadLayers, type LayerVisibility } from '../lib/layerState'
+import { applyHighlightLayerVisibility, applyLayerVisibility } from './layerVisibility'
 import { speakWithElevenLabs, stopSpeaking } from '../lib/elevenLabsTts'
 import { readPrivacyAccepted } from '../lib/privacyConsent'
 import cssText from './content.css?inline'
@@ -132,57 +133,17 @@ import { FONT_FACE_CSS } from '../lib/extensionFonts'
       }
     })
 
-    const LAYER_SELECTORS: Record<Exclude<keyof LayerVisibility, 'highlights'>, string[]> = {
-      drawings: ['#inline-draw-canvas', '#inline-handwriting-canvas'],
-      stickies: ['[data-inline-sticky]', '[data-inline-anchor]'],
-      stamps: ['[data-inline-stamp]'],
-    }
-
-    function applyHighlightLayerVisibility(visible: boolean): void {
-      document.querySelectorAll<HTMLElement>('[data-inline-highlight]').forEach((el) => {
-        if (visible) {
-          if (el.dataset.inlineSavedBg !== undefined) {
-            el.style.backgroundColor = el.dataset.inlineSavedBg
-            el.style.borderRadius = el.dataset.inlineSavedRadius ?? '4px'
-            el.style.padding = el.dataset.inlineSavedPadding ?? '0 3px'
-            delete el.dataset.inlineSavedBg
-            delete el.dataset.inlineSavedRadius
-            delete el.dataset.inlineSavedPadding
-          }
-          return
-        }
-
-        if (el.dataset.inlineSavedBg === undefined) {
-          el.dataset.inlineSavedBg = el.style.backgroundColor
-          el.dataset.inlineSavedRadius = el.style.borderRadius
-          el.dataset.inlineSavedPadding = el.style.padding
-        }
-        el.style.backgroundColor = 'transparent'
-        el.style.borderRadius = ''
-        el.style.padding = ''
-      })
-    }
-
     let currentLayers: LayerVisibility | null = null
 
-    function applyLayerVisibility(layers: LayerVisibility): void {
+    function syncLayerVisibility(layers: LayerVisibility): void {
       currentLayers = layers
-      applyHighlightLayerVisibility(layers.highlights)
-
-      ;(Object.keys(LAYER_SELECTORS) as (keyof typeof LAYER_SELECTORS)[]).forEach((key) => {
-        const visible = layers[key]
-        for (const sel of LAYER_SELECTORS[key]) {
-          document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
-            el.style.display = visible ? '' : 'none'
-          })
-        }
-      })
+      applyLayerVisibility(layers)
     }
 
-    loadLayers().then(applyLayerVisibility).catch(() => {})
+    loadLayers().then(syncLayerVisibility).catch(() => {})
 
     document.addEventListener('inline:layerToggle', ((e: CustomEvent<LayerVisibility>) => {
-      if (e.detail) applyLayerVisibility(e.detail)
+      if (e.detail) syncLayerVisibility(e.detail)
     }) as EventListener)
 
     document.addEventListener('inline:highlightsRestored', reapplyHighlightLayer)

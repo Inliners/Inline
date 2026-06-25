@@ -7,7 +7,7 @@ import { fetchViaBackground } from '../lib/backgroundFetch'
 import { saveAIResultToHistory } from '../lib/historyApi'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
-import { PanelShell, Spinner, SectionLabel, ActionTile, Chip, Composer, BlockDiffView, PanelResultCard, ReviewFooter } from './panelKit'
+import { PanelShell, Spinner, SectionLabel, ActionTile, Chip, Composer, BlockDiffView, PanelResultCard, ReviewFooter, PanelSection, panelBodyStyle } from './panelKit'
 import FormattedAiText from './FormattedAiText'
 import { setAiBusy } from '../lib/panelLock'
 
@@ -195,13 +195,8 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
         onClose={onClose}
         tool="ai"
       >
-        <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{
-            border: `1px solid ${C.border}`,
-            borderRadius: C.radiusMd,
-            background: C.bg,
-            padding: 12,
-          }}>
+        <div style={panelBodyStyle}>
+          <PanelSection>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <span style={{
                 display: 'inline-flex',
@@ -254,7 +249,7 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
                 overflow: 'hidden',
               }}>"{selectedText.trim()}"</p>
             )}
-          </div>
+          </PanelSection>
 
           <Composer
             value={customPrompt}

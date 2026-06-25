@@ -11,12 +11,14 @@ function PairCard({
   children,
   visualClassName,
   visualContainerClassName,
+  bottomColor = mkt.espresso,
 }: {
   title?: string
   description?: string
   children: ReactNode
   visualClassName?: string
   visualContainerClassName?: string
+  bottomColor?: string
 }) {
   return (
     <article className="relative flex h-full min-h-[480px] flex-col rounded-[1.75rem] border border-[#E8DFD4] sm:min-h-[520px]">
@@ -25,7 +27,7 @@ function PairCard({
         aria-hidden
       >
         <div className="h-[75%]" style={{ backgroundColor: mkt.tan }} />
-        <div className="h-[25%]" style={{ backgroundColor: mkt.espresso }} />
+        <div className="h-[25%]" style={{ backgroundColor: bottomColor }} />
       </div>
 
       <div className="relative flex min-h-0 flex-[3] flex-col p-5 sm:p-6 md:p-8">
@@ -69,6 +71,7 @@ export default function MaintainingPairSection() {
             <PairCard
               title="Self-updating recap"
               description="Highlights and notes on the page feed back into your recap — so the summary always reflects what you captured."
+              bottomColor={mkt.burntRed}
               visualContainerClassName="pt-5 sm:pt-6"
               visualClassName="translate-y-1 sm:translate-y-2"
             >

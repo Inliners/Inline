@@ -161,11 +161,11 @@ export default function ExtensionDockSceneHighlightAnimated({
         className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
         aria-hidden
       >
-        <div className="h-[58%]" style={{ backgroundColor: mkt.tan }} />
-        <div className="h-[42%]" style={{ backgroundColor: product.brand }} />
+        <div className="h-[68%]" style={{ backgroundColor: mkt.tan }} />
+        <div className="h-[32%]" style={{ backgroundColor: product.brand }} />
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-[3] flex-col p-4 sm:p-5 md:p-6">
+      <div className="relative z-10 flex flex-[2] flex-col p-4 pb-2 sm:p-5 sm:pb-3 md:p-6 md:pb-4">
         <div className="relative">
           <div className="rounded-lg border border-border/50 bg-white px-3 py-2.5 shadow-sm">
             <p className="truncate text-[10px] text-muted-foreground">{DEMO_DOMAIN}</p>
@@ -203,7 +203,7 @@ export default function ExtensionDockSceneHighlightAnimated({
         </div>
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-end px-4 pb-4 pt-2 sm:flex-row sm:items-end sm:justify-end sm:gap-4 sm:px-5 sm:pb-5 md:px-6 md:pb-6">
+      <div className="relative z-10 -mt-10 flex min-h-0 flex-1 flex-col items-center justify-start px-4 pb-4 pt-0 sm:-mt-14 sm:flex-row sm:items-end sm:justify-end sm:gap-4 sm:px-5 sm:pb-5 md:-mt-16 md:px-6 md:pb-6">
         <ExtensionAskPanelMock compact className="w-full max-w-[342px]" badgeShape={badgeShape} />
         <ExtensionDockMock activeIndex={2} className="shrink-0" />
       </div>

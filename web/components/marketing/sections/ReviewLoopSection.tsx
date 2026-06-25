@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { Reveal } from '@/components/marketing/primitives/Reveal'
 import { ProductVisualRing } from '@/components/marketing/primitives/ProductVisualRing'
-import { WorkspaceDashboardPreviewMock } from '@/components/marketing/productMocks'
+import { WorkspaceDocumentsPreviewMock } from '@/components/marketing/productMocks'
 import { mktBtnSecondary } from '@/components/marketing/marketingSurfaces'
 import { DEFAULT_WORKSPACES } from '@/lib/workspaces'
 import { workspacePath } from '@/lib/workspace-routes'
@@ -21,7 +21,7 @@ export default function ReviewLoopSection() {
           </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground lg:mt-0">
             Inline drafts recap updates in the extension. You approve in the same Ask panel — then
-            captures and recaps show up on your dashboard.
+            captures and recaps show up as library documents in your workspace.
           </p>
           <Link href={WORKSPACE_HOME} className={`mt-6 inline-flex items-center gap-1 ${mktBtnSecondary}`}>
             Open workspace
@@ -31,7 +31,7 @@ export default function ReviewLoopSection() {
 
         <Reveal delay={0.08} className="mt-10 w-full md:mt-14">
           <ProductVisualRing innerRadius="2xl">
-            <WorkspaceDashboardPreviewMock />
+            <WorkspaceDocumentsPreviewMock />
           </ProductVisualRing>
         </Reveal>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { PANEL as C, FONT } from '../lib/extensionTheme'
-import { PanelShell, SectionLabel } from './panelKit'
+import { PanelShell, SectionLabel, PanelSection, panelBodyStyle } from './panelKit'
 
 const STAMP_SYMBOLS = ['✓', '✗', '?', '!', '★', '♥', '+', '−', '→', '•']
 
@@ -28,7 +28,7 @@ export default function Stamps({ onClose }: StampsProps) {
       {placing && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          margin: '14px 18px 0', padding: '10px 14px', borderRadius: 14,
+          margin: '14px 18px 0', padding: '10px 14px', borderRadius: C.radius,
           background: C.accent, color: '#fff', fontFamily: FONT,
           boxShadow: 'none',
         }}>
@@ -44,9 +44,11 @@ export default function Stamps({ onClose }: StampsProps) {
         </div>
       )}
 
-      <div style={{ padding: '16px 18px 20px', fontFamily: FONT }}>
-        <SectionLabel>Symbols</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+      <div style={{ ...panelBodyStyle, fontFamily: FONT }}>
+        <div>
+          <SectionLabel>Symbols</SectionLabel>
+          <PanelSection style={{ padding: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
           {STAMP_SYMBOLS.map(sym => {
             const on = placing === sym
             return (
@@ -60,7 +62,7 @@ export default function Stamps({ onClose }: StampsProps) {
                   aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, fontWeight: 600,
                   border: `1px solid ${on ? C.accent : C.border}`,
-                  borderRadius: 14,
+                  borderRadius: C.radius,
                   background: on ? C.accent : C.surfaceBubble,
                   color: on ? '#fff' : C.text,
                   cursor: 'pointer', padding: 0, fontFamily: FONT,
@@ -70,6 +72,8 @@ export default function Stamps({ onClose }: StampsProps) {
               >{sym}</button>
             )
           })}
+            </div>
+          </PanelSection>
         </div>
       </div>
     </PanelShell>

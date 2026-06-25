@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { PANEL as C, FONT } from '../lib/extensionTheme'
-import { PanelShell, Toggle } from './panelKit'
+import { PanelShell, Toggle, PanelSection, panelBodyStyle } from './panelKit'
 import { loadLayers, saveLayers, type LayerVisibility } from '../lib/layerState'
 
 const IHighlights = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l-6 6v3h9l3-3" /><path d="M22 12l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></svg>)
@@ -39,14 +39,11 @@ export default function Layers({ onClose }: LayersProps) {
 
   return (
     <PanelShell title="Layers" subtitle="Show or hide annotation types" width={308} tool="layers" onClose={onClose}>
-      <div style={{ padding: '16px 18px 18px', fontFamily: FONT }}>
-        <div style={{
-          border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden',
-          background: C.surfaceBubble, boxShadow: C.shadowCard,
-        }}>
+      <div style={{ ...panelBodyStyle, fontFamily: FONT }}>
+        <PanelSection list>
           {LAYER_ROWS.map((row, i) => (
             <div key={row.key} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px',
+              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
               ...(i > 0 ? { borderTop: `1px solid ${C.divider}` } : {}),
             }}>
               <span style={{
@@ -63,7 +60,7 @@ export default function Layers({ onClose }: LayersProps) {
               <Toggle checked={layers[row.key]} onChange={v => handleToggle(row.key, v)} label={row.label} />
             </div>
           ))}
-        </div>
+        </PanelSection>
       </div>
     </PanelShell>
   )

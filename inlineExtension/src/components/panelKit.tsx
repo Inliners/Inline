@@ -458,6 +458,43 @@ export function SectionLabel({ children, style }: { children: ReactNode; style?:
   )
 }
 
+/** Ask-panel body rhythm — shared across tool popups. */
+export const panelBodyStyle: CSSProperties = {
+  padding: '20px 20px 16px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+}
+
+/** Bordered inner section shell — matches Ask page card / composer / action tiles. */
+export const panelSectionShellStyle: CSSProperties = {
+  border: `1px solid ${C.border}`,
+  borderRadius: C.radiusMd,
+  background: C.surfaceBubble,
+  boxShadow: 'none',
+}
+
+export function PanelSection({
+  children,
+  style,
+  list,
+}: {
+  children: ReactNode
+  style?: CSSProperties
+  /** Stacked rows with dividers — no inner padding on the shell. */
+  list?: boolean
+}) {
+  return (
+    <div style={{
+      ...panelSectionShellStyle,
+      ...(list ? { overflow: 'hidden', padding: 0 } : { padding: 12 }),
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
 /* ─────────────────────────  Interactive tiles/chips  ───────────────────────── */
 
 /** A solid quick-action card with optional leading icon + description. */
