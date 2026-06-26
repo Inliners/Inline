@@ -30,6 +30,12 @@ export const RecapParagraph = Paragraph.extend({
         parseHTML: el => el.getAttribute('class'),
         renderHTML: attrs => (attrs.class ? { class: attrs.class } : {}),
       },
+      dataRecapTime: {
+        default: null,
+        parseHTML: el => el.getAttribute('data-recap-time'),
+        renderHTML: attrs =>
+          attrs.dataRecapTime ? { 'data-recap-time': attrs.dataRecapTime } : {},
+      },
     }
   },
 })

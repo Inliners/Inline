@@ -9,10 +9,10 @@ interface Props {
   setInput: (value: string) => void
   onSend: () => void
   loading?: boolean
-  inputRef?: React.RefObject<HTMLInputElement | null>
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   placeholder?: string
-  /** Flat embed — no panel footer padding wrapper */
-  embedded?: boolean
+  /** Flat embed — no panel footer padding wrapper. `panel` = document side rail. */
+  embedded?: boolean | 'panel'
   className?: string
 }
 
@@ -33,7 +33,41 @@ export default function WorkspaceChatComposer({
     }
   }
 
-  const inner = (
+  const isPanel = embedded === 'panel'
+
+  const inner = isPanel ? (
+    <div className="relative rounded-xl border border-border bg-background">
+      <textarea
+        ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            onSend()
+          }
+        }}
+        placeholder={placeholder ?? 'Ask Inline'}
+        rows={3}
+        disabled={loading}
+        aria-label="Message Inline"
+        className="block min-h-[4.5rem] w-full resize-none border-0 bg-transparent px-4 pt-3.5 pb-12 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/60"
+      />
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={loading || !input.trim()}
+        className="absolute bottom-2.5 right-2.5 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+        aria-label="Send message"
+      >
+        {loading ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <ArrowUp className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  ) : (
     <div className="overflow-hidden rounded-lg border border-primary/25 bg-background shadow-[0_0_0_3px_rgba(75,131,196,0.10)]">
       {input.trim() && (
         <div className="flex items-center justify-between border-b border-primary/10 bg-primary/5 px-4 py-2 text-xs text-primary">
@@ -50,7 +84,7 @@ export default function WorkspaceChatComposer({
       )}
       <div className="flex min-h-[78px] flex-col px-4 py-3">
         <input
-          ref={inputRef}
+          ref={inputRef as React.RefObject<HTMLInputElement | null>}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
@@ -105,6 +139,10 @@ export default function WorkspaceChatComposer({
       </div>
     </div>
   )
+
+  if (isPanel) {
+    return <div className={cn('w-full shrink-0 px-4 pb-4 pt-2', className)}>{inner}</div>
+  }
 
   if (embedded) {
     return <div className={cn('w-full', className)}>{inner}</div>

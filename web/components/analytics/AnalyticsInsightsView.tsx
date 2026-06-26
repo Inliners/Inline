@@ -1,42 +1,73 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import EmbeddedInsightsChat from '@/components/analytics/EmbeddedInsightsChat'
 import AiFeedbackBar from '@/components/ai/AiFeedbackBar'
 import type { InsightsStats } from '@/components/insights/InsightsSummary'
+import {
+  loadInsightsSummary,
+  saveInsightsSummary,
+} from '@/lib/workspace-insights-summary'
 import { cn } from '@/lib/utils'
 
 interface Props {
   workspaceId: string
 }
 
-export default function AnalyticsInsightsView({ workspaceId }: Props) {
-  const [narrative, setNarrative] = useState<string | null>(null)
-  const [stats, setStats] = useState<InsightsStats | null>(null)
-  const [loading, setLoading] = useState(true)
+function readCachedInsights(workspaceId: string) {
+  return loadInsightsSummary(workspaceId)
+}
 
-  const load = useCallback(async () => {
+export default function AnalyticsInsightsView({ workspaceId }: Props) {
+  const [narrative, setNarrative] = useState<string | null>(() => {
+    return readCachedInsights(workspaceId)?.narrative ?? null
+  })
+  const [stats, setStats] = useState<InsightsStats | null>(() => {
+    return readCachedInsights(workspaceId)?.stats ?? null
+  })
+  const [loading, setLoading] = useState(() => !readCachedInsights(workspaceId))
+  const [skipReveal, setSkipReveal] = useState(() => !!readCachedInsights(workspaceId))
+
+  useEffect(() => {
+    const cached = readCachedInsights(workspaceId)
+    if (cached) {
+      setNarrative(cached.narrative)
+      setStats(cached.stats)
+      setLoading(false)
+      setSkipReveal(true)
+      return
+    }
+
+    setSkipReveal(false)
+    let cancelled = false
     setLoading(true)
-    try {
-      const res = await fetch('/api/ai/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId }),
-      })
-      if (res.ok) {
+
+    ;(async () => {
+      try {
+        const res = await fetch('/api/ai/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceId }),
+        })
+        if (!res.ok || cancelled) return
         const json = await res.json() as {
           narrative?: string
           stats?: InsightsStats
         }
-        setNarrative(json.narrative ?? null)
-        setStats(json.stats ?? null)
+        const nextNarrative = json.narrative ?? null
+        const nextStats = json.stats ?? null
+        setNarrative(nextNarrative)
+        setStats(nextStats)
+        saveInsightsSummary(workspaceId, { narrative: nextNarrative, stats: nextStats })
+      } catch { /* ignore */ }
+      finally {
+        if (!cancelled) setLoading(false)
       }
-    } catch { /* ignore */ }
-    finally { setLoading(false) }
-  }, [workspaceId])
+    })()
 
-  useEffect(() => { void load() }, [load])
+    return () => { cancelled = true }
+  }, [workspaceId])
 
   const topDomain = stats?.topDomains?.[0]?.domain
 
@@ -54,6 +85,7 @@ export default function AnalyticsInsightsView({ workspaceId }: Props) {
         narrative={narrative}
         stats={stats}
         insightsLoading={loading}
+        insightsSkipReveal={skipReveal}
         insightsFooter={
           !loading && narrative ? (
             <AiFeedbackBar

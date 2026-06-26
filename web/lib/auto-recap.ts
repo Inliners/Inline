@@ -26,6 +26,8 @@ import {
   actionLabelFor,
   summarizeNotesForAi,
   normalizeRecapListSections,
+  normalizeRecapEntryTimes,
+  recapSectionHeading,
 } from './recap-format'
 
 export {
@@ -116,7 +118,7 @@ function composeRecapHtml(
 
   const overview = buildOverviewHtml(notes, pageTitle, domain, aiOverview)
   const entries = sorted.map(buildRecapEntryHtml).join('')
-  return `${overview}<h2>Activity</h2>${entries}`
+  return `${overview}${recapSectionHeading('Activity')}${entries}`
 }
 
 async function fetchAiOverview(
@@ -159,6 +161,7 @@ export function normalizeRecapContent(html: string, notes?: Note[]): string {
     /(class="recap-entry-meta"[^>]*>\s*<em>[^<]*)\s·\s([^<]*<\/em>)/gi,
     '$1 — $2',
   )
+  out = normalizeRecapEntryTimes(out)
   out = normalizeRecapListSections(out)
   if (notes?.length) out = ensureRecapEntryAnchors(out, notes)
   return out.trim()
@@ -169,7 +172,8 @@ export function ensureRecapEntryAnchors(html: string, notes: Note[]): string {
   if (!html.trim() || notes.length === 0) return html
   if (/data-recap-entry/i.test(html) && /<div[^>]*data-recap-entry/i.test(html)) return html
 
-  const activityMatch = html.match(/<h2[^>]*>\s*Activity\s*<\/h2>/i)
+  const activityMatch = html.match(/<h2[^>]*class="[^"]*recap-section-heading[^"]*"[^>]*>\s*Activity\s*<\/h2>/i)
+    ?? html.match(/<h2[^>]*>\s*Activity\s*<\/h2>/i)
   if (!activityMatch || activityMatch.index == null) return html
 
   const splitAt = activityMatch.index + activityMatch[0].length

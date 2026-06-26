@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, Clock, Sparkles, User } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SourceCardRow, type ChatSource } from '@/components/shell/SourceCard'
 import { extractCitationRefs } from '@/lib/ai/rag/citations'
@@ -10,6 +10,11 @@ import AiFeedbackBar from '@/components/ai/AiFeedbackBar'
 import InsightsSummary, { type InsightsStats } from '@/components/insights/InsightsSummary'
 import InsightsLoadingStatus from '@/components/insights/InsightsLoadingStatus'
 import { loadFolderDocuments } from '@/lib/workspace-library'
+import {
+  loadInsightsChatMessages,
+  saveInsightsChatMessages,
+  type WorkspaceInsightsChatMessage,
+} from '@/lib/workspace-insights-chat'
 import { getChatGreeting } from '@/lib/chat-format'
 import { AssistantMessageContent, UserMessageBubble } from '@/components/chat/ChatMessageParts'
 import WorkspaceChatComposer from '@/components/chat/WorkspaceChatComposer'
@@ -20,6 +25,15 @@ type Message = {
   content: string
   sources?: ChatSource[]
   error?: boolean
+}
+
+function hydrateMessages(stored: WorkspaceInsightsChatMessage[]): Message[] {
+  return stored.map(m => ({
+    role: m.role,
+    content: m.content,
+    error: m.error,
+    sources: Array.isArray(m.sources) ? (m.sources as ChatSource[]) : undefined,
+  }))
 }
 
 function citedSourcesForMessage(sources: ChatSource[] | undefined, content: string): ChatSource[] {
@@ -36,24 +50,17 @@ interface Props {
   narrative?: string | null
   stats?: InsightsStats | null
   insightsLoading?: boolean
+  insightsSkipReveal?: boolean
   insightsFooter?: React.ReactNode
   className?: string
 }
 
-function buildQuickPrompts(topDomain?: string): { label: string; prompt: string; icon: React.ReactNode }[] {
+function buildQuickPrompts(topDomain?: string): string[] {
   return [
-    {
-      label: 'Summarize this week',
-      prompt: 'Summarize what I captured this week and what stands out.',
-      icon: <BarChart3 className="h-3.5 w-3.5 text-[#2f80ed]" />,
-    },
-    {
-      label: topDomain ? `Deep dive: ${topDomain}` : 'Prep my next brief',
-      prompt: topDomain
-        ? `Generate a consolidated analysis of everything I've captured about ${topDomain} this week.`
-        : 'What should I focus on next based on my recent captures?',
-      icon: <Sparkles className="h-3.5 w-3.5 text-violet-500" />,
-    },
+    'Summarize what I captured this week',
+    topDomain
+      ? `What stands out about ${topDomain}?`
+      : 'What should I focus on next?',
   ]
 }
 
@@ -64,6 +71,7 @@ export default function EmbeddedInsightsChat({
   narrative,
   stats,
   insightsLoading,
+  insightsSkipReveal,
   insightsFooter,
   className,
 }: Props) {
@@ -72,7 +80,23 @@ export default function EmbeddedInsightsChat({
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
+
+  const patchMessages = useCallback((
+    updater: Message[] | ((prev: Message[]) => Message[]),
+  ) => {
+    setMessages(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      saveInsightsChatMessages(workspaceId, next as WorkspaceInsightsChatMessage[])
+      return next
+    })
+  }, [workspaceId])
+
+  useEffect(() => {
+    setMessages(hydrateMessages(loadInsightsChatMessages(workspaceId)))
+    setInput('')
+    setLoading(false)
+  }, [workspaceId])
 
   const greeting = getChatGreeting()
   const quickPrompts = buildQuickPrompts(topDomain)
@@ -89,7 +113,7 @@ export default function EmbeddedInsightsChat({
     const trimmed = text.trim()
     if (!trimmed || loading) return
 
-    setMessages(prev => [...prev, { role: 'user', content: trimmed }])
+    patchMessages(prev => [...prev, { role: 'user', content: trimmed }])
     setInput('')
     setLoading(true)
 
@@ -107,7 +131,7 @@ export default function EmbeddedInsightsChat({
           const j = (await res.json()) as { error?: string }
           if (j?.error) detail = j.error
         } catch { /* ignore */ }
-        setMessages(prev => [...prev, { role: 'assistant', content: detail, error: true }])
+        patchMessages(prev => [...prev, { role: 'assistant', content: detail, error: true }])
         return
       }
 
@@ -117,7 +141,7 @@ export default function EmbeddedInsightsChat({
       let headerParsed = false
       let sources: ChatSource[] = []
       let accumulated = ''
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+      patchMessages(prev => [...prev, { role: 'assistant', content: '' }])
 
       while (true) {
         const { done, value } = await reader.read()
@@ -141,7 +165,7 @@ export default function EmbeddedInsightsChat({
         if (buffer) {
           accumulated += buffer
           buffer = ''
-          setMessages(prev => {
+          patchMessages(prev => {
             const next = [...prev]
             next[next.length - 1] = { role: 'assistant', content: accumulated, sources }
             return next
@@ -151,21 +175,21 @@ export default function EmbeddedInsightsChat({
 
       if (buffer) {
         accumulated += buffer
-        setMessages(prev => {
+        patchMessages(prev => {
           const next = [...prev]
           next[next.length - 1] = { role: 'assistant', content: accumulated, sources }
           return next
         })
       }
     } catch {
-      setMessages(prev => [
+      patchMessages(prev => [
         ...prev,
         { role: 'assistant', content: 'Network error — check your connection and try again.', error: true },
       ])
     } finally {
       setLoading(false)
     }
-  }, [loading, workspaceId])
+  }, [loading, patchMessages, workspaceId])
 
   function applyQuickPrompt(prompt: string) {
     setInput(prompt)
@@ -173,20 +197,9 @@ export default function EmbeddedInsightsChat({
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-h-0 flex-1 flex-col',
-        hasMessages && 'relative h-full overflow-hidden',
-        className,
-      )}
-    >
-      <div className="shrink-0 pb-4">
-        <h2
-          className={cn(
-            'font-semibold tracking-tight text-foreground',
-            hasMessages ? 'text-xl' : 'text-2xl sm:text-3xl',
-          )}
-        >
+    <div className={cn('flex h-full min-h-0 flex-1 flex-col', className)}>
+      <header className="shrink-0 pb-4">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
           {greeting}! What&apos;s on today?
         </h2>
         {contextLabel && (
@@ -195,144 +208,121 @@ export default function EmbeddedInsightsChat({
             <span>{contextLabel}</span>
           </p>
         )}
-      </div>
-
-      <div className={cn('relative min-h-0 flex-1', hasMessages && 'min-h-0')}>
-        <div
-          ref={scrollRef}
-          className={cn(
-            'scrollbar-minimal h-full min-h-0 space-y-5 overflow-y-auto pr-1',
-            hasMessages && 'overscroll-contain pb-32',
-          )}
-        >
-        <div className="mt-6">
-        <AnimatePresence mode="wait">
-          {insightsLoading ? (
-            <motion.div
-              key="insights-loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="max-w-[92%] py-1"
-            >
-              <InsightsLoadingStatus />
-            </motion.div>
-          ) : showInsightsContent ? (
-            <motion.div
-              key="insights-content"
-              {...insightsRevealMotion}
-              className="max-w-[92%]"
-            >
-              <InsightsSummary
-                variant="inline"
-                animateIn
-                narrative={narrative ?? null}
-                stats={stats ?? null}
-                footer={insightsFooter}
-              />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-        </div>
-
-        {hasMessages && (
-          <AnimatePresence initial={false}>
-            {messages.map((m, i) => (
-              <motion.div
-                key={`${i}-${m.role}-${m.content.slice(0, 24)}`}
-                {...chatMessageMotion}
-                className={cn(
-                  'flex min-w-0 items-start gap-2',
-                  m.role === 'user' ? 'flex-row-reverse' : 'flex-row',
-                )}
-              >
-                {m.role === 'user' && (
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary">
-                    <User className="h-3 w-3 text-foreground" />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    'group/msg relative min-w-0',
-                    m.role === 'user' ? 'flex flex-1 flex-col items-end' : 'max-w-[92%] flex-1',
-                  )}
-                >
-                  {m.role === 'user' ? (
-                    <UserMessageBubble content={m.content} />
-                  ) : (
-                    <AssistantMessageContent
-                      content={m.content}
-                      thinking={loading && i === messages.length - 1 && !m.content.trim()}
-                      error={m.error}
-                    />
-                  )}
-                  {m.role === 'assistant' && !loading && (() => {
-                    const cited = citedSourcesForMessage(m.sources, m.content)
-                    return cited.length > 0 ? (
-                      <SourceCardRow sources={cited} workspaceId={workspaceId} />
-                    ) : null
-                  })()}
-                  {m.role === 'assistant' && m.content && !loading && !(loading && i === messages.length - 1) && (
-                    <AiFeedbackBar
-                      workspaceId={workspaceId}
-                      surface="chat"
-                      targetId={`insights-chat-${i}`}
-                      className="mt-2"
-                    />
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-
-        {hasMessages && loading && messages[messages.length - 1]?.role === 'user' && (
-          <motion.div {...chatMessageMotion} className="max-w-[92%]">
-            <AssistantMessageContent content="" thinking />
-          </motion.div>
-        )}
-        <div ref={bottomRef} className="h-1 shrink-0" aria-hidden />
-        </div>
-
-        {hasMessages && (
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-14 bg-gradient-to-t from-background from-40% via-background/55 to-transparent"
-            aria-hidden
-          />
-        )}
-      </div>
+      </header>
 
       <div
-        className={cn(
-          hasMessages
-            ? 'absolute bottom-5 left-0 right-0 z-10 shadow-[0_-6px_20px_-6px_rgba(0,0,0,0.10)]'
-            : 'shrink-0 bg-background pb-6 pt-4',
-        )}
+        ref={scrollRef}
+        className="scrollbar-minimal min-h-0 flex-1 overflow-y-auto"
       >
+        <div className="space-y-6 pb-4">
+          <AnimatePresence mode="wait">
+            {insightsLoading ? (
+              <motion.div
+                key="insights-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-1"
+              >
+                <InsightsLoadingStatus />
+              </motion.div>
+            ) : showInsightsContent ? (
+              insightsSkipReveal ? (
+                <div key="insights-content">
+                  <InsightsSummary
+                    variant="inline"
+                    narrative={narrative ?? null}
+                    stats={stats ?? null}
+                    footer={insightsFooter}
+                  />
+                </div>
+              ) : (
+                <motion.div key="insights-content" {...insightsRevealMotion}>
+                  <InsightsSummary
+                    variant="inline"
+                    animateIn
+                    narrative={narrative ?? null}
+                    stats={stats ?? null}
+                    footer={insightsFooter}
+                  />
+                </motion.div>
+              )
+            ) : null}
+          </AnimatePresence>
+
+          {hasMessages && (
+            <AnimatePresence initial={false}>
+              {messages.map((m, i) => (
+                <motion.div
+                  key={`${i}-${m.role}-${m.content.slice(0, 24)}`}
+                  {...chatMessageMotion}
+                  className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
+                >
+                  {m.role === 'user' ? (
+                    <UserMessageBubble content={m.content} variant="sidePanel" />
+                  ) : (
+                    <div className="min-w-0 max-w-full space-y-2">
+                      <AssistantMessageContent
+                        content={m.content}
+                        thinking={loading && i === messages.length - 1 && !m.content.trim()}
+                        error={m.error}
+                      />
+                      {!loading && (() => {
+                        const cited = citedSourcesForMessage(m.sources, m.content)
+                        return cited.length > 0 ? (
+                          <SourceCardRow sources={cited} workspaceId={workspaceId} />
+                        ) : null
+                      })()}
+                      {m.content && !loading && !(loading && i === messages.length - 1) && (
+                        <AiFeedbackBar
+                          workspaceId={workspaceId}
+                          surface="chat"
+                          targetId={`insights-chat-${i}`}
+                          className="mt-1"
+                        />
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+
+          {hasMessages && loading && messages[messages.length - 1]?.role === 'user' && (
+            <motion.div {...chatMessageMotion}>
+              <AssistantMessageContent content="" thinking />
+            </motion.div>
+          )}
+        </div>
+        <div ref={bottomRef} className="h-1 shrink-0" aria-hidden />
+      </div>
+
+      <div className="shrink-0 pt-2">
         <WorkspaceChatComposer
-          embedded
+          embedded="panel"
           input={input}
           setInput={setInput}
           onSend={() => void send(input)}
           loading={loading}
           inputRef={inputRef}
           placeholder="Ask anything…"
+          className="!px-0 pb-2"
         />
 
         {!hasMessages && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            {quickPrompts.map(item => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => applyQuickPrompt(item.prompt)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
-              >
-                {item.icon}
-                {item.label}
-              </button>
+          <ul className="mt-3 space-y-1">
+            {quickPrompts.map(prompt => (
+              <li key={prompt}>
+                <button
+                  type="button"
+                  onClick={() => applyQuickPrompt(prompt)}
+                  className="w-full cursor-pointer rounded-lg py-2 text-left text-sm text-foreground transition-colors hover:bg-muted/50"
+                >
+                  {prompt}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>

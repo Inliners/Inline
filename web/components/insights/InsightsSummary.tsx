@@ -55,10 +55,7 @@ export default function InsightsSummary({
       {narrative && (
         inline ? (
           <Section className="space-y-2" {...sectionProps}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              What you&apos;re researching
-            </p>
-            <p className={cn('leading-relaxed text-foreground', compact ? 'text-sm' : 'text-sm sm:text-base')}>
+            <p className={cn('text-sm leading-relaxed text-foreground', compact && 'text-xs')}>
               {narrative}
             </p>
           </Section>

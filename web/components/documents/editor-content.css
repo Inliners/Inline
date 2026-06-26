@@ -201,29 +201,91 @@
   border-top: 1px solid #f1f5f9;
 }
 
-.auto-recap-document .ProseMirror h2 {
+.auto-recap-document .ProseMirror h2.recap-section-heading,
+.auto-recap-document .ProseMirror h2[data-recap-time],
+.auto-recap-document .ProseMirror h2:has(.recap-overview-range),
+.auto-recap-document .ProseMirror h3.recap-entry-header,
+.auto-recap-document .ProseMirror h3[data-recap-time],
+.auto-recap-document .ProseMirror p.recap-entry-header,
+.auto-recap-document .ProseMirror p[data-recap-time] {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auto-recap-document .ProseMirror h2.recap-section-heading[data-recap-time]::after,
+.auto-recap-document .ProseMirror h2[data-recap-time]::after,
+.auto-recap-document .ProseMirror h3.recap-entry-header[data-recap-time]::after,
+.auto-recap-document .ProseMirror h3[data-recap-time]::after,
+.auto-recap-document .ProseMirror p.recap-entry-header[data-recap-time]::after,
+.auto-recap-document .ProseMirror p[data-recap-time]::after {
+  content: attr(data-recap-time);
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-style: normal;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  text-transform: none;
+}
+
+.auto-recap-document .ProseMirror h2 {
   font-size: 1.125rem;
   margin-top: 1.75rem;
   margin-bottom: 0.5rem;
   color: #334155;
 }
 
-.auto-recap-document .ProseMirror h2 .recap-overview-range {
-  font-size: 0.625rem;
+.auto-recap-document .ProseMirror h2 .recap-overview-range,
+.auto-recap-document .ProseMirror .recap-entry-time,
+.auto-recap-document .ProseMirror .recap-time {
+  font-size: 0.75rem;
   font-weight: 400;
+  font-style: normal;
   color: #94a3b8;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .auto-recap-document .ProseMirror h2:first-of-type {
   margin-top: 0.25rem;
 }
 
+.auto-recap-document .ProseMirror h3.recap-entry-header,
+.auto-recap-document .ProseMirror p.recap-entry-header {
+  margin: 0.875rem 0 0.35rem;
+}
+
+.auto-recap-document .ProseMirror .recap-entry-lead {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
 .auto-recap-document .ProseMirror h3 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0.875rem 0 0.35rem;
+}
+
+.auto-recap-document .ProseMirror h3.recap-entry-header {
+  margin: 0.875rem 0 0.35rem;
+}
+
+.auto-recap-document .ProseMirror p.recap-entry-header {
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -260,11 +322,7 @@
 }
 
 .auto-recap-document .ProseMirror p > em:only-child {
-  font-size: 0.75rem;
-  font-style: normal;
-  font-weight: 400;
-  color: #94a3b8;
-  letter-spacing: 0.01em;
+  display: none;
 }
 
 .auto-recap-document .ProseMirror blockquote {
@@ -360,8 +418,20 @@
   color: var(--foreground);
 }
 
-.dark .auto-recap-document .ProseMirror h2 .recap-overview-range {
-  color: var(--muted-foreground);
+.dark .auto-recap-document .ProseMirror h2 .recap-overview-range,
+.dark .auto-recap-document .ProseMirror .recap-entry-time,
+.dark .auto-recap-document .ProseMirror .recap-time,
+.dark .auto-recap-document .ProseMirror h2.recap-section-heading[data-recap-time]::after,
+.dark .auto-recap-document .ProseMirror h2[data-recap-time]::after,
+.dark .auto-recap-document .ProseMirror h3.recap-entry-header[data-recap-time]::after,
+.dark .auto-recap-document .ProseMirror h3[data-recap-time]::after,
+.dark .auto-recap-document .ProseMirror p.recap-entry-header[data-recap-time]::after,
+.dark .auto-recap-document .ProseMirror p[data-recap-time]::after {
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+}
+
+.dark .auto-recap-document .ProseMirror .recap-entry-lead {
+  color: var(--foreground);
 }
 
 .dark .auto-recap-document .ProseMirror h3 {

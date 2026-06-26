@@ -90,7 +90,13 @@ export function AssistantMessageContent({
   )
 }
 
-export function UserMessageBubble({ content }: { content: string }) {
+export function UserMessageBubble({
+  content,
+  variant = 'default',
+}: {
+  content: string
+  variant?: 'default' | 'sidePanel'
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [multiline, setMultiline] = useState(() => /\n/.test(content))
 
@@ -119,8 +125,13 @@ export function UserMessageBubble({ content }: { content: string }) {
     <div
       ref={ref}
       className={cn(
-        'ml-auto inline-block max-w-[82%] bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground wrap-anywhere',
-        multiline ? 'rounded-2xl' : 'rounded-full',
+        'ml-auto inline-block max-w-[82%] px-4 py-2.5 text-sm leading-relaxed wrap-anywhere',
+        variant === 'sidePanel'
+          ? 'max-w-[88%] rounded-2xl bg-muted text-foreground'
+          : cn(
+              'bg-primary text-primary-foreground',
+              multiline ? 'rounded-2xl' : 'rounded-full',
+            ),
       )}
     >
       {content}

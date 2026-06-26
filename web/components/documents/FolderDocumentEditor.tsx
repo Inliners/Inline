@@ -28,6 +28,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './editor-content.css'
 import { RecapParagraph } from './recap-paragraph'
 import { RecapBulletList } from './recap-bullet-list'
+import { RecapHeading } from './recap-heading'
+import { normalizeRecapEntryTimes } from '@/lib/recap-format'
 
 /* ─── Props ─── */
 interface Props {
@@ -87,13 +89,14 @@ function decodeHtmlEntities(value: string): string {
   return textarea.value
 }
 
-function normalizeEditorContent(value: string): string {
+function normalizeEditorContent(value: string, recapMode = false): string {
   const trimmed = value.trim()
   if (!trimmed) return value
   const looksLikeEscapedHtml =
     /&lt;(p|h[1-6]|ul|ol|li|blockquote|pre|table|img|div|br)\b/i.test(trimmed) ||
     /&lt;\/(p|h[1-6]|ul|ol|li|blockquote|pre|table|div)&gt;/i.test(trimmed)
-  return looksLikeEscapedHtml ? decodeHtmlEntities(value) : value
+  const decoded = looksLikeEscapedHtml ? decodeHtmlEntities(value) : value
+  return recapMode ? normalizeRecapEntryTimes(decoded) : decoded
 }
 
 /* ─── Insert-block catalogue ─── */
@@ -171,7 +174,7 @@ function focusSelectionInBlock(editor: Editor, blockEl: HTMLElement | null) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 export default function FolderDocumentEditor({ content, onChange, className, readOnly = false, recapMode = false }: Props) {
   const wrapperRef      = useRef<HTMLDivElement>(null)
-  const lastContent     = useRef(normalizeEditorContent(content))
+  const lastContent     = useRef(normalizeEditorContent(content, recapMode))
   const hoverTimer      = useRef<ReturnType<typeof setTimeout> | null>(null)
   const editorRef       = useRef<Editor | null>(null)
   const imageInputRef   = useRef<HTMLInputElement>(null)
@@ -211,7 +214,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
         ...(recapMode ? { paragraph: false, bulletList: false } : {}),
       }),
       ...(recapMode ? [RecapParagraph, RecapBulletList] : []),
-      Heading.configure({ levels: [1, 2, 3] }),
+      (recapMode ? RecapHeading : Heading).configure({ levels: [1, 2, 3] }),
       TaskList,
       TaskItem.configure({ nested: true }),
       Table.configure({ resizable: true }),
@@ -221,7 +224,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
       Image.configure({ inline: false, allowBase64: true }),
       Underline,
     ],
-    content: normalizeEditorContent(content),
+    content: normalizeEditorContent(content, recapMode),
     onUpdate({ editor }) {
       const html = editor.getHTML()
       if (html !== lastContent.current) {
@@ -296,12 +299,12 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
   /* Sync external content */
   useEffect(() => {
     if (!editor) return
-    const normalized = normalizeEditorContent(content)
+    const normalized = normalizeEditorContent(content, recapMode)
     if (normalized !== lastContent.current) {
       lastContent.current = normalized
       editor.commands.setContent(normalized)
     }
-  }, [editor, content])
+  }, [editor, content, recapMode])
 
   /* ─── Block handle mouse tracking ─── */
   const onMouseMove = useCallback((e: React.MouseEvent) => {

@@ -35,10 +35,14 @@ export function computeSynthesisRoi(sourceNotes: Note[], recapHtml: string): Syn
   return { sourceWords, recapWords, siteCount, minutesSaved }
 }
 
-export function formatSynthesisRoiMessage(roi: SynthesisRoi): string {
-  const sourceK = roi.sourceWords >= 1000
-    ? `${(roi.sourceWords / 1000).toFixed(1).replace(/\.0$/, '')}k`
-    : String(roi.sourceWords)
+/** Share of reading time saved vs. raw captures (0–100). */
+export function synthesisRoiSavedPercent(roi: SynthesisRoi): number {
+  if (roi.sourceWords <= 0) return 0
+  const ratio = 1 - roi.recapWords / roi.sourceWords
+  return Math.min(100, Math.max(0, Math.round(ratio * 100)))
+}
 
-  return `You captured ${sourceK} words across ${roi.siteCount} site${roi.siteCount === 1 ? '' : 's'}. This brief is ${roi.recapWords.toLocaleString()} words — about ${roi.minutesSaved} minute${roi.minutesSaved === 1 ? '' : 's'} back.`
+export function formatSynthesisRoiMessage(roi: SynthesisRoi): string {
+  const m = roi.minutesSaved
+  return `You just saved ${m} minute${m === 1 ? '' : 's'} of reading time.`
 }

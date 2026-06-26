@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Loader2, RotateCcw } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import AiFeedbackBar from '@/components/ai/AiFeedbackBar'
 
@@ -26,18 +27,38 @@ interface Props {
   docId: string
   recapText: string
   notesText: string
+  initialTopic?: KnowledgeTopic
+  /** When true, generates cards on mount and syncs topic to the URL. */
+  autoStart?: boolean
 }
 
-export default function KnowledgeCardDeck({ workspaceId, docId, recapText, notesText }: Props) {
-  const [topic, setTopic] = useState<KnowledgeTopic>('interview')
+export default function KnowledgeCardDeck({
+  workspaceId,
+  docId,
+  recapText,
+  notesText,
+  initialTopic = 'interview',
+  autoStart = false,
+}: Props) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [topic, setTopic] = useState<KnowledgeTopic>(initialTopic)
   const [cards, setCards] = useState<KnowledgeCard[]>([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [generationId, setGenerationId] = useState('')
+  const startedRef = useRef(false)
 
-  async function generate() {
+  const syncTopicToUrl = useCallback((t: KnowledgeTopic) => {
+    if (!autoStart) return
+    const next = new URLSearchParams(searchParams.toString())
+    next.set('topic', t)
+    router.replace(`?${next.toString()}`, { scroll: false })
+  }, [autoStart, router, searchParams])
+
+  const generate = useCallback(async (t: KnowledgeTopic) => {
     setLoading(true)
     setError(null)
     setFlipped(false)
@@ -46,7 +67,7 @@ export default function KnowledgeCardDeck({ workspaceId, docId, recapText, notes
       const res = await fetch('/api/ai/knowledge-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recapText, notes: notesText, topic }),
+        body: JSON.stringify({ recapText, notes: notesText, topic: t }),
       })
       const json = await res.json() as { cards?: KnowledgeCard[]; error?: string }
       if (!res.ok || !json.cards?.length) {
@@ -54,25 +75,35 @@ export default function KnowledgeCardDeck({ workspaceId, docId, recapText, notes
         return
       }
       setCards(json.cards)
-      setGenerationId(`${docId}-${topic}-${Date.now()}`)
+      setGenerationId(`${docId}-${t}-${Date.now()}`)
     } catch {
       setError('Network error — try again.')
     } finally {
       setLoading(false)
     }
+  }, [docId, notesText, recapText])
+
+  useEffect(() => {
+    if (!autoStart || startedRef.current) return
+    if (!recapText.trim() && !notesText.trim()) return
+    startedRef.current = true
+    void generate(initialTopic)
+  }, [autoStart, generate, initialTopic, notesText, recapText])
+
+  function selectTopic(t: KnowledgeTopic) {
+    setTopic(t)
+    syncTopicToUrl(t)
+    if (autoStart) void generate(t)
   }
 
   const current = cards[index]
 
   return (
-    <div className="mt-10 rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Test my knowledge</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Active recall from your captures — pick a focus, flip three cards.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          {loading ? 'Generating your cards…' : 'Tap a card to flip · use arrows to move between cards'}
+        </p>
         <div
           className="inline-flex rounded-full border border-border bg-muted p-0.5"
           role="tablist"
@@ -84,9 +115,10 @@ export default function KnowledgeCardDeck({ workspaceId, docId, recapText, notes
               type="button"
               role="tab"
               aria-selected={topic === t}
-              onClick={() => setTopic(t)}
+              onClick={() => selectTopic(t)}
+              disabled={loading}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer',
+                'rounded-full px-3 py-1 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50',
                 topic === t
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
@@ -98,30 +130,39 @@ export default function KnowledgeCardDeck({ workspaceId, docId, recapText, notes
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => void generate()}
-        disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Generating…
-          </>
-        ) : (
-          'Test my knowledge'
-        )}
-      </button>
+      {!autoStart && (
+        <button
+          type="button"
+          onClick={() => void generate(topic)}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            'Test my knowledge'
+          )}
+        </button>
+      )}
+
+      {loading && autoStart && !current && (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Building flashcards…
+        </div>
+      )}
 
       {error && (
-        <p className="mt-3 text-sm text-destructive">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {current && (
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <div
-            className="relative mx-auto h-48 max-w-md cursor-pointer perspective-[1000px]"
+            className="relative mx-auto h-56 max-w-md cursor-pointer perspective-[1000px]"
             onClick={() => setFlipped(f => !f)}
             onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setFlipped(f => !f) } }}
             role="button"

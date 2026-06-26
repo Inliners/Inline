@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -42,6 +43,7 @@ import { extractCitationRefs } from '@/lib/ai/rag/citations'
 import { getChatGreeting } from '@/lib/chat-format'
 import { AssistantMessageContent, UserMessageBubble } from '@/components/chat/ChatMessageParts'
 import WorkspaceChatComposer from '@/components/chat/WorkspaceChatComposer'
+import DocumentPanelChat from '@/components/chat/DocumentPanelChat'
 import { chatEmptyFadeContainer, chatEmptyFadeItem, CHAT_EASE } from '@/components/chat/chat-motion'
 
 function citedSourcesForMessage(sources: ChatSource[] | undefined, content: string): ChatSource[] {
@@ -221,7 +223,7 @@ export default function WorkspaceChatPanel() {
   const pathname = usePathname()
   const hideOnAnalytics = pathname.includes('/analytics')
   const wsId = getWsId(pathname)
-  const { open, setOpen, toggle } = useChatPanel()
+  const { open, setOpen, toggle, dockLeading, documentChatMode, chatHost } = useChatPanel()
   const usesMetaShortcut = useUsesMetaShortcut()
   const isDashboard = /\/dashboard$/.test(pathname)
 
@@ -235,7 +237,7 @@ export default function WorkspaceChatPanel() {
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null)
   const [ttsNotice, setTtsNotice] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
   const activeSession = sessions.find(s => s.id === activeSessionId) ?? null
   const messages = (activeSession?.messages ?? []) as Message[]
@@ -484,15 +486,21 @@ export default function WorkspaceChatPanel() {
     'Summarize recent captures',
   ]
 
+  const embeddedOpen = documentChatMode && open
+  const showFloatingPanel = open && !documentChatMode
+  const showPill = !open
+
   if (hideOnAnalytics) return null
 
   return (
+    <>
     <div
       data-chat-panel
-      className="fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-0 pb-5"
+      className="fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 items-end gap-2.5 pb-5"
     >
+      {dockLeading}
       <AnimatePresence mode="wait" initial={false}>
-        {open ? (
+        {showFloatingPanel ? (
           <motion.div
             key="chat-panel"
             {...panelMotion}
@@ -762,7 +770,7 @@ export default function WorkspaceChatPanel() {
               inputRef={inputRef}
             />
           </motion.div>
-        ) : (
+        ) : showPill ? (
           <motion.button
             type="button"
             key="chat-pill"
@@ -778,8 +786,31 @@ export default function WorkspaceChatPanel() {
               {pillLabel}
             </span>
           </motion.button>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
+    {embeddedOpen && chatHost
+      ? createPortal(
+          <DocumentPanelChat
+            messages={messages}
+            loading={loading}
+            input={input}
+            setInput={setInput}
+            onSend={() => void send()}
+            onClose={() => setOpen(false)}
+            onClear={() => {
+              patchActiveMessages([])
+              stopChatSpeaking()
+              setSpeakingIdx(null)
+            }}
+            inputRef={inputRef}
+            bottomRef={bottomRef}
+            wsId={wsId}
+            ttsNotice={ttsNotice}
+          />,
+          chatHost,
+        )
+      : null}
+  </>
   )
 }

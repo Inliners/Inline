@@ -1,38 +1,31 @@
 'use client'
 
 import type { Note } from '@/lib/types'
-import SynthesisRoiBanner from './SynthesisRoiBanner'
-import KnowledgeCardDeck from './KnowledgeCardDeck'
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-}
+import { studyPlanPath, type StudyPlanRoute } from '@/lib/study-plan-routes'
+import TestKnowledgePromo from './TestKnowledgePromo'
 
 interface Props {
   workspaceId: string
   docId: string
+  folderId: string
   notes: Note[]
-  recapHtml: string
+  studyRoute?: StudyPlanRoute
 }
 
-export default function RecapDocEnhancements({ workspaceId, docId, notes, recapHtml }: Props) {
-  const notesText = notes.map(n => `${n.content}${n.pageContext ? `\n${n.pageContext}` : ''}`).join('\n\n')
-  const recapText = stripHtml(recapHtml)
+export default function RecapDocEnhancements({
+  workspaceId,
+  docId,
+  folderId,
+  notes,
+  studyRoute = 'doc',
+}: Props) {
+  if (notes.length === 0) return null
 
   return (
-    <>
-      <SynthesisRoiBanner
-        workspaceId={workspaceId}
-        docId={docId}
-        notes={notes}
-        recapHtml={recapHtml}
-      />
-      <KnowledgeCardDeck
-        workspaceId={workspaceId}
-        docId={docId}
-        recapText={recapText}
-        notesText={notesText}
-      />
-    </>
+    <TestKnowledgePromo
+      studyPlanHref={topic =>
+        studyPlanPath(workspaceId, docId, { route: studyRoute, folderId, topic })
+      }
+    />
   )
 }

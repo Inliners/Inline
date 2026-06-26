@@ -24,6 +24,7 @@ import {
 } from '@/lib/document-outline'
 import DocumentSideRail from './DocumentSideRail'
 import { cn } from '@/lib/utils'
+import { useChatPanel } from '@/lib/chat-panel-context'
 
 type Tab = 'outline' | 'symbols' | 'history'
 
@@ -156,20 +157,26 @@ export default function RecapContextPanel({
   const [tab, setTab] = useState<Tab>('outline')
   const [dismissed, setDismissed] = useState<Set<string>>(() => loadDismissed(doc.id))
   const [internalCollapsed, setInternalCollapsed] = useState(false)
+  const { open: chatOpen, documentChatMode, registerChatHost } = useChatPanel()
+  const embeddedChat = documentChatMode && chatOpen
 
   const collapsed = controlledCollapsed ?? internalCollapsed
   const setCollapsed = onCollapsedChange ?? setInternalCollapsed
+
+  const persistCollapsed = useCallback((next: boolean) => {
+    setCollapsed(next)
+    try { localStorage.setItem(PANEL_KEY, next ? '1' : '0') } catch { /* ignore */ }
+  }, [setCollapsed])
+
+  useEffect(() => {
+    if (embeddedChat) persistCollapsed(false)
+  }, [embeddedChat, persistCollapsed])
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(PANEL_KEY)
       if (stored === '1') setCollapsed(true)
     } catch { /* ignore */ }
-  }, [setCollapsed])
-
-  const persistCollapsed = useCallback((next: boolean) => {
-    setCollapsed(next)
-    try { localStorage.setItem(PANEL_KEY, next ? '1' : '0') } catch { /* ignore */ }
   }, [setCollapsed])
 
   const outline = useMemo(() => parseDocumentOutline(contentHtml), [contentHtml])
@@ -257,6 +264,17 @@ export default function RecapContextPanel({
   )
 
   return (
+    embeddedChat ? (
+      <aside
+        className="flex h-full w-[min(100vw-2rem,400px)] shrink-0 flex-col border-l border-border/40 bg-card"
+        aria-label="Ask Inline"
+      >
+        <div
+          ref={registerChatHost}
+          className="flex min-h-0 flex-1 flex-col"
+        />
+      </aside>
+    ) : (
     <DocumentSideRail
       collapsed={collapsed}
       onToggleCollapse={() => persistCollapsed(!collapsed)}
@@ -321,5 +339,6 @@ export default function RecapContextPanel({
         </div>
       )}
     </DocumentSideRail>
+    )
   )
 }
