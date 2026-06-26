@@ -41,7 +41,7 @@ const FAQS: { q: string; a: string }[] = [
 export default function FaqSection() {
   return (
     <section id="faq" className="scroll-mt-24 bg-[#FDFBF7] py-16 sm:py-20 md:py-28 lg:py-32">
-      <div className="mx-auto max-w-3xl px-6 lg:px-10">
+      <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <Reveal className="text-center">
           <p className="text-sm font-semibold text-[#78716c]">FAQ</p>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
@@ -50,12 +50,12 @@ export default function FaqSection() {
         </Reveal>
 
         <Reveal className="mt-10 sm:mt-12" delay={0.08}>
-          <div className="overflow-hidden rounded-[1.75rem] border border-[#E8DFD4] bg-[#F5EDE3]">
+          <div>
             {FAQS.map((f, i) => (
               <details
                 key={f.q}
                 className={cn(
-                  'group bg-white transition-colors open:bg-[#FAF5EE]',
+                  'group transition-colors open:bg-[#FAF5EE]/60',
                   i > 0 && 'border-t border-[#E8DFD4]',
                 )}
               >
@@ -64,7 +64,7 @@ export default function FaqSection() {
                     {f.q}
                   </span>
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E8DFD4] bg-[#FDFBF7] text-[#78716c] transition-all group-open:rotate-45 group-open:border-[#d6d3d1] group-open:bg-white"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E8DFD4] bg-[#FAF5EE]/60 text-[#78716c] transition-all group-open:rotate-45 group-open:border-[#d6d3d1] group-open:bg-[#FAF5EE]"
                     aria-hidden
                   >
                     <Plus className="h-4 w-4" strokeWidth={2} />

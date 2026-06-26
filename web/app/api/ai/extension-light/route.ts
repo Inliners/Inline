@@ -28,6 +28,7 @@ export async function POST(request: Request) {
 
   const prompt =
     task === 'summarize' ? `Summarize the following text in 3 short bullets:\n\n${text}` :
+    task === 'rephrase'  ? `Rephrase the following text clearly, keeping the same meaning:\n\n${text}` :
     task === 'rewrite'   ? (instruction
       ? `Rewrite the following text. Instruction: ${instruction}\n\nText:\n${text}`
       : `Rewrite the following text clearly, keeping the same meaning:\n\n${text}`) :

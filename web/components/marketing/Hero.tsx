@@ -12,7 +12,7 @@ import {
 import HeroCaptureGrid from '@/components/marketing/HeroCaptureGrid'
 import HeroAtmosphere from '@/components/marketing/HeroAtmosphere'
 import { SectionLink } from '@/components/marketing/SectionLink'
-import { mktBtnPrimaryLg, mktBtnSecondaryLg } from '@/components/marketing/marketingSurfaces'
+import { mktBtnPrimaryLg, mktBtnSecondaryHeroLg } from '@/components/marketing/marketingSurfaces'
 
 const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
@@ -110,7 +110,7 @@ export default function Hero() {
             <Link href="/install" className={`w-full sm:w-auto ${mktBtnPrimaryLg}`}>
               Add to Chrome
             </Link>
-            <SectionLink href="/#product" className={`w-full sm:w-auto ${mktBtnSecondaryLg}`}>
+            <SectionLink href="/#product" className={`w-full sm:w-auto ${mktBtnSecondaryHeroLg}`}>
               See how it works
             </SectionLink>
           </motion.div>

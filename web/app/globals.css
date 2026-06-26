@@ -43,6 +43,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-toggle-active: var(--toggle-active);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -99,6 +100,7 @@
   --sidebar-accent-foreground:  #1C1E26;
   --sidebar-border:             #d6d3d1;
   --sidebar-ring:               #4B83C4;
+  --toggle-active:              #2f80ed;
   --font-size-base:             14px;
 }
 
@@ -107,70 +109,78 @@
    and toggled by Settings › Appearance and the sidebar toggle). Keeps the same
    token names so every shadcn component inherits the new palette automatically. */
 .dark {
-  /* ── Elevation stack ──
-     Uses six distinct blue tones so dashboards don't read as one flat slab.
-     Darkest → lightest: background · sidebar · muted · card · secondary · accent · popover/accent-light
-     Picked so any component that uses bg-card or bg-popover visibly sits above the page. */
-  --background:                 #0A1430;   /* deepest canvas */
-  --foreground:                 #E7EEF9;
-  --card:                       #15285C;   /* dashboards cards, form panels */
-  --card-foreground:            #EAF1FB;
-  --popover:                    #1E3878;   /* menus, dialogs, floating panels */
-  --popover-foreground:         #EAF1FB;
-  --primary:                    #B5CDEF;
-  --primary-hover:              #C9DAF0;
-  --primary-light:              #15285C;
-  --primary-foreground:         #0A1430;
-  --secondary:                  #17296B;
-  --secondary-foreground:       #EAF1FB;
-  --muted:                      #10214A;   /* subtle elevation on bg */
-  --muted-foreground:           #9BBCE5;   /* bumped from #8AACDB so numbers/labels read clearly */
-  --accent:                     #1B326D;
-  --accent-light:               #26428B;
-  --accent-foreground:          #EAF1FB;
-  --highlight:                  #3B2E66;
-  --destructive:                #F08686;
-  --destructive-foreground:     #0A1430;
-  --border:                     #263E7A;   /* visible 1px stroke against navy */
-  --input:                      #15285C;
-  --ring:                       #8AACDB;
-  --chart-1:                    #8AACDB;
-  --chart-2:                    #5FA8A1;
-  --chart-3:                    #B599D9;
+  /* Black elevation stack with burnt red / burnt orange accents */
+  --background:                 #131211;
+  --foreground:                 #F2EEEB;
+  --card:                       #141414;
+  --card-foreground:            #F2EEEB;
+  --popover:                    #1A1A1A;
+  --popover-foreground:         #F2EEEB;
+  --primary:                    #D4734A;
+  --primary-hover:              #E0865C;
+  --primary-light:              #2A1814;
+  --primary-foreground:         #FFFFFF;
+  --secondary:                  #1C1C1C;
+  --secondary-foreground:       #E8E0DC;
+  --muted:                      #111111;
+  --muted-foreground:           #9A918C;
+  --accent:                     #241614;
+  --accent-light:               #2E1C19;
+  --accent-foreground:          #F5E6E2;
+  --highlight:                  #2A1815;
+  --destructive:                #9E3B2F;
+  --destructive-foreground:     #FFFFFF;
+  --border:                     #4A4440;
+  --input:                      #4A4440;
+  --ring:                       #C45C26;
+  --toggle-active:              #2f80ed;
+  --chart-1:                    #D4734A;
+  --chart-2:                    #9E3B2F;
+  --chart-3:                    #C45C26;
   --chart-4:                    #E8A46A;
-  --chart-5:                    #E2B96F;
-  --sidebar:                    #0D1B3C;   /* sits slightly above the page */
-  --sidebar-foreground:         #E7EEF9;
-  --sidebar-primary:            #B5CDEF;
-  --sidebar-primary-foreground: #0A1430;
-  --sidebar-accent:             #17296B;
-  --sidebar-accent-foreground:  #EAF1FB;
-  --sidebar-border:             #263E7A;
-  --sidebar-ring:               #8AACDB;
+  --chart-5:                    #8B3329;
+  --sidebar:                    #2E2A27;
+  --sidebar-foreground:         #F2EEEB;
+  --sidebar-primary:            #D4734A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:             #3A3531;
+  --sidebar-accent-foreground:  #F5E6E2;
+  --sidebar-border:             #4A4440;
+  --sidebar-ring:               #C45C26;
 }
 
 .dark .glass {
-  background: rgba(21, 40, 92, 0.72);
+  background: rgba(20, 20, 20, 0.72);
 }
 
 /* Scrollbar tuned for dark backgrounds. */
 .dark .scrollbar-minimal,
 .dark html {
-  scrollbar-color: #8AACDB transparent;
+  scrollbar-color: #5C534E transparent;
 }
 .dark .scrollbar-minimal::-webkit-scrollbar-thumb,
 .dark html::-webkit-scrollbar-thumb {
-  background-color: rgba(138, 172, 219, 0.45);
+  background-color: rgba(154, 145, 140, 0.45);
 }
 .dark .scrollbar-minimal::-webkit-scrollbar-thumb:hover,
 .dark html::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(201, 218, 240, 0.7);
+  background-color: rgba(212, 115, 74, 0.55);
 }
 .dark .scrollbar-overlay::-webkit-scrollbar-thumb {
-  background-color: rgba(201, 218, 240, 0.35);
+  background-color: rgba(154, 145, 140, 0.35);
 }
 .dark .scrollbar-overlay::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(201, 218, 240, 0.55);
+  background-color: rgba(212, 115, 74, 0.45);
+}
+
+@layer components {
+  /* Bordered panels and text areas in the workspace (not chat). */
+  .workspace-surface {
+    @apply rounded-xl border border-border bg-card;
+  }
+  .dark .workspace-surface {
+    @apply border-sidebar-border bg-secondary;
+  }
 }
 
 @layer base {
@@ -274,15 +284,10 @@ html::-webkit-scrollbar-button:end:increment {
   height: 0;
 }
 
-/* Marketing pages: scrollable document, no visible vertical scrollbar */
+/* Marketing pages: same thin document scrollbar as the app */
 html:has([data-marketing-layout]) {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-html:has([data-marketing-layout])::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: #787774 transparent;
 }
 
 /* Marketing mocks: horizontal carousels only — never a vertical thumb */

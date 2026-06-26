@@ -75,11 +75,10 @@ function ExpandedPanelMock() {
       </div>
       <div className="space-y-2.5 px-4 py-3">
         <p className="ml-auto w-fit max-w-[85%] rounded-full bg-[#1C1E26] px-3 py-1.5 text-[11px] text-white">
-          What does this paragraph claim about cable-stayed bridges?
+          What does this paragraph claim?
         </p>
         <p className="text-[11px] leading-relaxed text-[#78716c]">
-          The selection argues cable-stayed designs carry deck loads through towers rather than
-          anchorages, which shortens construction time…
+          The selection states the author&apos;s main point and backs it with a supporting example…
         </p>
         <div className="flex items-center gap-2 border-t border-[#d6d3d1]/50 pt-2">
           <span className="rounded-full border border-[#d6d3d1] px-2.5 py-1 text-[9px] font-medium text-[#78716c]">

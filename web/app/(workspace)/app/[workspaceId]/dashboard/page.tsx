@@ -3,8 +3,8 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import {
   BarChart2, BookMarked, Globe, BrainCircuit, Flame,
-  ChevronRight,
 } from 'lucide-react'
+import DashboardTopBar from '@/components/dashboard/DashboardTopBar'
 import NewDocumentButton from '@/components/dashboard/NewDocumentButton'
 import KpiCard from '@/components/dashboard/KpiCard'
 import CaptureChart from '@/components/dashboard/CaptureChart'
@@ -71,14 +71,7 @@ export default async function WorkspaceDashboardPage({
 
   return (
     <div className="min-h-full bg-background">
-      {/* ── Top breadcrumb bar ── */}
-      <div className="border-b border-border bg-card px-8 py-3">
-        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span>{workspaceName}</span>
-          <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-foreground">Dashboard</span>
-        </nav>
-      </div>
+      <DashboardTopBar workspaceName={workspaceName} />
 
       {/* ── Main content — generous bottom padding so chat bar never overlaps ── */}
       <div className="w-full min-w-0 px-8 py-8 pb-32 space-y-12">

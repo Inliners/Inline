@@ -14,10 +14,10 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 function getIntensityClass(count: number, max: number) {
   if (count === 0) return 'bg-muted'
   const ratio = count / max
-  if (ratio < 0.25) return 'bg-[#EDE9E3] dark:bg-[#1E3878]'
-  if (ratio < 0.5)  return 'bg-[#d6d3d1] dark:bg-[#3A5AA8]'
-  if (ratio < 0.75) return 'bg-[#78716c] dark:bg-[#6C8ED0]'
-  return 'bg-[#1C1E26] dark:bg-[#B5CDEF]'
+  if (ratio < 0.25) return 'bg-[#EDE9E3] dark:bg-[#2A1814]'
+  if (ratio < 0.5)  return 'bg-[#d6d3d1] dark:bg-[#4A2A22]'
+  if (ratio < 0.75) return 'bg-[#78716c] dark:bg-[#8B3329]'
+  return 'bg-[#1C1E26] dark:bg-[#D4734A]'
 }
 
 export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps) {
@@ -40,7 +40,7 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
     weeks.push(cells.slice(i, i + 7))
   }
 
-  const shellClass = 'rounded-xl border border-border bg-card p-5'
+  const shellClass = 'rounded-xl border border-border bg-card p-5 dark:border-sidebar-border dark:bg-secondary'
 
   const body = (
     <>
@@ -53,10 +53,10 @@ export default function ActivityHeatmap({ data, linkHref }: ActivityHeatmapProps
           <span>Less</span>
           {[
             'bg-muted',
-            'bg-[#EDE9E3] dark:bg-[#1E3878]',
-            'bg-[#d6d3d1] dark:bg-[#3A5AA8]',
-            'bg-[#78716c] dark:bg-[#6C8ED0]',
-            'bg-[#1C1E26] dark:bg-[#B5CDEF]',
+            'bg-[#EDE9E3] dark:bg-[#2A1814]',
+            'bg-[#d6d3d1] dark:bg-[#4A2A22]',
+            'bg-[#78716c] dark:bg-[#8B3329]',
+            'bg-[#1C1E26] dark:bg-[#D4734A]',
           ].map(cls => (
             <div key={cls} className={cn('w-3 h-3 rounded-sm', cls)} />
           ))}

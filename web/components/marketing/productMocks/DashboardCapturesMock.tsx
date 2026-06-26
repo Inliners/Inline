@@ -5,15 +5,17 @@ import { cn, formatDisplayTitle } from '@/lib/utils'
 type DashboardCapturesMockProps = {
   className?: string
   limit?: number
+  offset?: number
   size?: 'default' | 'compact'
 }
 
 export default function DashboardCapturesMock({
   className,
   limit = 3,
+  offset = 0,
   size = 'default',
 }: DashboardCapturesMockProps) {
-  const captures = DEMO_CAPTURES.slice(0, limit)
+  const captures = DEMO_CAPTURES.slice(offset, offset + limit)
   const compact = size === 'compact'
 
   return (

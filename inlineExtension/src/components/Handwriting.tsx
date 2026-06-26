@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { PANEL as C } from '../lib/extensionTheme'
-import { PanelShell, SectionLabel } from './panelKit'
+import { PANEL as C, FONT } from '../lib/extensionTheme'
+import { PanelShell, SectionLabel, PanelSection, panelBodyStyle } from './panelKit'
 import { ensureHandwritingCanvas, restoreHandwriting } from '../content/handwritingRestore'
 import { emitSaveToast } from '../lib/saveToast'
 
@@ -293,7 +293,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
 
   return (
     <PanelShell title="Pen" subtitle="Handwrite & highlight freely" chip={activeLabel} width={290} tool="handwriting" onClose={onClose}>
-      <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ ...panelBodyStyle, fontFamily: FONT }}>
         {/* Tools */}
         <div>
           <SectionLabel>Tool</SectionLabel>
@@ -307,7 +307,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
                   aria-pressed={on}
                   style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    height: 46, borderRadius: 14,
+                    height: 46, borderRadius: C.radius,
                     border: `1px solid ${on ? C.accent : C.border}`,
                     background: on ? C.accent : C.surfaceBubble,
                     color: on ? '#fff' : C.textMuted,
@@ -324,9 +324,8 @@ export default function Handwriting({ onClose }: HandwritingProps) {
         {/* Stroke */}
         <div>
           <SectionLabel>Stroke weight</SectionLabel>
-          <div style={{
+          <PanelSection style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-            border: `1px solid ${C.border}`, borderRadius: 16, background: C.surfaceBubble, boxShadow: C.shadowSoft,
           }}>
             <button type="button" onClick={() => setThickness(v => Math.max(1, v - 1))} aria-label="Thinner" style={sliderBtn}>−</button>
             <input
@@ -341,7 +340,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
               minWidth: 26, height: 26, borderRadius: 8, background: C.surfaceSunken,
               fontSize: 12, fontWeight: 700, color: C.text,
             }}>{thickness}</span>
-          </div>
+          </PanelSection>
         </div>
 
         {/* Colour */}
@@ -357,7 +356,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
                   aria-label={`Colour ${c}`}
                   aria-pressed={on}
                   style={{
-                    height: 34, borderRadius: 12, background: c, cursor: 'pointer', padding: 0,
+                    height: 34, borderRadius: C.radius, background: c, cursor: 'pointer', padding: 0,
                     border: on ? `2.5px solid ${C.accent}` : '1px solid rgba(17,19,33,0.08)',
                     boxShadow: 'none',
                     transform: 'none',
@@ -381,7 +380,7 @@ export default function Handwriting({ onClose }: HandwritingProps) {
 
 const sliderBtn: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-  width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+  width: 30, height: 30, borderRadius: C.radius, flexShrink: 0,
   border: `1px solid ${C.border}`, background: C.surfaceBubble,
   cursor: 'pointer', fontSize: 16, fontWeight: 600, color: C.textMuted,
   boxShadow: C.shadowSoft,
@@ -389,7 +388,7 @@ const sliderBtn: React.CSSProperties = {
 
 const actionBtn: React.CSSProperties = {
   flex: 1, padding: '11px 0', fontSize: 12.5, fontWeight: 700,
-  borderRadius: 13, cursor: 'pointer', letterSpacing: '-0.01em',
+  borderRadius: C.radius, cursor: 'pointer', letterSpacing: '-0.01em',
   border: `1px solid ${C.border}`, background: C.surfaceBubble,
   color: C.text, transition: 'background 0.15s, border-color 0.15s', fontFamily: 'inherit',
 }

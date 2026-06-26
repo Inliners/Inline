@@ -6,7 +6,8 @@ import { Reveal } from '@/components/marketing/primitives/Reveal'
 import WorkspaceChatMock, {
   type WorkspaceChatScenario,
 } from '@/components/marketing/productMocks/WorkspaceChatMock'
-import { DEMO_BRIDGE_SOURCES } from '@/components/marketing/productMocks/sampleData'
+import { DEMO_BRIDGE_SOURCES, DEMO_DOMAIN } from '@/components/marketing/productMocks/sampleData'
+import { ProductVisualRing } from '@/components/marketing/primitives/ProductVisualRing'
 import { formatDisplayTitle } from '@/lib/utils'
 
 const SCENARIOS: { id: string; label: string; scenario: WorkspaceChatScenario }[] = [
@@ -14,10 +15,9 @@ const SCENARIOS: { id: string; label: string; scenario: WorkspaceChatScenario }[
     id: 'research',
     label: 'Research question',
     scenario: {
-      userMessage:
-        'What did I highlight about cable-stayed vs suspension bridge load distribution?',
+      userMessage: 'What did I highlight about the main argument in this article?',
       assistantMessage:
-        'You highlighted that cable-stayed towers take deck loads directly through stay cables [1], while suspension designs hang the deck from main cables anchored at both ends [2]. Your recap adds that cable-stayed construction is typically faster [3].',
+        'You highlighted the core claim in the opening section [1], a supporting example in the middle [2], and a note tying it to another capture [3].',
       sources: DEMO_BRIDGE_SOURCES,
     },
   },
@@ -25,9 +25,9 @@ const SCENARIOS: { id: string; label: string; scenario: WorkspaceChatScenario }[
     id: 'recap',
     label: 'Recap lookup',
     scenario: {
-      userMessage: 'Summarize everything I captured on the example-website.com article.',
+      userMessage: `Summarize everything I captured on the ${DEMO_DOMAIN} article.`,
       assistantMessage:
-        'The article covers load paths, tower geometry, and construction trade-offs. Your auto-recap was last updated today and links four highlights and two sticky notes from the page.',
+        'The article covers the main argument, supporting examples, and your sticky notes. Your auto-recap was last updated today and links four highlights from the page.',
       sources: DEMO_BRIDGE_SOURCES.slice(0, 2),
     },
   },
@@ -35,12 +35,11 @@ const SCENARIOS: { id: string; label: string; scenario: WorkspaceChatScenario }[
     id: 'compare',
     label: 'Cross-page ask',
     scenario: {
-      userMessage:
-        'Compare what I saved about bridges across two pages on example-website.com.',
+      userMessage: `Compare what I saved across two pages on ${DEMO_DOMAIN}.`,
       assistantMessage:
-        'One page focuses on suspension mechanics — decks hanging from anchored cables. Your other captures emphasize cable-stayed towers carrying loads directly, with a shorter construction timeline.',
+        'One capture focuses on the introduction and definitions. Your other saves emphasize the supporting examples and notes you added in the margins.',
       sources: DEMO_BRIDGE_SOURCES,
-      recencyNote: 'Searching captures across example-website.com in your workspace.',
+      recencyNote: `Searching captures across ${DEMO_DOMAIN} in your workspace.`,
     },
   },
 ]
@@ -91,12 +90,14 @@ export default function AiSearchTabsSection() {
         </Reveal>
 
         <Reveal delay={0.1} className="mt-10 text-left">
-          <WorkspaceChatMock
-            variant="panel"
-            scenario={scenario}
-            sessionTitle="Bridge research"
-            elevated={false}
-          />
+          <ProductVisualRing tone="burntOrange">
+            <WorkspaceChatMock
+              variant="panel"
+              scenario={scenario}
+              sessionTitle="Reading session"
+              elevated={false}
+            />
+          </ProductVisualRing>
         </Reveal>
       </div>
     </section>

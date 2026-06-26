@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 const THOUGHT_LINES = [
   'Reading page context…',
-  'Pulling highlights on cable-stayed loads…',
+  'Pulling highlights from this page…',
   'Grounding the answer in your captures…',
 ] as const
 

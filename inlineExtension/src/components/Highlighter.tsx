@@ -39,7 +39,7 @@ export default function Highlighter({ onClose }: HighlighterProps) {
                 aria-label={`Highlight ${name}`}
                 aria-pressed={on}
                 style={{
-                  height: 44, borderRadius: 14, background: value, cursor: 'pointer',
+                  height: 44, borderRadius: C.radius, background: value, cursor: 'pointer',
                   border: on ? `2.5px solid ${C.accent}` : `1px solid rgba(17,19,33,0.08)`,
                   boxShadow: 'none',
                   transform: 'none',

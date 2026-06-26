@@ -21,34 +21,16 @@ const NAV_LINKS: { label: string; href: SectionHref }[] = [
   { label: 'FAQ',       href: '/#faq'       },
 ]
 
-/** Inline word-mark. Adapts to the current nav surface (dark hero vs cream scroll). */
-function InlineLogo({ onDark, className }: { onDark: boolean; className?: string }) {
+function InlineWordmark({ onDark }: { onDark: boolean }) {
   return (
-    <Link href="/" className={cn('flex items-center gap-2', className)} aria-label="Inline home">
-      <div
-        className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-lg',
-          onDark ? 'bg-white/95' : 'bg-[#1C1E26]',
-        )}
-        aria-hidden
-      >
-        <span
-          className={cn(
-            'block h-4 w-1 rounded-full -rotate-12',
-            onDark ? 'bg-[#0B1735]' : 'bg-white',
-          )}
-        />
-      </div>
+    <Link href="/" className="shrink-0" aria-label="Inline home">
       <span
         className={cn(
-          'font-semibold text-lg tracking-tight transition-colors',
+          'font-semibold text-xl tracking-tight transition-colors sm:text-2xl',
           onDark ? 'text-white' : 'text-[#1C1E26]',
         )}
       >
         inline
-        <span className={cn('ml-0.5 text-sm align-top', onDark ? 'text-white/60' : 'text-stone-400')}>
-          ~
-        </span>
       </span>
     </Link>
   )
@@ -112,15 +94,15 @@ export default function MarketingNav() {
       )}
     >
       <nav className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-6 py-3.5 lg:grid-cols-[1fr_auto_1fr] lg:px-10">
-        <InlineLogo onDark={onDark} />
+        <InlineWordmark onDark={onDark} />
 
-        <ul className="hidden items-center justify-center gap-1 justify-self-center lg:flex">
+        <ul className="hidden items-center justify-center gap-2 justify-self-center lg:flex">
           {NAV_LINKS.map(link => (
             <li key={link.href}>
               <SectionLink
                 href={link.href}
                 className={cn(
-                  'inline-flex items-center px-3.5 py-2 text-sm font-medium rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
+                  'inline-flex items-center px-4 py-2.5 text-base font-medium rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
                   onDark
                     ? 'text-stone-200 hover:text-white focus-visible:outline-white/70'
                     : 'text-stone-700 hover:text-[#1C1E26] focus-visible:outline-[#4B83C4]',
@@ -132,7 +114,7 @@ export default function MarketingNav() {
           ))}
         </ul>
 
-        <div className="col-start-2 flex items-center justify-end justify-self-end gap-2 sm:gap-3 lg:col-auto">
+        <div className="col-start-2 flex items-center justify-end justify-self-end gap-2 sm:gap-3 lg:col-start-3">
           <Link
             href="/auth/login"
             className={cn(
@@ -181,7 +163,7 @@ export default function MarketingNav() {
                 <SectionLink
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-[#1C1E26]"
+                  className="block rounded-xl px-3 py-3.5 text-base font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-[#1C1E26]"
                 >
                   {link.label}
                 </SectionLink>

@@ -14,8 +14,23 @@ import { fetchViaBackground } from '../lib/backgroundFetch'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { saveAIReplacement } from './aiReplacements'
 import { TOOLBAR as TB, HIGHLIGHT_SWATCHES, FONT, PANEL as C } from '../lib/extensionTheme'
+import {
+  FloatingPanelShell,
+  BlockDiffView,
+  PanelResultCard,
+  ReviewFooter,
+  GhostFooterButton,
+  Spinner,
+} from '../components/panelKit'
 import FormattedAiText from '../components/FormattedAiText'
 import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
+import {
+  emitDockPanelDismiss,
+  emitSelectionUiActive,
+  onDockPanelClosed,
+  onDockPanelOpen,
+  onSelectionUiDismiss,
+} from './inlineUiCoordinator'
 
 type Pt = { x: number; y: number }
 type AnchorNote = { id: string; x: number; y: number; text: string }
@@ -32,6 +47,7 @@ async function tryWindowAi(task: string, text: string): Promise<string | null> {
     const session = await create.call(w.ai!.languageModel!)
     const prompt =
       task === 'summarize' ? `Summarize in 3 short bullets:\n\n${text}` :
+      task === 'rephrase'  ? `Rephrase clearly, same meaning:\n\n${text}` :
       task === 'shorten'   ? `Shorten by ~40%, keep meaning:\n\n${text}` :
       `Rewrite clearly, same meaning:\n\n${text}`
     return await session.prompt(prompt.slice(0, 8000))
@@ -75,7 +91,6 @@ async function serverTask(
 
 /* ─── Theme (floating toolbar — matches web chat) ─── */
 const DARK = C.text
-const CREAM = C.bg
 const SURFACE = C.bg
 const BORDER = C.border
 const PANEL_BORDER = C.border
@@ -232,6 +247,7 @@ function ContextMenuItem({ item }: { item: CtxItem }) {
   return (
     <button
       type="button"
+      onMouseDown={e => e.preventDefault()}
       onClick={item.action}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -284,7 +300,7 @@ export default function SmartOverlay() {
     title: string
     body: string
     loading?: boolean
-    task?: 'summarize' | 'rewrite' | 'shorten'
+    task?: 'summarize' | 'rephrase' | 'rewrite' | 'shorten'
     instruction?: string
     inserted?: boolean
   } | null>(null)
@@ -297,6 +313,32 @@ export default function SmartOverlay() {
   const selRef = useRef('')
   const subInputRef = useRef<HTMLInputElement>(null)
   const anchorSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Mirrors for synchronous reads inside mouseup-driven refreshSelection.
+  const ctxMenuRef = useRef(false)
+  const ctxRewriteRef = useRef(false)
+  const suppressSelectionChromeRef = useRef(false)
+
+  /** Hide toolbar/context chrome only — keeps savedRangeRef, selRef, and DOM highlights. */
+  const dismissSelectionChrome = useCallback(() => {
+    setToolbar(null)
+    setSubPanel(null)
+    setColorRow(false)
+    setCtxMenu(null)
+    setCtxRewrite(null)
+    setCtxRewriteInput('')
+  }, [])
+
+  /** Full teardown when Inline is hidden globally. */
+  const dismissAllSurfaces = useCallback(() => {
+    dismissSelectionChrome()
+    setAiResult(null)
+    setRiskOpen(false)
+    setRiskText('')
+    setRiskLoading(false)
+    suppressSelectionChromeRef.current = false
+    selRef.current = ''
+    savedRangeRef.current = null
+  }, [dismissSelectionChrome])
 
   /* ── Load persisted anchor notes on mount ── */
   useEffect(() => {
@@ -350,6 +392,7 @@ export default function SmartOverlay() {
       // reason the selection went away is because focus moved into our
       // own input. The pill stays anchored at its current position.
       if (subPanelRef.current) return
+      suppressSelectionChromeRef.current = false
       setToolbar(null); setSubPanel(null); setColorRow(false); selRef.current = ''
       savedRangeRef.current = null
       return
@@ -359,11 +402,21 @@ export default function SmartOverlay() {
     const rect = range.getBoundingClientRect()
     if (!rect.width && !rect.height) { setToolbar(null); return }
     selRef.current = sel!.toString()
-    // Keep the Range snapshot fresh while the user is actively selecting.
-    // Once a subpanel opens we stop overwriting this so the pre-focus
-    // snapshot survives until the user commits via Go / Enter.
     try { savedRangeRef.current = range.cloneRange() } catch { /* ignore */ }
-    setToolbar({ x: rect.left + rect.width / 2, y: rect.top + window.scrollY })
+
+    // Context menu or dock panel owns focus — keep refs fresh but don't
+    // resurrect the horizontal toolbar on top of them.
+    if (ctxMenuRef.current || ctxRewriteRef.current || suppressSelectionChromeRef.current) return
+
+    setCtxMenu(null)
+    setCtxRewrite(null)
+    setToolbar(prev => {
+      if (!prev) {
+        emitDockPanelDismiss()
+        emitSelectionUiActive('toolbar')
+      }
+      return { x: rect.left + rect.width / 2, y: rect.top + window.scrollY }
+    })
   }, [])
 
   useEffect(() => {
@@ -380,15 +433,21 @@ export default function SmartOverlay() {
       if (!sel || sel.isCollapsed || !sel.toString().trim()) return
       e.preventDefault()
       selRef.current = sel.toString()
-      // Snapshot the range so we can restore the selection later — opening
-      // the custom-rewrite input will steal focus, which in turn collapses
-      // the live selection. Cloning lets us call wrapSelectionWithHighlight
-      // after the user hits Go.
       try { savedRangeRef.current = sel.getRangeAt(0).cloneRange() }
       catch { savedRangeRef.current = null }
+      suppressSelectionChromeRef.current = false
+      ctxMenuRef.current = true
+      setToolbar(null)
+      setSubPanel(null)
+      setColorRow(false)
+      emitDockPanelDismiss()
+      emitSelectionUiActive('contextMenu')
       setCtxMenu({ x: e.clientX, y: e.clientY })
     }
-    const dismiss = () => setCtxMenu(null)
+    const dismiss = () => {
+      ctxMenuRef.current = false
+      setCtxMenu(null)
+    }
     document.addEventListener('contextmenu', handler)
     document.addEventListener('click', dismiss)
     return () => {
@@ -396,6 +455,49 @@ export default function SmartOverlay() {
       document.removeEventListener('click', dismiss)
     }
   }, [])
+
+  /* Cross-component focus coordination */
+  useEffect(() => {
+    const offDismiss = onSelectionUiDismiss(() => {
+      dismissSelectionChrome()
+    })
+    const offDockOpen = onDockPanelOpen(() => {
+      suppressSelectionChromeRef.current = true
+      dismissSelectionChrome()
+    })
+    const offDockClosed = onDockPanelClosed(() => {
+      suppressSelectionChromeRef.current = false
+      // Re-show the toolbar if the user still has an active selection.
+      requestAnimationFrame(() => {
+        if (suppressSelectionChromeRef.current) return
+        if (ctxMenuRef.current || ctxRewriteRef.current) return
+        const sel = window.getSelection()
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) return
+        try {
+          const range = sel.getRangeAt(0)
+          const rect = range.getBoundingClientRect()
+          if (!rect.width && !rect.height) return
+          selRef.current = sel.toString()
+          savedRangeRef.current = range.cloneRange()
+          setToolbar({ x: rect.left + rect.width / 2, y: rect.top + window.scrollY })
+        } catch { /* ignore invalid range */ }
+      })
+    })
+    const onHideAll = (e: Event) => {
+      const hidden = (e as CustomEvent<{ hidden: boolean }>).detail?.hidden
+      if (hidden) dismissAllSurfaces()
+    }
+    document.addEventListener('inline:hideAll', onHideAll)
+    return () => {
+      offDismiss()
+      offDockOpen()
+      offDockClosed()
+      document.removeEventListener('inline:hideAll', onHideAll)
+    }
+  }, [dismissSelectionChrome, dismissAllSurfaces])
+
+  useEffect(() => { ctxMenuRef.current = !!ctxMenu }, [ctxMenu])
+  useEffect(() => { ctxRewriteRef.current = !!ctxRewrite }, [ctxRewrite])
 
   // Auto-focus the custom rewrite input whenever it opens.
   useEffect(() => {
@@ -422,6 +524,7 @@ export default function SmartOverlay() {
     const instruction = ctxRewriteInput.trim()
     if (!instruction) return
     if (!restoreSavedSelection()) return
+    ctxRewriteRef.current = false
     setCtxRewrite(null)
     setCtxRewriteInput('')
     savedRangeRef.current = null
@@ -460,26 +563,77 @@ export default function SmartOverlay() {
     setSubInput('')
   }
 
+  function runCtxAiTask(task: 'summarize' | 'rephrase' | 'rewrite' | 'shorten', instruction?: string) {
+    restoreSavedSelection()
+    ctxMenuRef.current = false
+    setCtxMenu(null)
+    void runAiTask(task, instruction)
+  }
+
   /** Reapply the saved selection (if any) before calling runAiTask so the
    *  live selection is non-collapsed when wrapSelectionWithHighlight runs.
    *  Used by every pill button that triggers an AI task — not just custom
    *  rewrite — so selection loss never silently swallows a click. */
-  function runPillAiTask(task: 'summarize' | 'rewrite' | 'shorten', instruction?: string) {
+  function runPillAiTask(task: 'summarize' | 'rephrase' | 'rewrite' | 'shorten', instruction?: string) {
     // Prefer the saved Range because the live selection has almost
     // certainly been collapsed by the time the click handler runs.
     restoreSavedSelection()
     void runAiTask(task, instruction)
   }
 
-  async function runAiTask(task: 'summarize' | 'rewrite' | 'shorten', instruction?: string) {
+  function aiTaskLabel(task: 'summarize' | 'rephrase' | 'rewrite' | 'shorten'): string {
+    if (task === 'summarize') return 'Summary'
+    if (task === 'rephrase') return 'Rephrased'
+    if (task === 'rewrite') return 'Rewritten'
+    return 'Shortened'
+  }
+
+  function aiTaskSubtitle(task: 'summarize' | 'rephrase' | 'rewrite' | 'shorten'): string {
+    if (task === 'summarize') return 'Summary update'
+    if (task === 'rephrase') return 'Rephrase update'
+    if (task === 'rewrite') return 'Rewrite update'
+    return 'Shorten update'
+  }
+
+  function dismissAiResult() {
+    setAiResult(null)
+  }
+
+  /** Discard the AI suggestion and restore the original highlighted text. */
+  function handleRejectAiResult() {
+    const span = lastHighlightSpan.current
+    const originalText = lastOriginalText.current
+    if (span?.parentNode) {
+      const text = document.createTextNode(originalText || span.textContent || '')
+      span.parentNode.replaceChild(text, span)
+    }
+    lastHighlightSpan.current = null
+    lastOriginalText.current = ''
+    setAiResult(null)
+  }
+
+  async function runAiTask(task: 'summarize' | 'rephrase' | 'rewrite' | 'shorten', instruction?: string) {
+    restoreSavedSelection()
     const wrapped = wrapSelectionWithHighlight(task)
-    if (!wrapped) return
+    if (!wrapped) {
+      ctxMenuRef.current = false
+      ctxRewriteRef.current = false
+      dismissSelectionChrome()
+      setAiResult({
+        title: 'Selection lost',
+        body: 'Highlight the paragraph you want to change, then try again.',
+        loading: false,
+      })
+      return
+    }
     // Remember the highlighted span + its original text so the user can
     // click "Insert" later to make the edit persistent across reloads.
     lastHighlightSpan.current = wrapped.span
     lastOriginalText.current = wrapped.text
-    setToolbar(null); setSubPanel(null); setCtxMenu(null)
-    const label = task === 'summarize' ? 'Summary' : task === 'rewrite' ? 'Rephrased' : 'Shortened'
+    ctxMenuRef.current = false
+    ctxRewriteRef.current = false
+    dismissSelectionChrome()
+    const label = aiTaskLabel(task)
     setAiResult({ title: label, body: '', loading: true, task, instruction })
     let out = await tryWindowAi(task, wrapped.text)
     if (!out) {
@@ -584,10 +738,10 @@ export default function SmartOverlay() {
 
   /* Context menu items */
   const ctxItems: CtxItem[] = [
-    { label: 'Highlight', icon: <IHighlight />, action: () => { wrapSelectionWithHighlight('extract'); setCtxMenu(null) } },
-    { label: 'Summarize', icon: <IAi />, action: () => { void runAiTask('summarize'); setCtxMenu(null) } },
-    { label: 'Rephrase', icon: <IEdit />, action: () => { void runAiTask('rewrite'); setCtxMenu(null) } },
-    { label: 'Shorten', icon: <IGrid />, action: () => { void runAiTask('shorten'); setCtxMenu(null) } },
+    { label: 'Highlight', icon: <IHighlight />, action: () => { restoreSavedSelection(); wrapSelectionWithHighlight('extract'); setCtxMenu(null) } },
+    { label: 'Summarize', icon: <IAi />, action: () => runCtxAiTask('summarize') },
+    { label: 'Rephrase', icon: <IEdit />, action: () => runCtxAiTask('rephrase') },
+    { label: 'Shorten', icon: <IGrid />, action: () => runCtxAiTask('shorten') },
     // Custom Rewrite — opens a free-form instruction prompt at the context
     // menu position. The user's instruction is forwarded to runAiTask so
     // it shares the same "Insert + persist" flow as the pill's custom
@@ -597,8 +751,10 @@ export default function SmartOverlay() {
       icon: <IEdit />,
       action: () => {
         const pt = ctxMenu
+        ctxMenuRef.current = false
         setCtxMenu(null)
         if (!pt) return
+        ctxRewriteRef.current = true
         setCtxRewriteInput('')
         setCtxRewrite(pt)
       },
@@ -657,7 +813,7 @@ export default function SmartOverlay() {
             <Sep />
 
             <TBtn isText onClick={() => runPillAiTask('summarize')} title="Summarize">Summarize</TBtn>
-            <TBtn isText onClick={() => runPillAiTask('rewrite')} title="Rephrase">Rephrase</TBtn>
+            <TBtn isText onClick={() => runPillAiTask('rephrase')} title="Rephrase">Rephrase</TBtn>
             <TBtn isText onClick={() => runPillAiTask('shorten')} title="Shorten">Shorten</TBtn>
             <TBtn active={subPanel === 'rewrite'} onClick={() => toggleSub('rewrite')} title="Custom rewrite">
               <IEdit />
@@ -857,6 +1013,7 @@ export default function SmartOverlay() {
       {ctxMenu && (
         <div
           className="inline-toolbar"
+          onMouseDown={e => e.preventDefault()}
           style={{
             position: 'fixed',
             left: Math.min(ctxMenu.x, window.innerWidth - 200),
@@ -864,12 +1021,12 @@ export default function SmartOverlay() {
             zIndex: 2147483647,
             background: SURFACE,
             border: `1px solid ${PANEL_BORDER}`,
-            borderRadius: 13,
+            borderRadius: C.radius,
             pointerEvents: 'auto',
             width: 192,
             padding: '6px',
             fontFamily: FONT,
-            boxShadow: TB.shadow,
+            boxShadow: C.shadowOuter,
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -955,70 +1112,99 @@ export default function SmartOverlay() {
 
       {/* ── Page risk panel ── */}
       {riskOpen && (
-        <div style={{ position: 'fixed', right: 16, top: 16, width: 'min(100vw - 32px, 340px)', maxHeight: '70vh', overflow: 'auto', zIndex: 2147483646, background: CREAM, border: '1px solid rgba(15,18,23,0.10)', borderRadius: 16, padding: '14px 16px', pointerEvents: 'auto', fontFamily: FONT, fontSize: 12, boxShadow: TB.shadow }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <strong style={{ fontSize: 13, color: DARK }}>Page risk analysis</strong>
-            <button type="button" onClick={() => setRiskOpen(false)}
-              style={{ border: '1px solid rgba(15,18,23,0.10)', borderRadius: 6, background: '#fff', cursor: 'pointer', padding: '2px 7px', fontSize: 13, color: DARK }}>×</button>
-          </div>
-          {riskLoading
-            ? <p style={{ color: '#6B7280', margin: 0 }}>Analysing…</p>
-            : <pre style={{ whiteSpace: 'pre-wrap', margin: 0, color: DARK, lineHeight: 1.5 }}>{riskText}</pre>}
-        </div>
+        <FloatingPanelShell
+          title="Ask"
+          subtitle="Page risk analysis"
+          width={342}
+          tool="ai"
+          onClose={() => setRiskOpen(false)}
+          footer={!riskLoading && riskText ? (
+            <ReviewFooter
+              onBack={() => setRiskOpen(false)}
+              showReject={false}
+              showApprove={false}
+            />
+          ) : undefined}
+        >
+          <PanelResultCard>
+            {riskLoading ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: C.textMuted, fontSize: 14 }}>
+                <Spinner size={16} /> Analysing…
+              </span>
+            ) : (
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: FONT, fontSize: 13.5, lineHeight: 1.55 }}>{riskText}</pre>
+            )}
+          </PanelResultCard>
+        </FloatingPanelShell>
       )}
 
       {/* ── Inline AI result card (replaces window.alert) ── */}
-      {aiResult && (
-        <div
-          className="inline-toolbar"
-          style={{
-            position: 'fixed', right: 16, top: 16,
-            width: 'min(100vw - 32px, 360px)', maxHeight: '70vh', overflow: 'auto',
-            zIndex: 2147483646,
-            background: CREAM, border: '1px solid rgba(15,18,23,0.10)', borderRadius: 16,
-            padding: '14px 16px', pointerEvents: 'auto',
-            fontFamily: FONT, fontSize: 12,
-            boxShadow: TB.shadow,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <strong style={{ fontSize: 13, color: DARK }}>{aiResult.title}</strong>
-            <button type="button" onClick={() => setAiResult(null)}
-              style={{ border: '1px solid rgba(15,18,23,0.10)', borderRadius: 6, background: '#fff', cursor: 'pointer', padding: '2px 7px', fontSize: 13, color: DARK }}>×</button>
-          </div>
-          {aiResult.loading
-            ? <p style={{ color: '#6B7280', margin: 0 }}>Thinking…</p>
-            : <FormattedAiText text={aiResult.body} style={{ fontSize: 12, lineHeight: 1.5, color: DARK }} />}
-          {!aiResult.loading && aiResult.body && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
-              <button type="button"
-                onClick={() => { void navigator.clipboard.writeText(aiResult.body).catch(() => {}) }}
-                style={{ border: '1px solid rgba(15,18,23,0.10)', borderRadius: 8, padding: '5px 10px', background: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600, color: DARK }}>Copy</button>
-              {/* Insert + persist — only shown for the three AI text tasks
-                  and only when we still have a live highlight span to
-                  replace. Once clicked we set `inserted: true` so the
-                  button flips to a confirmation state. */}
-              {aiResult.task && !aiResult.body.startsWith('[Error]') && (
-                <button type="button"
-                  disabled={aiResult.inserted || !lastHighlightSpan.current}
-                  onClick={handleInsertAiResult}
-                  title={aiResult.inserted
-                    ? 'The AI edit is now part of the page and will come back on reload. Hover it and click × to remove.'
-                    : 'Replace the highlighted text with this result. Persists across reloads.'}
-                  style={{
-                    border: 'none', borderRadius: 8,
-                    padding: '5px 12px', fontSize: 11,
-                    cursor: aiResult.inserted ? 'default' : 'pointer', fontWeight: 700,
-                    background: aiResult.inserted ? '#16a34a' : DARK,
-                    color: '#fff',
-                    opacity: aiResult.inserted || !lastHighlightSpan.current ? 0.85 : 1,
-                  }}
-                >{aiResult.inserted ? 'Inserted ✓' : 'Insert'}</button>
+      {aiResult && (() => {
+        const isError = !aiResult.loading && aiResult.body.startsWith('[Error]')
+        const isReview = !!aiResult.task && !isError && !aiResult.loading
+        const original = lastOriginalText.current
+        const canApprove = isReview && !aiResult.inserted && !!lastHighlightSpan.current
+
+        return (
+          <FloatingPanelShell
+            className="inline-toolbar"
+            title="Ask"
+            subtitle={
+              aiResult.loading ? 'Thinking…'
+                : isError ? 'Something went wrong'
+                  : aiResult.task ? aiTaskSubtitle(aiResult.task)
+                    : aiResult.title
+            }
+            width={342}
+            tool="ai"
+            onClose={dismissAiResult}
+            footer={!aiResult.loading && aiResult.body ? (
+              isReview ? (
+                <ReviewFooter
+                  onBack={dismissAiResult}
+                  onReject={handleRejectAiResult}
+                  onApprove={handleInsertAiResult}
+                  approveLabel={aiResult.inserted ? 'Approved' : 'Approve'}
+                  approveDisabled={!canApprove}
+                />
+              ) : isError ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 8, padding: '12px 16px',
+                }}>
+                  <GhostFooterButton label="Back" onClick={dismissAiResult} />
+                  <GhostFooterButton
+                    label="Copy"
+                    onClick={() => { void navigator.clipboard.writeText(aiResult.body).catch(() => {}) }}
+                  />
+                </div>
+              ) : (
+                <ReviewFooter
+                  onBack={dismissAiResult}
+                  showReject={false}
+                  showApprove={false}
+                />
+              )
+            ) : undefined}
+          >
+            <PanelResultCard>
+              {aiResult.loading ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: C.textMuted, fontSize: 14, fontStyle: 'italic' }}>
+                  <Spinner size={16} /> Putting together the best answer…
+                </span>
+              ) : isError ? (
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#991B1B' }}>
+                  {aiResult.body.replace(/^\[Error\]\s*/, '')}
+                </p>
+              ) : isReview && original ? (
+                <BlockDiffView original={original} updated={aiResult.body} />
+              ) : (
+                <FormattedAiText text={aiResult.body} style={{ fontSize: 13.5, lineHeight: 1.55 }} />
               )}
-            </div>
-          )}
-        </div>
-      )}
+            </PanelResultCard>
+          </FloatingPanelShell>
+        )
+      })()}
 
       <GlobalDragHandler setAnchors={setAnchors} dragRef={dragRef} />
     </>
@@ -1035,25 +1221,35 @@ function AnchorPanel({
   onClose: () => void
 }) {
   return (
-    <div
+    <FloatingPanelShell
       className="inline-anchor"
-      style={{ position: 'fixed', left: note.x, top: note.y, width: 240, zIndex: 2147483645, background: CREAM, border: '1px solid rgba(15,18,23,0.10)', borderRadius: 14, overflow: 'hidden', pointerEvents: 'auto', fontFamily: FONT, boxShadow: TB.shadow }}
+      title="Note"
+      subtitle="Drag header to move"
+      width={260}
+      bareBody
+      position={{ left: note.x, top: note.y }}
+      zIndex={2147483645}
+      onClose={onClose}
+      onHeaderMouseDown={e => {
+        dragRef.current = { id: note.id, ox: e.clientX - note.x, oy: e.clientY - note.y }
+        e.preventDefault()
+      }}
+      headerCursor="grab"
     >
-      <div
-        onMouseDown={e => { dragRef.current = { id: note.id, ox: e.clientX - note.x, oy: e.clientY - note.y }; e.preventDefault() }}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', background: '#F6F5F3', borderBottom: '1px solid rgba(15,18,23,0.06)', cursor: 'grab', userSelect: 'none' }}
-      >
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', letterSpacing: 1 }}>⠿ ANCHOR NOTE</span>
-        <button type="button" onClick={onClose}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 15, padding: 0, lineHeight: 1 }}>×</button>
+      <div style={{ padding: '12px 14px' }}>
+        <textarea
+          value={note.text}
+          onChange={e => onChange(e.target.value)}
+          placeholder="Start typing…"
+          style={{
+            display: 'block', width: '100%', boxSizing: 'border-box',
+            border: `1px solid ${C.border}`, borderRadius: C.radiusSm,
+            padding: '8px 10px', fontSize: 12, resize: 'vertical', minHeight: 90,
+            outline: 'none', fontFamily: FONT, color: DARK, background: C.inputBg,
+          }}
+        />
       </div>
-      <textarea
-        value={note.text}
-        onChange={e => onChange(e.target.value)}
-        placeholder="Start typing…"
-        style={{ display: 'block', width: '100%', boxSizing: 'border-box', border: 'none', padding: '8px 10px', fontSize: 12, resize: 'vertical', minHeight: 90, outline: 'none', fontFamily: FONT, color: DARK, background: CREAM }}
-      />
-    </div>
+    </FloatingPanelShell>
   )
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { FileText, Globe, NotebookPen, Sparkles } from 'lucide-react'
 import { cn, formatDisplayTitle } from '@/lib/utils'
@@ -90,14 +91,27 @@ export function SourceCard({ source, workspaceId }: { source: ChatSource; worksp
   return <div className={cardClass}>{body}</div>
 }
 
-export function SourceCardRow({ sources, workspaceId }: { sources: ChatSource[]; workspaceId: string }) {
+export function SourceCardRow({
+  sources,
+  workspaceId,
+  hideScrollbar = false,
+}: {
+  sources: ChatSource[]
+  workspaceId: string
+  hideScrollbar?: boolean
+}) {
   if (sources.length === 0) return null
+  const scrollStyle: CSSProperties | undefined = hideScrollbar ? { scrollbarWidth: 'none' } : undefined
+
   return (
     <div className="mt-2">
       <p className="mb-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground/70">
         Sources
       </p>
-      <div className="scrollbar-minimal flex gap-2 overflow-x-auto overflow-y-hidden pb-1">
+      <div
+        className="scrollbar-minimal flex gap-2 overflow-x-auto overflow-y-hidden pb-1"
+        style={scrollStyle}
+      >
         {sources.map(s => (
           <SourceCard key={`${s.sourceType}:${s.sourceId}`} source={s} workspaceId={workspaceId} />
         ))}

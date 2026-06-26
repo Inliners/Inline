@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode, type CSSProperties } from 'react'
+import { useEffect, useState, type ReactNode, type CSSProperties, type MouseEvent } from 'react'
 import { InlineChatBadge } from './InlineChatIcon'
 import { ToolHeaderIcon, type ToolId } from './toolIcons'
-import { PANEL as C, CHAT, FONT, BRAND_GRADIENT, PANEL_HEADER_ICON } from '../lib/extensionTheme'
+import { PANEL as C, CHAT, FONT, BRAND_GRADIENT, PANEL_HEADER_ICON, DOCK_CLEARANCE, Z } from '../lib/extensionTheme'
 
 /**
  * Inline panel design system.
@@ -171,6 +171,259 @@ export function PanelShell({
   )
 }
 
+const panelSurfaceStyle: CSSProperties = {
+  background: C.bg,
+  border: `1px solid ${C.border}`,
+  borderRadius: C.radius,
+  boxShadow: C.shadowOuter,
+  fontFamily: FONT,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+}
+
+export interface FloatingPanelShellProps {
+  title: string
+  subtitle?: string
+  width?: number
+  onClose: () => void
+  footer?: ReactNode
+  children: ReactNode
+  position?: { right?: number; top?: number; left?: number; bottom?: number }
+  zIndex?: number
+  className?: string
+  tool?: ToolId
+  useChatBrand?: boolean
+  onHeaderMouseDown?: (e: MouseEvent) => void
+  headerCursor?: CSSProperties['cursor']
+  /** Skip default body padding (e.g. anchor note with its own field). */
+  bareBody?: boolean
+}
+
+/** Fixed-position panel shell — same chrome as dock panels (Ask, Rewrite, etc.). */
+export function FloatingPanelShell({
+  title, subtitle, width = 360, onClose, footer, children,
+  position, zIndex, className, tool, useChatBrand, onHeaderMouseDown, headerCursor, bareBody,
+}: FloatingPanelShellProps) {
+  const pos = position ?? { right: DOCK_CLEARANCE, top: 16 }
+  return (
+    <div
+      className={className}
+      style={{
+        position: 'fixed',
+        ...pos,
+        width,
+        maxWidth: 'min(94vw, 388px)',
+        maxHeight: '70vh',
+        zIndex: zIndex ?? Z.floatingOverlay,
+        pointerEvents: 'auto',
+        ...panelSurfaceStyle,
+      }}
+    >
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          minHeight: 56,
+          padding: '0 16px 0 20px',
+          background: C.headerBg,
+          flexShrink: 0,
+        }}
+      >
+        <div
+          onMouseDown={onHeaderMouseDown}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1,
+            cursor: headerCursor, userSelect: onHeaderMouseDown ? 'none' : undefined,
+          }}
+        >
+          {useChatBrand
+            ? <InlineChatBadge />
+            : tool
+              ? <ToolHeaderIcon tool={tool} />
+              : <BrandMark size={PANEL_HEADER_ICON.badgeSize} />}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{
+              fontSize: 14, fontWeight: 500, color: C.text, letterSpacing: '-0.01em',
+              lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{title}</div>
+            {subtitle && (
+              <div style={{
+                marginTop: 2, fontSize: 12, color: C.textMuted, lineHeight: 1.2,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{subtitle}</div>
+            )}
+          </div>
+        </div>
+        <CloseButton onClose={onClose} />
+      </header>
+
+      <div style={{
+        display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1,
+        overflowY: 'auto', overflowX: 'hidden',
+        ...(bareBody ? {} : { padding: '16px 20px', fontSize: 14, lineHeight: 1.55, color: C.text }),
+      }}>
+        {children}
+      </div>
+
+      {footer && (
+        <div style={{ background: C.bg, flexShrink: 0 }}>
+          {footer}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────  Review / diff result UI  ───────────────────────── */
+
+export const DIFF = {
+  removedBg: '#FEE2E2',
+  removedText: '#991B1B',
+  addedBg: '#DCFCE7',
+  addedText: '#166534',
+} as const
+
+export function DiffRemovedBlock({ children }: { children: ReactNode }) {
+  return (
+    <p style={{
+      margin: 0, padding: '4px 8px', borderRadius: C.radiusSm,
+      background: DIFF.removedBg, color: DIFF.removedText,
+      textDecoration: 'line-through', fontSize: 12, lineHeight: 1.45,
+    }}>{children}</p>
+  )
+}
+
+export function DiffAddedBlock({ children }: { children: ReactNode }) {
+  return (
+    <p style={{
+      margin: 0, padding: '4px 8px', borderRadius: C.radiusSm,
+      background: DIFF.addedBg, color: DIFF.addedText,
+      fontSize: 12, lineHeight: 1.45,
+    }}>{children}</p>
+  )
+}
+
+/** Side-by-side removed / added blocks — matches the Ask recap review mock. */
+export function BlockDiffView({ original, updated }: { original: string; updated: string }) {
+  const oldText = original.trim()
+  const newText = updated.trim()
+  if (!oldText) {
+    return <DiffAddedBlock>{newText}</DiffAddedBlock>
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <DiffRemovedBlock>{oldText}</DiffRemovedBlock>
+      <DiffAddedBlock>{newText}</DiffAddedBlock>
+    </div>
+  )
+}
+
+export function PanelResultCard({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div style={{
+      minHeight: 48,
+      maxHeight: 280,
+      overflowY: 'auto',
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+const ICheckGlyph = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+)
+
+export function GhostFooterButton({
+  label, onClick, disabled,
+}: { label: string; onClick: () => void; disabled?: boolean }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        padding: '6px 12px', borderRadius: C.radiusPill, border: 'none',
+        background: hov && !disabled ? C.hoverBg : 'transparent',
+        color: C.textMuted, fontSize: 12, fontWeight: 500, fontFamily: FONT,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.55 : 1,
+      }}
+    >{label}</button>
+  )
+}
+
+export function ApproveFooterButton({
+  label = 'Approve', onClick, disabled,
+}: { label?: string; onClick: () => void; disabled?: boolean }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '6px 12px', borderRadius: C.radiusPill, border: 'none',
+        background: CHAT.send, color: '#fff',
+        fontSize: 12, fontWeight: 500, fontFamily: FONT,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+        filter: hov && !disabled ? 'brightness(1.05)' : undefined,
+      }}
+    >
+      <ICheckGlyph /> {label}
+    </button>
+  )
+}
+
+/** Back / Reject / Approve row — matches extension recap review mock. */
+export function ReviewFooter({
+  onBack, onReject, onApprove,
+  approveLabel = 'Approve', approveDisabled, showReject = true, showApprove = true,
+}: {
+  onBack: () => void
+  onReject?: () => void
+  onApprove?: () => void
+  approveLabel?: string
+  approveDisabled?: boolean
+  showReject?: boolean
+  showApprove?: boolean
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      gap: 8, padding: '12px 16px', flexWrap: 'wrap',
+    }}>
+      <GhostFooterButton label="Back" onClick={onBack} />
+      <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+        {showReject && onReject && <GhostFooterButton label="Reject" onClick={onReject} />}
+        {showApprove && onApprove && (
+          <ApproveFooterButton label={approveLabel} onClick={onApprove} disabled={approveDisabled} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Footer action row for floating / dock panels. */
+export function PanelFooterBar({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px' }}>
+      {children}
+    </div>
+  )
+}
+
 /** A small status/context pill used in headers. */
 export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' }) {
   const accent = tone === 'accent'
@@ -202,6 +455,43 @@ export function SectionLabel({ children, style }: { children: ReactNode; style?:
       lineHeight: 1.25,
       ...style,
     }}>{children}</div>
+  )
+}
+
+/** Ask-panel body rhythm — shared across tool popups. */
+export const panelBodyStyle: CSSProperties = {
+  padding: '20px 20px 16px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+}
+
+/** Bordered inner section shell — matches Ask page card / composer / action tiles. */
+export const panelSectionShellStyle: CSSProperties = {
+  border: `1px solid ${C.border}`,
+  borderRadius: C.radiusMd,
+  background: C.surfaceBubble,
+  boxShadow: 'none',
+}
+
+export function PanelSection({
+  children,
+  style,
+  list,
+}: {
+  children: ReactNode
+  style?: CSSProperties
+  /** Stacked rows with dividers — no inner padding on the shell. */
+  list?: boolean
+}) {
+  return (
+    <div style={{
+      ...panelSectionShellStyle,
+      ...(list ? { overflow: 'hidden', padding: 0 } : { padding: 12 }),
+      ...style,
+    }}>
+      {children}
+    </div>
   )
 }
 

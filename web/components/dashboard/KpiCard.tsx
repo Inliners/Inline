@@ -66,12 +66,12 @@ export default function KpiCard({
     return (
       <Link
         href={href}
-        className="block space-y-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-stone-400/50 cursor-pointer"
+        className="block cursor-pointer space-y-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-stone-400/50 dark:border-sidebar-border dark:bg-secondary dark:hover:border-primary/40"
       >
         {content}
       </Link>
     )
   }
 
-  return <div className="space-y-3 rounded-xl border border-border bg-card p-5">{content}</div>
+  return <div className="space-y-3 rounded-xl border border-border bg-card p-5 dark:border-sidebar-border dark:bg-secondary">{content}</div>
 }

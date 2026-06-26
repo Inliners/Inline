@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { SectionLink, type SectionHref } from '@/components/marketing/SectionLink'
 import { DEFAULT_WORKSPACES } from '@/lib/workspaces'
 import { workspacePath } from '@/lib/workspace-routes'
-import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site-contact'
 
 const WORKSPACE_HOME = workspacePath(DEFAULT_WORKSPACES[0]!, 'dashboard')
 
@@ -86,12 +85,7 @@ export default function MarketingFooter() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-stone-400">
-            Built with curiosity and coffee.{' '}
-            <a href={SUPPORT_MAILTO} className="text-stone-300 hover:text-white transition-colors">
-              {SUPPORT_EMAIL}
-            </a>
-          </p>
+          <p className="text-xs text-stone-400">Built with curiosity and coffee.</p>
           <p className="text-xs text-stone-400">&copy;{new Date().getFullYear()} Inline</p>
         </div>
       </div>

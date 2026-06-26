@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Settings2, MoreHorizontal } from 'lucide-react'
 import ExportButton from './ExportButton'
+import WorkspaceActivityPanelToggle from './WorkspaceActivityPanelToggle'
 
 interface Crumb { label: string; href?: string }
 
@@ -44,18 +45,18 @@ export default function PageHeader({ crumbs, title, titleSlot, subtitle, action,
   const workspaceId  = getWorkspaceId(pathname)
 
   return (
-    <div className={cn('border-b border-slate-200 bg-white sticky top-0 z-10', className)}>
-      <div className="flex items-center justify-between px-6 h-[52px]">
-        <nav className="flex items-center gap-1 text-sm text-slate-400">
+    <div className={cn('sticky top-0 z-10 border-b border-border bg-white dark:border-sidebar-border dark:bg-sidebar', className)}>
+      <div className="flex h-[52px] items-center justify-between px-6">
+        <nav className="flex items-center gap-1 text-sm text-muted-foreground">
           {crumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
+              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />}
               {crumb.href ? (
-                <Link href={crumb.href} className="hover:text-slate-700 transition-colors cursor-pointer">
+                <Link href={crumb.href} className="cursor-pointer transition-colors hover:text-foreground">
                   {crumb.label}
                 </Link>
               ) : (
-                <span className={cn(i === crumbs.length - 1 && 'text-slate-700 font-medium')}>
+                <span className={cn(i === crumbs.length - 1 && 'font-medium text-foreground')}>
                   {crumb.label}
                 </span>
               )}
@@ -67,15 +68,15 @@ export default function PageHeader({ crumbs, title, titleSlot, subtitle, action,
           {action}
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer outline-none">
-              <MoreHorizontal className="w-4 h-4" />
+            <DropdownMenuTrigger className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground dark:hover:bg-sidebar-accent">
+              <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white border border-slate-200 rounded-xl">
+            <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-popover">
               <DropdownMenuItem
-                className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-800"
+                className="flex cursor-pointer items-center gap-2 text-foreground"
                 onClick={() => router.push(settingsHref)}
               >
-                <Settings2 className="w-3.5 h-3.5 text-slate-400" />
+                <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>Workspace Settings</span>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -84,23 +85,25 @@ export default function PageHeader({ crumbs, title, titleSlot, subtitle, action,
               >
                 <ExportButton
                   workspaceId={workspaceId}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-slate-600 rounded-sm hover:bg-slate-50 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
                 />
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <WorkspaceActivityPanelToggle />
         </div>
       </div>
 
       {(title || subtitle) && (
-        <div className="px-6 pb-3 pt-0.5 min-w-0 space-y-0.5">
-          {title && <h1 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h1>}
-          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        <div className="min-w-0 space-y-0.5 px-6 pb-3 pt-0.5">
+          {title && <h1 className="text-lg font-semibold tracking-tight text-foreground">{title}</h1>}
+          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         </div>
       )}
 
       {titleSlot && (
-        <div className="px-6 pb-3 pt-0.5 min-w-0">{titleSlot}</div>
+        <div className="min-w-0 px-6 pb-3 pt-0.5">{titleSlot}</div>
       )}
     </div>
   )

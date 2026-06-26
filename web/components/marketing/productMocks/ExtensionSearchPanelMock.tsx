@@ -3,18 +3,18 @@ import {
   ExtensionPanelShellMock,
   ExtensionSegmentedMock,
 } from '@/components/marketing/productMocks/ExtensionPanelShellMock'
-import { cn, formatDisplayTitle } from '@/lib/utils'
-import { DEMO_DOMAIN } from '@/components/marketing/productMocks/sampleData'
+import { DEMO_DOMAIN, DEMO_PAGE_TITLE, DEMO_PAGE_TITLE_ALT } from '@/components/marketing/productMocks/sampleData'
+import { cn } from '@/lib/utils'
 
 const RESULTS = [
   {
-    title: 'Cable-stayed bridge design',
-    snippet: 'Towers carry deck loads directly through stay cables rather than anchorages…',
+    title: DEMO_PAGE_TITLE,
+    snippet: 'Opening section summarizes the main argument from your capture…',
     url: DEMO_DOMAIN,
   },
   {
-    title: 'Suspension bridge',
-    snippet: 'The deck hangs from main cables anchored at both ends…',
+    title: DEMO_PAGE_TITLE_ALT,
+    snippet: 'Supporting points from a paragraph you highlighted…',
     url: DEMO_DOMAIN,
   },
 ] as const
@@ -37,7 +37,7 @@ export default function ExtensionSearchPanelMock({ className }: ExtensionSearchP
           <span className="text-muted-foreground">
             <IconSearch size={18} />
           </span>
-          <span className="text-sm text-foreground">bridge load paths</span>
+          <span className="text-sm text-foreground">main themes</span>
         </div>
         <ExtensionSegmentedMock
           options={[
@@ -54,7 +54,7 @@ export default function ExtensionSearchPanelMock({ className }: ExtensionSearchP
             key={result.title}
             className="rounded-2xl border border-border bg-[#F7F7F5] px-3.5 py-3"
           >
-            <p className="text-[12.5px] font-bold tracking-tight text-foreground">{formatDisplayTitle(result.title)}</p>
+            <p className="text-[12.5px] font-bold tracking-tight text-foreground">{result.title}</p>
             <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">{result.snippet}</p>
             <p className="mt-1.5 truncate text-[10.5px] text-muted-foreground/80">{result.url}</p>
           </div>

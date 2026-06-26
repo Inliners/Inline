@@ -36,7 +36,9 @@ export default function LibraryDocumentsMock({ className, limit = 4 }: LibraryDo
                 Document
               </span>
             )}
-            <span className="shrink-0 text-[10px] text-muted-foreground">{doc.time}</span>
+            <span className="shrink-0 truncate text-[10px] text-muted-foreground">
+              {'folder' in doc && doc.folder ? `${doc.folder} · ${doc.time}` : doc.time}
+            </span>
           </div>
         </div>
       ))}

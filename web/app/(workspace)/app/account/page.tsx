@@ -48,7 +48,7 @@ function SectionCard({ title, description, children, action }: { title: string; 
         </div>
         {action}
       </div>
-      <div className="space-y-5 rounded-2xl border border-border bg-card p-6">
+      <div className="workspace-surface space-y-5 rounded-2xl p-6">
         {children}
       </div>
     </div>

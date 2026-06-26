@@ -131,8 +131,8 @@ function NavRow({ href, icon: Icon, label, collapsed, active, dotColor, onStar, 
             ? 'w-10 h-10 aspect-square rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0'
             : 'flex flex-1 items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-sm transition-all cursor-pointer min-w-0',
           active
-            ? 'bg-[#F1F1EF] text-[#37352F] font-semibold dark:bg-[#1B326D] dark:text-white'
-            : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100 dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B]',
+            ? 'bg-[#F1F1EF] text-[#37352F] font-semibold dark:bg-sidebar-accent dark:text-foreground'
+            : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-sidebar-accent',
         )}
       >
         {dotColor ? (
@@ -179,11 +179,11 @@ function SectionLabel({ label, collapsed, expanded, onToggle, action }: {
   if (collapsed) return null
   return (
     <div className="flex items-center justify-between px-2.5 pt-4 pb-1">
-      <button onClick={onToggle} className="flex items-center gap-1 cursor-pointer hover:text-stone-700 transition-colors dark:hover:text-white">
-        <span className="text-[10.5px] font-semibold uppercase tracking-wider text-stone-400 select-none dark:text-[#9BBCE5]">
+      <button onClick={onToggle} className="flex items-center gap-1 cursor-pointer hover:text-stone-700 transition-colors dark:hover:text-foreground">
+        <span className="text-[10.5px] font-semibold uppercase tracking-wider text-stone-400 select-none dark:text-muted-foreground">
           {label}
         </span>
-        <ChevronDown className={cn('w-3 h-3 text-stone-300 transition-transform duration-200 dark:text-[#9BBCE5]', !expanded && '-rotate-90')} />
+        <ChevronDown className={cn('w-3 h-3 text-stone-300 transition-transform duration-200 dark:text-muted-foreground', !expanded && '-rotate-90')} />
       </button>
       {action}
     </div>
@@ -357,7 +357,7 @@ function SidebarFolderNode({
         </button>
       </div>
       {treeOpen && (
-        <div className="ml-4 pl-2 border-l border-stone-200/40 space-y-0.5 mt-0.5">
+        <div className="ml-4 pl-2 border-l border-stone-300 dark:border-border/60 space-y-0.5 mt-0.5">
           {childFolders.map(child => (
             <SidebarFolderNode
               key={child.id}
@@ -667,7 +667,7 @@ export default function Sidebar() {
                 isActive && 'bg-muted/50',
               )}
             >
-              <GripVertical className="h-3.5 w-3.5 shrink-0 text-stone-300 dark:text-[#5A7BB5]" aria-hidden />
+              <GripVertical className="h-3.5 w-3.5 shrink-0 text-stone-300 dark:text-muted-foreground/60" aria-hidden />
               <WorkspaceIcon ws={ws} size="sm" />
               <span className="min-w-0 flex-1 truncate text-foreground">{ws.label}</span>
               {isActive ? (
@@ -725,12 +725,12 @@ export default function Sidebar() {
         animate={{ width: collapsed ? 60 : 228 }}
         transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
         style={{ willChange: 'width' }}
-        className="relative h-screen flex flex-col bg-[#FDFBF7] border-r border-stone-200/60 overflow-hidden shrink-0 select-none dark:bg-[#0D1B3C] dark:border-[#263E7A]"
+        className="relative h-screen flex flex-col bg-[#FDFBF7] border-r border-stone-200/60 overflow-hidden shrink-0 select-none dark:bg-sidebar dark:border-sidebar-border"
       >
         {/* ── Workspace switcher + sidebar collapse ── */}
         <div
           className={cn(
-            'flex h-[52px] shrink-0 items-center border-b border-stone-200 dark:border-[#263E7A]',
+            'flex h-[52px] shrink-0 items-center border-b border-stone-200 dark:border-sidebar-border',
             collapsed ? 'justify-center px-0' : 'gap-1.5 px-2',
           )}
         >
@@ -738,7 +738,7 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => setCollapsed(false)}
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-muted-foreground dark:hover:bg-sidebar-accent dark:hover:text-foreground"
               title="Expand sidebar"
             >
               <PanelLeftClose className="h-4 w-4 rotate-180" />
@@ -748,14 +748,14 @@ export default function Sidebar() {
               {activeWorkspace && (
                 <DropdownMenu onOpenChange={open => { if (!open) setCreatingWorkspaceInMenu(false) }}>
                   <DropdownMenuTrigger
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-stone-100 dark:hover:bg-[#17296B]"
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-stone-100 dark:hover:bg-sidebar-accent"
                     aria-label="Switch workspace"
                   >
                     <WorkspaceIcon ws={activeWorkspace} />
                     <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-stone-800 dark:text-white">
                       {activeWorkspace.label}
                     </span>
-                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-stone-400 dark:text-[#9BBCE5]" />
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-stone-400 dark:text-muted-foreground" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
@@ -769,7 +769,7 @@ export default function Sidebar() {
               <button
                 type="button"
                 onClick={() => setCollapsed(true)}
-                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-muted-foreground dark:hover:bg-sidebar-accent dark:hover:text-foreground"
                 title="Collapse sidebar"
               >
                 <PanelLeftClose className="h-4 w-4" />
@@ -783,7 +783,7 @@ export default function Sidebar() {
           {collapsed ? (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('inline-open-cmd'))}
-              className="w-10 h-10 aspect-square rounded-md flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:hover:bg-[#17296B] dark:hover:text-white"
+              className="w-10 h-10 aspect-square rounded-md flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:hover:bg-sidebar-accent dark:hover:text-foreground"
               title="Search (Ctrl+K)"
             >
               <Search className="w-4 h-4" />
@@ -792,11 +792,11 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('inline-open-cmd'))}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200/70 shadow-[0_1px_2px_rgba(28,30,38,0.08)] cursor-pointer hover:border-stone-300 transition-colors text-left dark:bg-[#10214A] dark:border-[#263E7A] dark:hover:border-[#355199]"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-stone-300 shadow-[0_1px_2px_rgba(28,30,38,0.08)] cursor-pointer hover:border-stone-400 transition-colors text-left dark:bg-muted dark:border-sidebar-border dark:hover:border-border"
             >
-              <Search className="w-3.5 h-3.5 text-stone-400 shrink-0 dark:text-[#9BBCE5]" />
-              <span className="flex-1 text-xs text-stone-400 select-none dark:text-[#9BBCE5]">Search…</span>
-              <kbd className="text-[9px] text-stone-300 bg-white border border-stone-200/60 rounded px-1 py-0.5 font-sans leading-none dark:bg-[#0A1430] dark:border-[#263E7A] dark:text-[#9BBCE5]">/</kbd>
+              <Search className="w-3.5 h-3.5 text-stone-400 shrink-0 dark:text-muted-foreground" />
+              <span className="flex-1 text-xs text-stone-400 select-none dark:text-muted-foreground">Search…</span>
+              <kbd className="text-[9px] text-stone-300 bg-white border border-stone-200/60 rounded px-1 py-0.5 font-sans leading-none dark:bg-background dark:border-sidebar-border dark:text-muted-foreground">/</kbd>
             </button>
           )}
         </div>
@@ -845,7 +845,7 @@ export default function Sidebar() {
               !collapsed ? (
                 <button
                   type="button"
-                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-[#9BBCE5] dark:hover:bg-[#17296B] dark:hover:text-white"
+                  className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-muted-foreground dark:hover:bg-sidebar-accent dark:hover:text-foreground"
                   onClick={() => setAddingFolderForWs(activeWsId)}
                   title="New folder"
                 >
@@ -918,13 +918,13 @@ export default function Sidebar() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="border-t border-stone-200 px-2 pt-2 pb-2 shrink-0 space-y-0.5 dark:border-[#263E7A]">
+        <div className="border-t border-stone-200 px-2 pt-2 pb-2 shrink-0 space-y-0.5 dark:border-sidebar-border">
           <div
             className="overflow-hidden transition-[opacity,max-height] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
             style={{ maxHeight: collapsed ? 0 : 40, opacity: collapsed ? 0 : 1 }}
           >
             <button
-              className="w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-xs text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B]"
+              className="w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-xs text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-sidebar-accent"
               onClick={() => setInviteOpen(true)}
             >
               <UserPlus className="w-3.5 h-3.5 shrink-0" />
@@ -932,39 +932,40 @@ export default function Sidebar() {
             </button>
           </div>
 
-          <div className={cn('flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg', collapsed && 'justify-center')}>
+          <div className={cn('flex items-center w-full rounded-lg', collapsed ? 'justify-center py-[7px]' : 'gap-2.5 px-2.5 py-[7px]')}>
             <Link
               href="/app/account"
               title={collapsed ? `${userName}\n${userEmail}` : undefined}
               className={cn(
-                'flex items-center gap-2.5 flex-1 min-w-0 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer dark:hover:bg-[#17296B]',
-                collapsed ? 'justify-center' : 'py-0.5',
+                'flex items-center rounded-lg hover:bg-stone-100 transition-colors cursor-pointer dark:hover:bg-sidebar-accent',
+                collapsed ? 'w-10 h-10 aspect-square justify-center shrink-0' : 'flex-1 gap-2.5 min-w-0 py-0.5',
               )}
             >
-              <div className={cn('bg-[#F0EBE3] border border-stone-300 flex items-center justify-center text-[#37352F] text-[10px] font-bold shrink-0 dark:bg-[#1B326D] dark:border-[#263E7A] dark:text-white', collapsed ? 'w-10 h-10 aspect-square rounded-md' : 'w-6 h-6 rounded-full')}>
+              <div className={cn('bg-[#F0EBE3] border border-stone-300 flex items-center justify-center text-[#37352F] text-[10px] font-bold shrink-0 dark:bg-sidebar-accent dark:border-sidebar-border dark:text-foreground', collapsed ? 'w-10 h-10 aspect-square rounded-md' : 'w-6 h-6 rounded-full')}>
                 {userInitial}
               </div>
-              <div
-                className="flex-1 overflow-hidden min-w-0 transition-[opacity,max-width] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
-                style={{ maxWidth: collapsed ? 0 : 120, opacity: collapsed ? 0 : 1 }}
-              >
+              {!collapsed && (
+              <div className="flex-1 overflow-hidden min-w-0">
                 <p className="font-medium text-stone-700 text-xs truncate leading-tight dark:text-white">{userName}</p>
-                <p className="text-stone-400 truncate text-[10px] leading-tight dark:text-[#9BBCE5]">{userEmail}</p>
+                <p className="text-stone-400 truncate text-[10px] leading-tight dark:text-muted-foreground">{userEmail}</p>
               </div>
+              )}
             </Link>
+            {!collapsed && (
             <div
-              className="flex items-center gap-0.5 transition-[opacity,max-width] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)] overflow-hidden"
-              style={{ maxWidth: collapsed ? 0 : 64, opacity: collapsed ? 0 : 1 }}
+              className="flex items-center gap-0.5 overflow-hidden transition-[opacity,max-width] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
+              style={{ maxWidth: 64, opacity: 1 }}
             >
               <ThemeToggle />
               <form action={signOut}>
                 <button type="submit"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors shrink-0 cursor-pointer dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B]"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors shrink-0 cursor-pointer dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-sidebar-accent"
                   title="Sign out">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </form>
             </div>
+            )}
           </div>
         </div>
       </motion.aside>

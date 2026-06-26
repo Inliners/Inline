@@ -1,36 +1,16 @@
 import { useState, useCallback, useEffect } from 'react'
 import { wrapSelectionWithHighlight } from '../content/highlightWrap'
 import { loadSettings } from '../lib/extensionSettings'
-import { speakWithElevenLabs, stopSpeaking } from '../lib/elevenLabsTts'
-import { PANEL as C, FONT, CHAT } from '../lib/extensionTheme'
+import { PANEL as C } from '../lib/extensionTheme'
 import { PROMPT_TEMPLATES } from '../lib/promptTemplates'
 import { fetchViaBackground } from '../lib/backgroundFetch'
 import { saveAIResultToHistory } from '../lib/historyApi'
 import { buildAIInsertMark } from '../lib/insertBadge'
 import { GUEST_AI_LIMIT, reserveAiPrompt } from '../lib/aiAccess'
-import { PanelShell, Spinner, SectionLabel, ActionTile, Chip, Composer } from './panelKit'
+import { PanelShell, Spinner, SectionLabel, ActionTile, Chip, Composer, BlockDiffView, PanelResultCard, ReviewFooter, PanelSection, panelBodyStyle } from './panelKit'
 import FormattedAiText from './FormattedAiText'
 import { setAiBusy } from '../lib/panelLock'
 
-const ICopy = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-)
-const IVolume = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-  </svg>
-)
-const IVolumeOff = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-    <line x1="23" y1="9" x2="17" y2="15" />
-    <line x1="17" y1="9" x2="23" y2="15" />
-  </svg>
-)
 const IGlobe = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
@@ -82,7 +62,6 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
   const [customPrompt, setCustomPrompt] = useState('')
   const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [speaking, setSpeaking] = useState(false)
   const [lastTask, setLastTask] = useState<string>('')
   const [lastInstruction, setLastInstruction] = useState<string | undefined>(undefined)
   const [recapState, setRecapState] = useState<'idle' | 'loading' | 'done' | 'empty' | 'error'>('idle')
@@ -131,16 +110,6 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
       setAiBusy(false)
     }
   }, [])
-
-  function handleSpeak() {
-    if (speaking) {
-      stopSpeaking()
-      setSpeaking(false)
-      return
-    }
-    if (!result) return
-    void speakWithElevenLabs(result, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) })
-  }
 
   const runTask = useCallback(async (task: string, instruction?: string) => {
     if (hasSelection) wrapSelectionWithHighlight(task)
@@ -226,13 +195,8 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
         onClose={onClose}
         tool="ai"
       >
-        <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{
-            border: `1px solid ${C.border}`,
-            borderRadius: C.radiusMd,
-            background: C.bg,
-            padding: 12,
-          }}>
+        <div style={panelBodyStyle}>
+          <PanelSection>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <span style={{
                 display: 'inline-flex',
@@ -285,7 +249,7 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
                 overflow: 'hidden',
               }}>"{selectedText.trim()}"</p>
             )}
-          </div>
+          </PanelSection>
 
           <Composer
             value={customPrompt}
@@ -345,80 +309,39 @@ export default function AI({ selectedText, originalRange, onClose }: AIProps) {
   return (
     <PanelShell
       title="Ask"
-      subtitle={loading ? 'Thinking...' : 'Here is your result'}
+      subtitle={loading ? 'Thinking…' : hasSelection ? (
+        lastTask === 'summarize' ? 'Summary update'
+          : lastTask === 'rephrase' ? 'Rephrase update'
+            : lastTask === 'shorten' ? 'Shorten update'
+              : 'Rewrite update'
+      ) : 'Here is your result'}
       chip={lastTask ? (lastInstruction ? 'Custom' : lastTask) : undefined}
       width={342}
       onClose={onClose}
       tool="ai"
       footer={!loading ? (
-        <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <button type="button" onClick={() => { setResult(null); setCopied(false) }} aria-label="Back" style={ghostBtn}>Back</button>
-          <button
-            type="button"
-            onClick={canInsertResult ? handleInsert : handleCopy}
-            aria-label={canInsertResult ? 'Insert into page' : 'Copy to clipboard'}
-            style={primaryBtn}
-          >
-            {canInsertResult ? 'Insert' : copied ? 'Copied' : 'Copy'}
-          </button>
-          <button type="button" onClick={handleSpeak} aria-label={speaking ? 'Stop speaking' : 'Speak'} style={{ ...iconBtn, marginLeft: 'auto' }}>{speaking ? <IVolumeOff /> : <IVolume />}</button>
-          {canInsertResult && <button type="button" onClick={handleCopy} aria-label="Copy" style={iconBtn}><ICopy /></button>}
-        </div>
+        <ReviewFooter
+          onBack={() => { setResult(null); setCopied(false) }}
+          onReject={() => { setResult(null); setCopied(false) }}
+          onApprove={canInsertResult ? handleInsert : handleCopy}
+          approveLabel={canInsertResult ? 'Approve' : copied ? 'Copied' : 'Copy'}
+          showReject={!!result}
+        />
       ) : undefined}
     >
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{
-          minHeight: 80,
-          maxHeight: 320,
-          overflowY: 'auto',
-        }}>
+      <div style={{ padding: '16px 20px' }}>
+        <PanelResultCard>
           {loading ? (
-            <p style={{ margin: 0, fontStyle: 'italic', color: C.textMuted, fontSize: 14, lineHeight: 1.625 }}>
-              Putting together the best answer — one moment, Inline…
-            </p>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: C.textMuted, fontSize: 14, fontStyle: 'italic' }}>
+              <Spinner size={16} /> Putting together the best answer — one moment, Inline…
+            </span>
+          ) : result && hasSelection ? (
+            <BlockDiffView original={selectedText} updated={result} />
           ) : result ? (
-            <FormattedAiText text={result} />
+            <FormattedAiText text={result} style={{ fontSize: 13.5, lineHeight: 1.55 }} />
           ) : null}
-        </div>
+        </PanelResultCard>
       </div>
     </PanelShell>
   )
-}
-
-const ghostBtn: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: C.radiusPill,
-  border: `1px solid ${C.border}`,
-  background: C.surfaceBubble,
-  fontSize: 12.5,
-  fontWeight: 600,
-  cursor: 'pointer',
-  color: C.text,
-  fontFamily: FONT,
-  boxShadow: 'none',
-}
-const primaryBtn: React.CSSProperties = {
-  padding: '9px 18px',
-  borderRadius: C.radiusPill,
-  border: 'none',
-  background: CHAT.send,
-  color: '#fff',
-  fontSize: 14,
-  fontWeight: 500,
-  cursor: 'pointer',
-  fontFamily: FONT,
-}
-const iconBtn: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 36,
-  height: 36,
-  border: `1px solid ${C.border}`,
-  borderRadius: C.radiusSm,
-  background: C.surfaceBubble,
-  cursor: 'pointer',
-  padding: 0,
-  color: C.textMuted,
-  boxShadow: 'none',
 }

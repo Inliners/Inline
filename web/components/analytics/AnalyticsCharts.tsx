@@ -56,12 +56,12 @@ function StatChip({ label, value, delta, icon: Icon, iconColor }: {
 }) {
   const pos = delta !== undefined && delta >= 0
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-start gap-3 dark:border-[#263E7A] dark:bg-[#15285C]">
-      <div className={cn('w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 dark:bg-[#1B326D]', iconColor)}>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-start gap-3 dark:border-border dark:bg-card">
+      <div className={cn('w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 dark:bg-muted', iconColor)}>
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 dark:text-[#9BBCE5]">{label}</p>
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 dark:text-muted-foreground">{label}</p>
         <p className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">{value}</p>
         {delta !== undefined && (
           <span className={cn('text-xs font-medium flex items-center gap-1 mt-0.5', pos ? 'text-emerald-500 dark:text-emerald-300' : 'text-red-400 dark:text-red-300')}>
@@ -76,7 +76,7 @@ function StatChip({ label, value, delta, icon: Icon, iconColor }: {
 
 function PeriodToggle({ period, onChange }: { period: Period; onChange: (p: Period) => void }) {
   return (
-    <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 gap-0.5 dark:border-[#263E7A] dark:bg-[#10214A]">
+    <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 gap-0.5 dark:border-border dark:bg-muted">
       {(['7d', '30d'] as Period[]).map(p => (
         <button
           key={p}
@@ -84,8 +84,8 @@ function PeriodToggle({ period, onChange }: { period: Period; onChange: (p: Peri
           className={cn(
             'px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer',
             period === p
-              ? 'bg-white border border-slate-200 text-slate-700 dark:bg-[#1B326D] dark:border-[#355199] dark:text-white'
-              : 'text-slate-400 hover:text-slate-700 dark:text-[#9BBCE5] dark:hover:text-white',
+              ? 'bg-white border border-slate-200 text-slate-700 dark:bg-muted dark:border-border dark:text-foreground'
+              : 'text-slate-400 hover:text-slate-700 dark:text-muted-foreground dark:hover:text-foreground',
           )}
         >
           {p === '7d' ? 'Last 7 days' : 'Last 30 days'}
@@ -99,8 +99,8 @@ function PeriodToggle({ period, onChange }: { period: Period; onChange: (p: Peri
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm dark:bg-[#1E3878] dark:border-[#355199]">
-      <p className="text-xs text-slate-400 mb-1 dark:text-[#9BBCE5]">{label}</p>
+    <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm dark:bg-popover dark:border-border">
+      <p className="text-xs text-slate-400 mb-1 dark:text-muted-foreground">{label}</p>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
@@ -157,7 +157,7 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
     <div className="space-y-6">
       <div id="activity" className="scroll-mt-28">
         <h2 className="text-base font-semibold text-slate-700 dark:text-white">Activity</h2>
-        <p className="text-xs text-slate-400 mt-0.5 max-w-2xl dark:text-[#9BBCE5]">
+        <p className="text-xs text-slate-400 mt-0.5 max-w-2xl dark:text-muted-foreground">
           Daily capture intensity and a quick summary of totals and your busiest day.
         </p>
       </div>
@@ -187,11 +187,11 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
       </div>
 
       {/* ── Capture volume chart ── */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#263E7A] dark:bg-[#15285C]">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-border dark:bg-card">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Capture Volume</h2>
-            <p className="text-xs text-slate-400 mt-0.5 dark:text-[#9BBCE5]">
+            <p className="text-xs text-slate-400 mt-0.5 dark:text-muted-foreground">
               {totalCaptures} total · {avgPerDay}/day avg · {totalAI} AI summaries
             </p>
           </div>
@@ -225,7 +225,7 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
       <div className="grid lg:grid-cols-2 gap-5">
 
         {/* Domain breakdown */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#263E7A] dark:bg-[#15285C]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-border dark:bg-card">
           <h2 className="text-sm font-semibold mb-4 text-slate-800 dark:text-white">Top Domains</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={domainData} layout="vertical" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
@@ -239,7 +239,7 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
         </div>
 
         {/* Note type split */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col dark:border-[#263E7A] dark:bg-[#15285C]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col dark:border-border dark:bg-card">
           <h2 className="text-sm font-semibold mb-4 text-slate-800 dark:text-white">Note Type Distribution</h2>
           <div className="flex-1 flex items-center justify-center">
             <div className="w-full flex items-center gap-6">
@@ -265,7 +265,7 @@ export default function AnalyticsCharts({ stats, timeSeries30, timeSeries7 }: Pr
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ background: item.color }} />
                     <div>
                       <p className="text-xs font-semibold text-slate-700 dark:text-white">{item.name}</p>
-                      <p className="text-xs text-slate-400 dark:text-[#9BBCE5]">{item.value} notes</p>
+                      <p className="text-xs text-slate-400 dark:text-muted-foreground">{item.value} notes</p>
                     </div>
                   </div>
                 ))}

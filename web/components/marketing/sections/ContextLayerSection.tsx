@@ -1,8 +1,10 @@
 import { Reveal } from '@/components/marketing/primitives/Reveal'
 import AskThoughtTrace from '@/components/marketing/AskThoughtTrace'
+import { mkt } from '@/components/marketing/marketingSurfaces'
+import ExtensionStaticHighlightSceneMock from '@/components/marketing/productMocks/ExtensionStaticHighlightSceneMock'
 import {
   ExtensionAskPanelMock,
-  ExtensionDockSceneMock,
+  ExtensionDockSceneHighlightAnimated,
   WorkspaceChatMock,
 } from '@/components/marketing/productMocks'
 
@@ -20,21 +22,32 @@ export default function ContextLayerSection() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid items-stretch gap-8 lg:grid-cols-2">
-          <Reveal delay={0.06} className="flex h-full flex-col">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#4B83C4]">
+        <div className="mt-14 grid min-w-0 items-stretch gap-8 lg:grid-cols-2">
+          <Reveal delay={0.06} className="flex h-full min-w-0 flex-col">
+            <p
+              className="mb-4 text-xs font-semibold uppercase tracking-[0.14em]"
+              style={{ color: mkt.espresso }}
+            >
               Chrome extension
             </p>
-            <ExtensionDockSceneMock className="h-full" />
+            <div className="sm:hidden">
+              <ExtensionStaticHighlightSceneMock className="mx-auto w-full" />
+            </div>
+            <div className="hidden h-full sm:block">
+              <ExtensionDockSceneHighlightAnimated className="h-full" />
+            </div>
           </Reveal>
 
-          <Reveal delay={0.1} className="flex h-full flex-col">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#4B83C4]">
+          <Reveal delay={0.1} className="flex h-full min-w-0 flex-col">
+            <p
+              className="mb-4 text-xs font-semibold uppercase tracking-[0.14em]"
+              style={{ color: mkt.espresso }}
+            >
               Workspace chat
             </p>
             <WorkspaceChatMock
               variant="panel"
-              sessionTitle="Bridge research"
+              sessionTitle="Reading session"
               elevated={false}
               className="h-full w-full"
             />
@@ -42,17 +55,27 @@ export default function ContextLayerSection() {
         </div>
 
         <Reveal delay={0.14} className="mt-10">
-          <div className="w-full overflow-hidden rounded-2xl border border-[#E8DFD4] bg-[#F5EDE3] p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <ExtensionAskPanelMock
-                compact
-                elevated={false}
-                className="w-full max-w-[342px] shrink-0"
-              />
-              <AskThoughtTrace className="w-full max-w-sm sm:flex-1 sm:px-6" />
-              <p className="text-center text-sm text-muted-foreground sm:max-w-[12rem] sm:shrink-0 sm:text-left">
-                Same Ask panel on the page
-              </p>
+          <div className="overflow-hidden rounded-2xl border border-[#E8DFD4]">
+            <div className="flex flex-col lg:flex-row lg:items-stretch">
+              <div
+                className="flex flex-1 flex-col items-center gap-5 p-4 sm:p-6 md:p-8 lg:flex-row lg:items-center lg:justify-between"
+                style={{ backgroundColor: mkt.tan }}
+              >
+                <ExtensionAskPanelMock
+                  compact
+                  elevated={false}
+                  className="w-full max-w-[342px] shrink-0"
+                />
+                <AskThoughtTrace className="w-full max-w-sm lg:flex-1 lg:px-6" />
+              </div>
+              <div
+                className="flex items-center justify-center px-6 py-4 lg:w-[12rem] lg:shrink-0 lg:justify-start lg:py-8"
+                style={{ backgroundColor: mkt.espressoDark }}
+              >
+                <p className="text-center text-sm font-medium leading-snug text-[#F5EDE3]/90 lg:text-left">
+                  Page-grounded answers
+                </p>
+              </div>
             </div>
           </div>
         </Reveal>

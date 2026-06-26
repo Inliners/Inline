@@ -1,9 +1,9 @@
 import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
 import { Database, SearchCheck, Quote, FileStack } from 'lucide-react'
 import { Reveal, SectionHeading } from '@/components/marketing/primitives/Reveal'
-import { formatDisplayTitle } from '@/lib/utils'
-import { DEMO_DOMAIN } from '@/components/marketing/productMocks/sampleData'
+import { DEMO_DOMAIN, DEMO_PAGE_TITLE, DEMO_PAGE_TITLE_RECAP } from '@/components/marketing/productMocks/sampleData'
 import { mktPanelMock } from '@/components/marketing/marketingSurfaces'
+import { formatDisplayTitle } from '@/lib/utils'
 
 /**
  * #rag — explains the real retrieval pipeline that ships in the product:
@@ -46,21 +46,20 @@ function ChatMock() {
       </div>
       <div className="space-y-3 px-4 py-4">
         <p className="ml-auto w-fit max-w-[80%] rounded-full bg-[#1C1E26] px-3 py-1.5 text-[11px] text-white">
-          What did I save about bridge load distribution?
+          What did I save about the main argument?
         </p>
         <div className="max-w-[88%]">
           <p className="text-[11px] leading-relaxed text-[#78716c]">
-            You highlighted that suspension decks hang from main cables anchored at both ends [1], and
-            your recap of the example article notes cable-stayed towers take the load directly
-            [2].
+            You highlighted the core claim in the opening section [1], and your recap notes the
+            supporting example you marked later on [2].
           </p>
           <p className="mb-1 mt-2 text-[8px] font-semibold uppercase tracking-wider text-[#78716c]">
             Sources
           </p>
           <div className="flex gap-2">
             {[
-              { ref: 1, type: 'Capture', title: 'Bridge overview', domain: DEMO_DOMAIN },
-              { ref: 2, type: 'Recap', title: 'Cable-stayed design', domain: DEMO_DOMAIN },
+              { ref: 1, type: 'Capture', title: DEMO_PAGE_TITLE, domain: DEMO_DOMAIN },
+              { ref: 2, type: 'Recap', title: DEMO_PAGE_TITLE_RECAP, domain: DEMO_DOMAIN },
             ].map(s => (
               <div
                 key={s.ref}

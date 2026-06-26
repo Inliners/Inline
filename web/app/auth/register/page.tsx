@@ -54,7 +54,7 @@ export default function RegisterPage() {
             <span className="block h-4 w-1 rounded-full bg-white -rotate-12" />
           </div>
           <span className="font-semibold text-xl tracking-tight text-[#1C1E26]">
-            inline<span className="text-stone-400 ml-0.5 text-sm align-top">~</span>
+            inline
           </span>
         </Link>
 

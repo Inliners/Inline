@@ -46,7 +46,7 @@ type ExtensionSelectionToolbarMockProps = {
 export default function ExtensionSelectionToolbarMock({ className }: ExtensionSelectionToolbarMockProps) {
   return (
     <div
-      className={cn('inline-flex w-fit max-w-full items-center gap-px', className)}
+      className={cn('inline-flex w-max origin-top scale-[0.66] items-center gap-px min-[420px]:scale-[0.78] sm:scale-100', className)}
       style={{
         background: TB.bg,
         border: `1px solid ${TB.border}`,

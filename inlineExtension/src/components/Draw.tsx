@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { PANEL as C } from '../lib/extensionTheme'
-import { PanelShell, SectionLabel, Segmented } from './panelKit'
+import { PANEL as C, FONT } from '../lib/extensionTheme'
+import { PanelShell, SectionLabel, Segmented, PanelSection, panelBodyStyle } from './panelKit'
 import { ensureDrawCanvas, restoreDrawings, clearAllDrawings, setDrawHitTesting } from '../content/drawingsRestore'
 import { emitSaveToast } from '../lib/saveToast'
 
@@ -709,7 +709,7 @@ export default function Draw({ onClose }: DrawProps) {
 
   return (
     <PanelShell title="Draw" subtitle="Annotate directly on the page" chip={activeLabel} width={290} tool="draw" onClose={onClose}>
-      <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ ...panelBodyStyle, fontFamily: FONT }}>
         {/* Tools */}
         <div>
           <SectionLabel>Tools</SectionLabel>
@@ -723,7 +723,7 @@ export default function Draw({ onClose }: DrawProps) {
                   aria-pressed={on}
                   style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    height: 46, borderRadius: 14,
+                    height: 46, borderRadius: C.radius,
                     border: `1px solid ${on ? C.accent : C.border}`,
                     background: on ? C.accent : C.surfaceBubble,
                     color: on ? '#fff' : C.textMuted,
@@ -750,9 +750,8 @@ export default function Draw({ onClose }: DrawProps) {
         {/* Stroke */}
         <div>
           <SectionLabel>Stroke weight</SectionLabel>
-          <div style={{
+          <PanelSection style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-            border: `1px solid ${C.border}`, borderRadius: 16, background: C.surfaceBubble, boxShadow: C.shadowSoft,
           }}>
             <button type="button" onClick={() => setThickness(v => Math.max(1, v - 1))} aria-label="Thinner" style={sliderBtn}>−</button>
             <input
@@ -767,7 +766,7 @@ export default function Draw({ onClose }: DrawProps) {
               minWidth: 26, height: 26, borderRadius: 8, background: C.surfaceSunken,
               fontSize: 12, fontWeight: 700, color: C.text,
             }}>{thickness}</span>
-          </div>
+          </PanelSection>
         </div>
 
         {/* Colour */}
@@ -783,7 +782,7 @@ export default function Draw({ onClose }: DrawProps) {
                   aria-label={`Colour ${c}`}
                   aria-pressed={on}
                   style={{
-                    height: 34, borderRadius: 12, background: c, cursor: 'pointer', padding: 0,
+                    height: 34, borderRadius: C.radius, background: c, cursor: 'pointer', padding: 0,
                     border: on ? `2.5px solid ${C.accent}` : '1px solid rgba(17,19,33,0.08)',
                     boxShadow: 'none',
                     transform: 'none',
@@ -803,17 +802,14 @@ export default function Draw({ onClose }: DrawProps) {
             aria-label="Clear all drawings on this page"
             style={{
               padding: '11px 0', fontSize: 12.5, fontWeight: 700,
-              borderRadius: 14, cursor: 'pointer', width: '100%',
+              borderRadius: C.radius, cursor: 'pointer', width: '100%',
               border: `1px solid rgba(220,38,38,0.28)`,
               background: '#FEF2F2', color: '#DC2626',
               transition: 'background 0.15s', letterSpacing: '-0.01em', fontFamily: 'inherit',
             }}
           >Clear all drawings</button>
         ) : (
-          <div role="alertdialog" aria-label="Clear all drawings?" style={{
-            background: C.surfaceBubble, border: `1px solid rgba(220,38,38,0.22)`,
-            borderRadius: 16, padding: 14, boxShadow: C.shadowCard,
-          }}>
+          <PanelSection style={{ padding: 14 }}>
             <p style={{ margin: '0 0 3px', fontSize: 13, fontWeight: 700, color: C.text }}>Clear all drawings?</p>
             <p style={{ margin: '0 0 12px', fontSize: 11.5, lineHeight: 1.5, color: C.textMuted }}>
               This removes every drawing on this page and can&apos;t be undone.
@@ -828,7 +824,7 @@ export default function Draw({ onClose }: DrawProps) {
                 border: 'none', background: '#DC2626', color: '#fff',
               }}>Clear all</button>
             </div>
-          </div>
+          </PanelSection>
         )}
       </div>
     </PanelShell>
@@ -837,7 +833,7 @@ export default function Draw({ onClose }: DrawProps) {
 
 const sliderBtn: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-  width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+  width: 30, height: 30, borderRadius: C.radius, flexShrink: 0,
   border: `1px solid ${C.border}`, background: C.surfaceBubble,
   cursor: 'pointer', fontSize: 16, fontWeight: 600, color: C.textMuted,
   boxShadow: C.shadowSoft,

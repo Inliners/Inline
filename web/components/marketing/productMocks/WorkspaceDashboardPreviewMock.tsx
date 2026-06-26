@@ -17,10 +17,10 @@ import {
 } from 'lucide-react'
 import DashboardCapturesMock from '@/components/marketing/productMocks/DashboardCapturesMock'
 import LibraryDocumentsMock from '@/components/marketing/productMocks/LibraryDocumentsMock'
+import MarketingSidebarFolderList from '@/components/marketing/productMocks/MarketingSidebarFolderList'
 import WorkspaceChatMock from '@/components/marketing/productMocks/WorkspaceChatMock'
-import { product } from '@/components/marketing/marketingSurfaces'
 import { cn } from '@/lib/utils'
-import { DEMO_DOMAIN } from '@/components/marketing/productMocks/sampleData'
+import { DEMO_DOMAIN, DEMO_PAGE_TITLE } from '@/components/marketing/productMocks/sampleData'
 
 type WorkspaceDashboardPreviewMockProps = {
   className?: string
@@ -44,19 +44,19 @@ const ACTIVITY_FEED = [
   {
     icon: Sparkles,
     label: 'Recap update approved',
-    sub: `${DEMO_DOMAIN} · Cable-stayed bridge design`,
+    sub: `${DEMO_DOMAIN} · ${DEMO_PAGE_TITLE}`,
     time: '2h ago',
   },
   {
     icon: FileText,
     label: 'Highlight saved',
-    sub: `Bridge load distribution · ${DEMO_DOMAIN}`,
+    sub: `Follow-up reading · ${DEMO_DOMAIN}`,
     time: '5h ago',
   },
   {
     icon: BrainCircuit,
     label: 'Answer cited your captures',
-    sub: 'Ask Inline · bridge research chat',
+    sub: 'Ask Inline · reading session',
     time: '1d ago',
   },
 ] as const
@@ -68,10 +68,9 @@ export default function WorkspaceDashboardPreviewMock({ className }: WorkspaceDa
         'flex w-full min-h-[480px] overflow-hidden rounded-2xl border border-[#E8DFD4] bg-white sm:h-[600px] md:h-[640px]',
         className,
       )}
-      style={{ boxShadow: product.panelShadow }}
       aria-label="Workspace dashboard preview"
     >
-      <aside className="hidden w-[200px] shrink-0 flex-col border-r border-border bg-[#FDFBF7] md:flex">
+      <aside className="hidden w-[200px] shrink-0 flex-col border-r border-border bg-[#FDFBF7] lg:flex">
         <div className="border-b border-border p-3">
           <div className="flex items-center justify-between gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-foreground">
             <span className="truncate">Marketing Team</span>
@@ -99,14 +98,9 @@ export default function WorkspaceDashboardPreviewMock({ className }: WorkspaceDa
             </div>
           ))}
 
-          <p className="mb-1 mt-4 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Folders
-          </p>
-          {['Research', 'Auto Recaps'].map(folder => (
-            <div key={folder} className="rounded-md px-2.5 py-2 text-xs text-muted-foreground">
-              {folder}
-            </div>
-          ))}
+          <MarketingSidebarFolderList
+            folders={[{ label: 'Research' }, { label: 'Auto Recaps' }]}
+          />
         </nav>
 
         <div className="space-y-2 border-t border-border p-3">

@@ -103,17 +103,17 @@ export async function PUT(request: Request) {
 }
 
 function summarize(result: { indexed: number; skipped: number; errors: string[] }) {
+  if (result.errors.length) {
+    console.warn('[ai/index] partial failure:', result.errors.slice(0, 8).join(' | '))
+  }
   return {
     indexed: result.indexed,
     skipped: result.skipped,
-    // Error strings are internal (table names, provider failures) — return a
-    // count and log details server-side instead of leaking them.
     errorCount: result.errors.length,
-    ...(result.errors.length ? logErrors(result.errors) : {}),
+    ...(result.errors.length ? { errorSample: result.errors[0] } : {}),
   }
 }
 
-function logErrors(errors: string[]) {
-  console.warn('[ai/index] partial failure:', errors.slice(0, 5).join(' | '))
+function logErrors(_errors: string[]) {
   return {}
 }

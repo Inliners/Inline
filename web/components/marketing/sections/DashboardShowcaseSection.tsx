@@ -1,5 +1,6 @@
 import { Reveal } from '@/components/marketing/primitives/Reveal'
-import WorkspaceDashboardHeroMock from '@/components/marketing/productMocks/WorkspaceDashboardHeroMock'
+import { ProductVisualRing } from '@/components/marketing/primitives/ProductVisualRing'
+import WorkspaceDashboardHeroAnimated from '@/components/marketing/productMocks/WorkspaceDashboardHeroAnimated'
 
 export default function DashboardShowcaseSection() {
   return (
@@ -16,12 +17,14 @@ export default function DashboardShowcaseSection() {
         </Reveal>
 
         <Reveal delay={0.08} className="mt-12 md:mt-14">
-          <div
-            className="overflow-hidden rounded-2xl border border-[#E8DFD4] bg-white"
-            aria-label="Inline workspace dashboard preview"
-          >
-            <WorkspaceDashboardHeroMock compact />
-          </div>
+          <ProductVisualRing innerRadius="2xl" tone="navy">
+            <div
+              className="overflow-hidden rounded-2xl border border-border bg-white"
+              aria-label="Inline workspace dashboard preview"
+            >
+              <WorkspaceDashboardHeroAnimated />
+            </div>
+          </ProductVisualRing>
         </Reveal>
       </div>
     </section>

@@ -144,3 +144,13 @@ export const DARK_PANEL = {
 } as const
 
 export type PanelTheme = typeof PANEL
+
+/** Stacking order — floating overlays must sit above the dock rail (2147483647). */
+export const Z = {
+  dockPanel: 2147483646,
+  dockRail: 2147483647,
+  floatingOverlay: 2147483648,
+} as const
+
+/** Right inset so top-floating cards clear the launcher + dock rail. */
+export const DOCK_CLEARANCE = 80 as const

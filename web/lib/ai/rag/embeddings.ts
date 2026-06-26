@@ -3,11 +3,12 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { getAIApiKey } from '@/lib/ai-key'
 
 /**
- * Server-only embedding helpers. Gemini text-embedding-004, 768 dimensions —
+ * Server-only embedding helpers. gemini-embedding-001 at 768 dimensions —
  * must match vector(768) in supabase/migrations/2026_06_12_pgvector_rag.sql.
+ * (text-embedding-004 is no longer served on the Gemini API.)
  */
 
-export const EMBEDDING_MODEL = 'text-embedding-004'
+export const EMBEDDING_MODEL = 'gemini-embedding-001'
 export const EMBEDDING_DIMENSIONS = 768
 
 async function embeddingModel() {
@@ -21,7 +22,16 @@ async function embeddingModel() {
 export async function embedText(text: string): Promise<number[] | null> {
   const model = await embeddingModel()
   if (!model) return null
-  const { embedding } = await embed({ model, value: text.slice(0, 8000) })
+  const { embedding } = await embed({
+    model,
+    value: text.slice(0, 8000),
+    providerOptions: {
+      google: {
+        outputDimensionality: EMBEDDING_DIMENSIONS,
+        taskType: 'RETRIEVAL_QUERY',
+      },
+    },
+  })
   return embedding
 }
 
@@ -33,6 +43,12 @@ export async function embedTexts(texts: string[]): Promise<number[][] | null> {
   const { embeddings } = await embedMany({
     model,
     values: texts.map(t => t.slice(0, 8000)),
+    providerOptions: {
+      google: {
+        outputDimensionality: EMBEDDING_DIMENSIONS,
+        taskType: 'RETRIEVAL_DOCUMENT',
+      },
+    },
   })
   return embeddings
 }

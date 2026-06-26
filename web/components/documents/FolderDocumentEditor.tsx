@@ -63,6 +63,23 @@ const MENU_MOTION = {
   transition: { duration: 0.1, ease: 'easeOut' as const },
 }
 
+const MENU_PANEL = 'rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-popover dark:text-popover-foreground'
+const MENU_ROW = 'text-foreground hover:bg-slate-50 dark:hover:bg-muted transition-colors cursor-pointer'
+const MENU_SEP = 'bg-slate-100 dark:bg-border'
+const MENU_HANDLE_BTN = 'w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted transition-colors cursor-pointer'
+const MENU_ICON_TILE = 'rounded-lg border border-slate-200 flex items-center justify-center shrink-0 bg-white dark:border-border dark:bg-secondary dark:group-hover:border-border'
+const MENU_STYLE_TILE = 'flex items-center justify-center w-12 h-11 rounded-lg border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground dark:border-border dark:hover:bg-muted transition-colors cursor-pointer'
+const MENU_STYLE_TILE_ACTIVE = 'bg-slate-100 border-slate-300 text-foreground dark:bg-muted dark:border-border'
+const BUBBLE_BAR = 'flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1.5 py-1 text-sm shadow-sm dark:border-border dark:bg-popover dark:text-popover-foreground'
+const BUBBLE_DIVIDER = 'w-px h-4 bg-slate-200 dark:bg-border mx-0.5'
+const BUBBLE_BTN = (active: boolean) => cn(
+  'w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-colors cursor-pointer',
+  active
+    ? 'bg-slate-100 text-foreground dark:bg-muted'
+    : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground',
+)
+const BUBBLE_ICON_BTN = 'w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer'
+
 function decodeHtmlEntities(value: string): string {
   if (typeof window === 'undefined') return value
   const textarea = document.createElement('textarea')
@@ -400,7 +417,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
           if (ed.isActive('table')) return false
           return state.selection.from !== state.selection.to
         }}
-        className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1.5 py-1 text-sm"
+        className={BUBBLE_BAR}
       >
         {[
           { label: 'B', active: editor.isActive('bold'),      action: () => editor.chain().focus().toggleBold().run(),      cls: 'font-bold'   },
@@ -408,29 +425,26 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
           { label: 'U', active: editor.isActive('underline'), action: () => editor.chain().focus().toggleUnderline().run(), cls: 'underline' },
         ].map(b => (
           <button key={b.label} type="button" onMouseDown={e => { e.preventDefault(); b.action() }}
-            className={cn('w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-colors cursor-pointer', b.cls,
-              b.active ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground')}>
+            className={cn(BUBBLE_BTN(b.active), b.cls)}>
             {b.label}
           </button>
         ))}
-        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <div className={BUBBLE_DIVIDER} />
         {([1, 2, 3] as const).map(l => {
           const Icons = [Heading1, Heading2, Heading3]
           const Icon  = Icons[l - 1]
           return (
             <button key={l} type="button"
               onMouseDown={e => { e.preventDefault(); editor.chain().focus().setHeading({ level: l }).run() }}
-              className={cn('w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
-                editor.isActive('heading', { level: l }) ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground')}>
+              className={BUBBLE_BTN(editor.isActive('heading', { level: l }))}>
               <Icon className="w-3.5 h-3.5" />
             </button>
           )
         })}
-        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <div className={BUBBLE_DIVIDER} />
         <button type="button"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBulletList().run() }}
-          className={cn('w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
-            editor.isActive('bulletList') ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground')}>
+          className={BUBBLE_BTN(editor.isActive('bulletList'))}>
           <List className="w-3.5 h-3.5" />
         </button>
       </BubbleMenu>
@@ -440,43 +454,43 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
         editor={editor}
         pluginKey="tableStructureBubble"
         shouldShow={({ editor: ed }) => ed.isActive('table')}
-        className="flex flex-wrap items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1.5 py-1 text-sm max-w-[min(100vw-2rem,28rem)]"
+        className={cn(BUBBLE_BAR, 'flex-wrap max-w-[min(100vw-2rem,28rem)]')}
       >
         <button type="button" title="Row above"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().addRowBefore().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          className={BUBBLE_ICON_BTN}>
           <BetweenVerticalStart className="w-4 h-4" />
         </button>
         <button type="button" title="Row below"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().addRowAfter().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          className={BUBBLE_ICON_BTN}>
           <BetweenVerticalEnd className="w-4 h-4" />
         </button>
         <button type="button" title="Delete row"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteRow().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-red-600 cursor-pointer">
+          className={cn(BUBBLE_ICON_BTN, 'hover:text-red-600 dark:hover:text-red-400')}>
           <Trash2 className="w-4 h-4" />
         </button>
-        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <div className={BUBBLE_DIVIDER} />
         <button type="button" title="Column left"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().addColumnBefore().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          className={BUBBLE_ICON_BTN}>
           <BetweenHorizontalStart className="w-4 h-4" />
         </button>
         <button type="button" title="Column right"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().addColumnAfter().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-foreground cursor-pointer">
+          className={BUBBLE_ICON_BTN}>
           <BetweenHorizontalEnd className="w-4 h-4" />
         </button>
         <button type="button" title="Delete column"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteColumn().run() }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50 hover:text-red-600 cursor-pointer">
+          className={cn(BUBBLE_ICON_BTN, 'hover:text-red-600 dark:hover:text-red-400')}>
           <Trash2 className="w-4 h-4" />
         </button>
-        <div className="w-px h-4 bg-slate-200 mx-0.5" />
+        <div className={BUBBLE_DIVIDER} />
         <button type="button" title="Delete table"
           onMouseDown={e => { e.preventDefault(); editor.chain().focus().deleteTable().run() }}
-          className="px-2 h-8 flex items-center justify-center rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
+          className="px-2 h-8 flex items-center justify-center rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer">
           Remove table
         </button>
       </BubbleMenu>
@@ -499,7 +513,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
               type="button"
               onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setBlockMenu({ open: false, sub: null }); setInsertOpen(v => !v) }}
               title="Insert block"
-              className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={MENU_HANDLE_BTN}
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -509,7 +523,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
               type="button"
               onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setInsertOpen(false); setBlockMenu(m => ({ open: !m.open, sub: null })) }}
               title="Block options"
-              className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={MENU_HANDLE_BTN}
             >
               <GripVertical className="w-3.5 h-3.5" />
             </button>
@@ -527,12 +541,12 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
             key="insert-panel"
             {...MENU_MOTION}
             style={{ position: 'fixed', top: insertPos.top, left: insertPos.left, zIndex: 50 }}
-            className="w-64 rounded-xl border border-slate-200 bg-white py-2 overflow-hidden max-h-[420px] overflow-y-auto scrollbar-minimal"
+            className={cn(MENU_PANEL, 'w-64 py-2 overflow-hidden max-h-[420px] overflow-y-auto scrollbar-minimal')}
           >
             {insertSections.map((section, si) => (
               <div key={section}>
-                {si > 0 && <div className="h-px bg-slate-100 my-1.5 mx-3" />}
-                <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 pt-1.5 pb-1">
+                {si > 0 && <div className={cn('h-px my-1.5 mx-3', MENU_SEP)} />}
+                <p className={cn('text-[10px] font-semibold uppercase tracking-wider px-3 pt-1.5 pb-1 text-muted-foreground/60')}>
                   {section}
                 </p>
                 {insertItems.filter(i => i.section === section).map(item => (
@@ -540,10 +554,10 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                     key={item.label}
                     type="button"
                     onMouseDown={e => { e.preventDefault(); insertBlockOfType(item.action) }}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer text-left group"
+                    className={cn('w-full flex items-center gap-3 px-3 py-2 text-sm text-left group', MENU_ROW)}
                   >
-                    <div className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center shrink-0 bg-white group-hover:border-slate-300 transition-colors">
-                      <item.Icon className="w-4 h-4 text-slate-500" />
+                    <div className={cn('w-8 h-8', MENU_ICON_TILE)}>
+                      <item.Icon className="w-4 h-4 text-slate-500 dark:text-muted-foreground" />
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-[13px] leading-tight">{item.label}</p>
@@ -567,13 +581,13 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
             key="block-menu"
             {...MENU_MOTION}
             style={{ position: 'fixed', top: blockMenuPos.top, left: blockMenuPos.left, zIndex: 50 }}
-            className="w-52 rounded-xl border border-slate-200 bg-white py-1.5"
+            className={cn(MENU_PANEL, 'w-52 py-1.5')}
           >
             {/* Paragraph style → */}
             <div className="relative">
               <button type="button"
                 onMouseEnter={() => setBlockMenu(m => ({ ...m, sub: 'style' }))}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer"
+                className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm', MENU_ROW)}
               >
                 <AlignLeft className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="flex-1 text-left">Paragraph style</span>
@@ -587,7 +601,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                     {...MENU_MOTION}
                     onMouseEnter={() => setBlockMenu(m => ({ ...m, sub: 'style' }))}
                     onMouseLeave={() => setBlockMenu(m => ({ ...m, sub: null }))}
-                    className="absolute left-full top-0 ml-1 w-60 rounded-xl border border-slate-200 bg-white py-3 px-3"
+                    className={cn(MENU_PANEL, 'absolute left-full top-0 ml-1 w-60 py-3 px-3')}
                     style={{ zIndex: 51 }}
                   >
                     {/* Text */}
@@ -603,7 +617,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                           }}
                           title={opt.title}
                           className={cn('flex flex-col items-center justify-center w-12 h-11 rounded-lg border text-xs font-bold transition-colors cursor-pointer gap-0.5',
-                            opt.active(editor) ? 'bg-slate-100 border-slate-300 text-foreground' : 'border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground'
+                            opt.active(editor) ? MENU_STYLE_TILE_ACTIVE : MENU_STYLE_TILE
                           )}
                         >
                           <opt.Icon className="w-4 h-4" />
@@ -611,7 +625,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                         </button>
                       ))}
                     </div>
-                    <div className="h-px bg-slate-100 mb-2" />
+                    <div className={cn('h-px mb-2', MENU_SEP)} />
                     {/* Lists */}
                     <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2">Lists</p>
                     <div className="flex items-center gap-1.5 mb-3">
@@ -624,13 +638,13 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                             setBlockMenu({ open: false, sub: null })
                           }}
                           title={opt.title}
-                          className="flex items-center justify-center w-12 h-11 rounded-lg border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground transition-colors cursor-pointer"
+                          className={MENU_STYLE_TILE}
                         >
                           <opt.Icon className="w-4 h-4" />
                         </button>
                       ))}
                     </div>
-                    <div className="h-px bg-slate-100 mb-2" />
+                    <div className={cn('h-px mb-2', MENU_SEP)} />
                     {/* Quote */}
                     <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2">Quote</p>
                     <div className="flex items-center gap-1.5">
@@ -643,7 +657,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                             setBlockMenu({ open: false, sub: null })
                           }}
                           title={opt.title}
-                          className="flex items-center justify-center w-12 h-11 rounded-lg border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground transition-colors cursor-pointer"
+                          className={MENU_STYLE_TILE}
                         >
                           <opt.Icon className="w-4 h-4" />
                         </button>
@@ -658,7 +672,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
             <div className="relative">
               <button type="button"
                 onMouseEnter={() => setBlockMenu(m => ({ ...m, sub: 'insert' }))}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer"
+                className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm', MENU_ROW)}
               >
                 <Plus className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="flex-1 text-left">Insert line</span>
@@ -672,13 +686,13 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                     {...MENU_MOTION}
                     onMouseEnter={() => setBlockMenu(m => ({ ...m, sub: 'insert' }))}
                     onMouseLeave={() => setBlockMenu(m => ({ ...m, sub: null }))}
-                    className="absolute left-full top-0 ml-1 w-44 rounded-xl border border-slate-200 bg-white py-1.5"
+                    className={cn(MENU_PANEL, 'absolute left-full top-0 ml-1 w-44 py-1.5')}
                     style={{ zIndex: 51 }}
                   >
                     {['Insert above', 'Insert below'].map(label => (
                       <button key={label} type="button"
                         onMouseDown={e => { e.preventDefault(); insertBlockOfType(); setBlockMenu({ open: false, sub: null }) }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                        className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left', MENU_ROW)}
                       >
                         {label}
                       </button>
@@ -688,12 +702,12 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
               </AnimatePresence>
             </div>
 
-            <div className="h-px bg-slate-100 my-1" />
+            <div className={cn('h-px my-1', MENU_SEP)} />
 
             {/* Return to block */}
             <button type="button"
               onMouseDown={e => { e.preventDefault(); editor.chain().focus().run(); setBlockMenu({ open: false, sub: null }) }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer"
+              className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm', MENU_ROW)}
             >
               <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               Return to block
@@ -702,7 +716,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
             {/* Copy link */}
             <button type="button"
               onMouseDown={e => { e.preventDefault(); void navigator.clipboard.writeText(window.location.href); setBlockMenu({ open: false, sub: null }) }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer"
+              className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm', MENU_ROW)}
             >
               <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               Copy link
@@ -721,9 +735,9 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
             key="slash-menu"
             {...MENU_MOTION}
             style={{ position: 'fixed', top: slash.top, left: slash.left, zIndex: 50 }}
-            className="w-60 rounded-xl border border-slate-200 bg-white py-1.5 max-h-80 overflow-y-auto scrollbar-minimal"
+            className={cn(MENU_PANEL, 'w-60 py-1.5 max-h-80 overflow-y-auto scrollbar-minimal')}
           >
-            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100 mb-1">
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 dark:border-border mb-1">
               <Search className="w-3 h-3 text-muted-foreground/50" />
               <span className="text-xs text-muted-foreground/50">/{slash.query || 'Search…'}</span>
             </div>
@@ -733,10 +747,10 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
                 {filteredSlash.filter(c => c.section === group).map(cmd => (
                   <button key={cmd.label} type="button"
                     onMouseDown={e => { e.preventDefault(); execSlash(cmd) }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors cursor-pointer"
+                    className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm', MENU_ROW)}
                   >
-                    <div className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center shrink-0 bg-white">
-                      <cmd.Icon className="w-3.5 h-3.5 text-slate-500" />
+                    <div className={cn('w-7 h-7', MENU_ICON_TILE)}>
+                      <cmd.Icon className="w-3.5 h-3.5 text-slate-500 dark:text-muted-foreground" />
                     </div>
                     {cmd.label}
                   </button>

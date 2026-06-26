@@ -20,7 +20,7 @@ const CHART_STROKE = '#57534e'
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm dark:border-sidebar-border dark:bg-secondary">
       <p className="mb-1 text-muted-foreground">{label}</p>
       <p className="font-semibold text-foreground">{payload[0].value} notes</p>
     </div>
@@ -31,7 +31,7 @@ export default function CaptureChart({ data }: CaptureChartProps) {
   const formatted = data.map(d => ({ ...d, label: formatDate(d.date) }))
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5 dark:border-sidebar-border dark:bg-secondary">
       <div className="mb-5">
         <p className="text-sm font-semibold text-foreground">Capture Volume</p>
         <p className="mt-0.5 text-xs text-muted-foreground">Notes captured per day</p>

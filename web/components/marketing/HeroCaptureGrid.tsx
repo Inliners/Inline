@@ -6,7 +6,6 @@ import {
 } from '@/components/marketing/extensionToolIcons'
 import InlineBrandGlyph from '@/components/marketing/InlineBrandGlyph'
 import {
-  mktHeroAmbient,
   mktHeroTileBackdrop,
   mktHeroTileBorder,
   mktHeroTileGlass,
@@ -93,19 +92,20 @@ export default function HeroCaptureGrid() {
   return (
     <div
       className="relative mx-auto mb-6 flex w-full max-w-[52rem] shrink-0 items-center justify-center px-2"
-      style={{ height: 'clamp(280px, 36vh, 360px)' }}
+      style={{ height: 'clamp(300px, 88vw, 380px)' }}
       aria-hidden
     >
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[360px] w-[600px] max-w-[95%] -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[640px] max-w-[95%] -translate-x-1/2 -translate-y-1/2"
         style={{
-          background: mktHeroAmbient,
-          filter: 'blur(28px)',
+          background:
+            'radial-gradient(ellipse 55% 50% at 72% 28%, rgba(252, 163, 17, 0.2) 0%, transparent 70%), radial-gradient(ellipse 50% 45% at 22% 68%, rgba(18, 69, 89, 0.18) 0%, transparent 72%)',
+          filter: 'blur(32px)',
         }}
       />
 
       <div
-        className="relative mx-auto h-[332px] w-[820px] max-w-full origin-center scale-[0.58] sm:scale-[0.88] md:scale-100"
+        className="relative mx-auto h-[332px] w-[820px] max-w-full origin-center scale-[0.72] min-[420px]:scale-[0.78] sm:scale-[0.82] md:scale-[0.84] lg:scale-100"
         style={{
           maskImage:
             'radial-gradient(50% 60% at 50% 55%, black 25%, transparent 90%)',
@@ -114,11 +114,11 @@ export default function HeroCaptureGrid() {
         }}
       >
         <div
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 opacity-60"
           aria-hidden
           style={{
             background:
-              'radial-gradient(circle at 38% 42%, rgba(232, 160, 130, 0.34) 0%, transparent 52%), radial-gradient(circle at 62% 58%, rgba(210, 195, 255, 0.22) 0%, transparent 48%), radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 70%)',
+              'radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.28) 0%, transparent 62%)',
           }}
         />
 

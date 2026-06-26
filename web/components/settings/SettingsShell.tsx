@@ -4,17 +4,15 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
-import { Settings, Search, ChevronRight } from 'lucide-react'
-import { DEFAULT_WORKSPACES } from '@/lib/workspaces'
-import { workspacePath } from '@/lib/workspace-routes'
-
-const WORKSPACE_HOME = workspacePath(DEFAULT_WORKSPACES[0]!, 'dashboard')
+import { ArrowLeft, HelpCircle, Search } from 'lucide-react'
 
 export type SettingsNavItem = {
   id: string
   label: string
   icon: React.ElementType
   danger?: boolean
+  /** When set, renders a link instead of a tab button. */
+  href?: string
 }
 
 export type SettingsNavGroup = {
@@ -23,27 +21,60 @@ export type SettingsNavGroup = {
 }
 
 type SettingsShellProps = {
-  title: string
-  subtitle?: string
   groups: SettingsNavGroup[]
   activeId: string
   onSelect: (id: string) => void
   children: React.ReactNode
-  /** Optional: show support + sign-out in left rail */
   footer?: React.ReactNode
-  /** Accent for active item (workspace can use purple-ish) */
-  accentClass?: string
+  sectionDescriptions?: Record<string, string>
+  exitHref: string
+  helpHref?: string
+}
+
+function NavItem({
+  item,
+  active,
+  onSelect,
+}: {
+  item: SettingsNavItem
+  active: boolean
+  onSelect: (id: string) => void
+}) {
+  const Icon = item.icon
+  const className = cn(
+    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors',
+    active && !item.danger && 'bg-muted/80 font-medium text-foreground',
+    active && item.danger && 'bg-destructive/10 font-medium text-destructive',
+    !active && !item.danger && 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+    !active && item.danger && 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive',
+  )
+
+  if (item.href) {
+    return (
+      <Link href={item.href} className={className}>
+        <Icon className="h-4 w-4 shrink-0 opacity-80" />
+        <span className="truncate">{item.label}</span>
+      </Link>
+    )
+  }
+
+  return (
+    <button type="button" onClick={() => onSelect(item.id)} className={className}>
+      <Icon className="h-4 w-4 shrink-0 opacity-80" />
+      <span className="truncate">{item.label}</span>
+    </button>
+  )
 }
 
 export default function SettingsShell({
-  title,
-  subtitle,
   groups,
   activeId,
   onSelect,
   children,
   footer,
-  accentClass = 'bg-primary text-primary-foreground',
+  sectionDescriptions,
+  exitHref,
+  helpHref = '/install',
 }: SettingsShellProps) {
   const [q, setQ] = useState('')
 
@@ -58,90 +89,160 @@ export default function SettingsShell({
       .filter(g => g.items.length > 0)
   }, [groups, q])
 
+  const activeItem = useMemo(() => {
+    for (const group of groups) {
+      const item = group.items.find(i => i.id === activeId)
+      if (item) return item
+    }
+    return null
+  }, [groups, activeId])
+
+  const activeDescription = activeItem ? sectionDescriptions?.[activeItem.id] : undefined
+  const ActiveIcon = activeItem?.icon
+
   return (
-    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 dark:bg-[#0A1430]">
-      <div className="w-full max-w-none overflow-hidden rounded-2xl border border-border bg-card shadow-[0_18px_60px_-36px_rgba(28,30,38,0.35)] flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
-        {/* Top bar */}
-        <header className="shrink-0 flex h-12 items-center justify-between gap-4 border-b border-border bg-card px-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Settings className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-sm font-semibold tracking-tight text-foreground truncate">{title}</h1>
-              {subtitle && <p className="hidden text-xs text-muted-foreground truncate sm:block">{subtitle}</p>}
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 md:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href={exitHref}
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Settings
+          </Link>
+
+          {activeItem && ActiveIcon && (
+            <>
+              <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
+              <div className="hidden min-w-0 items-center gap-2 sm:flex">
+                <ActiveIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm font-medium text-foreground">{activeItem.label}</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        <Link
+          href={helpHref}
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Help
+          <HelpCircle className="h-4 w-4" />
+        </Link>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        <aside className="flex w-[248px] shrink-0 flex-col border-r border-border bg-muted/20">
+          <div className="p-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={q}
+                onChange={e => setQ(e.target.value)}
+                placeholder="Search settings"
+                className="h-9 border-border bg-background pl-8 text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-primary/30 dark:border-sidebar-border dark:bg-secondary/50"
+              />
             </div>
           </div>
-          <Link
-            href={WORKSPACE_HOME}
-            className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
-          >
-            Exit <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </header>
 
-        <div className="flex flex-1 min-h-0">
-          {/* Navigation rail — matches app sidebar tokens */}
-          <aside className="w-[240px] shrink-0 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
-            <div className="p-3 border-b border-sidebar-border">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={e => setQ(e.target.value)}
-                  placeholder="Search settings…"
-                  className="h-8 bg-white pl-8 text-xs text-foreground shadow-[0_1px_2px_rgba(28,30,38,0.08)] placeholder:text-muted-foreground focus-visible:ring-primary/40 dark:bg-[#10214A]"
-                />
+          <nav className="scrollbar-minimal flex-1 space-y-6 overflow-y-auto px-2 py-4">
+            {filtered.map(group => (
+              <div key={group.label}>
+                <p className="mb-1 px-2 text-[11px] font-medium text-muted-foreground">
+                  {group.label}
+                </p>
+                <ul className="space-y-0.5">
+                  {group.items.map(item => (
+                    <li key={item.id}>
+                      <NavItem
+                        item={item}
+                        active={!item.href && activeId === item.id}
+                        onSelect={onSelect}
+                      />
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ))}
+          </nav>
+
+          {footer && (
+            <div className="shrink-0 space-y-1 border-t border-border p-3">
+              {footer}
             </div>
+          )}
+        </aside>
 
-            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5 scrollbar-minimal">
-              {filtered.map(group => (
-                <div key={group.label}>
-                  <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {group.label}
+        <main className="scrollbar-minimal min-w-0 flex-1 overflow-y-auto bg-background">
+          <div className="mx-auto w-full max-w-3xl px-6 py-8 md:px-10 md:py-10">
+            {activeItem && (
+              <div className="mb-8 border-b border-border pb-6">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                  {activeItem.label}
+                </h1>
+                {activeDescription && (
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {activeDescription}
                   </p>
-                  <ul className="space-y-0.5">
-                    {group.items.map(item => {
-                      const Icon = item.icon
-                      const active = activeId === item.id
-                      return (
-                        <li key={item.id}>
-                          <button
-                            type="button"
-                            onClick={() => onSelect(item.id)}
-                            className={cn(
-                              'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-sm transition-all cursor-pointer',
-                              active && !item.danger && accentClass,
-                              active && item.danger && 'bg-destructive/15 text-destructive',
-                              !active && !item.danger && 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              !active && item.danger && 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive',
-                            )}
-                          >
-                            <Icon className="w-4 h-4 shrink-0 opacity-90" />
-                            <span className="truncate font-medium">{item.label}</span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </nav>
-
-            {footer && (
-              <div className="p-3 border-t border-sidebar-border space-y-1 shrink-0">
-                {footer}
+                )}
               </div>
             )}
-          </aside>
 
-          {/* Main content */}
-          <main className="flex-1 overflow-y-auto bg-white scrollbar-minimal dark:bg-[#0A1430]">
-            <div className="w-full px-6 py-10 lg:px-10">{children}</div>
-          </main>
-        </div>
+            {children}
+          </div>
+        </main>
       </div>
+    </div>
+  )
+}
+
+/** Flat section block — matches reference settings detail rows. */
+export function SettingsSection({
+  title,
+  description,
+  children,
+  action,
+  className,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+  action?: React.ReactNode
+  className?: string
+}) {
+  return (
+    <section className={cn('space-y-5 border-t border-border/80 pt-8 first:border-t-0 first:pt-0', className)}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          {description && (
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+          )}
+        </div>
+        {action}
+      </div>
+      <div className="space-y-5">{children}</div>
+    </section>
+  )
+}
+
+export function SettingsRow({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-[minmax(0,200px)_1fr] md:gap-8">
+      <div className="pt-0.5">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {hint && <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{hint}</p>}
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }

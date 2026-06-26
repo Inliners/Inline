@@ -222,7 +222,7 @@ export default function NotesTable({ notes, workspaceId, highlightNoteId: _ }: N
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-border dark:border-sidebar-border">
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-card">
             {table.getHeaderGroups().map(hg => (

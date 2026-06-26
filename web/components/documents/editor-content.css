@@ -191,11 +191,32 @@
 }
 
 /* Auto-recap — subtle timeline metadata, content-first */
+.auto-recap-document.workspace-recap-preview .ProseMirror section {
+  margin-bottom: 0;
+}
+
+.auto-recap-document.workspace-recap-preview .ProseMirror .recap-entry + .recap-entry {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
 .auto-recap-document .ProseMirror h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
   font-size: 1.125rem;
   margin-top: 1.75rem;
   margin-bottom: 0.5rem;
   color: #334155;
+}
+
+.auto-recap-document .ProseMirror h2 .recap-overview-range {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
 }
 
 .auto-recap-document .ProseMirror h2:first-of-type {
@@ -281,5 +302,96 @@
   outline-offset: 4px;
   border-radius: 0.25rem;
   transition: outline-color 0.3s ease;
+}
+
+/* ── Dark mode — document body typography ── */
+.dark .folder-document-editor .ProseMirror {
+  color: var(--foreground);
+}
+
+.dark .folder-document-editor .ProseMirror h1,
+.dark .folder-document-editor .ProseMirror h2,
+.dark .folder-document-editor .ProseMirror h3 {
+  color: var(--foreground);
+}
+
+.dark .folder-document-editor .ProseMirror blockquote {
+  border-left-color: var(--border);
+  color: var(--muted-foreground);
+}
+
+.dark .folder-document-editor .ProseMirror pre {
+  background: var(--secondary);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.dark .folder-document-editor .ProseMirror :not(pre) > code {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  color: var(--foreground);
+}
+
+.dark .folder-document-editor .ProseMirror a {
+  color: var(--primary);
+}
+
+.dark .folder-document-editor .ProseMirror th,
+.dark .folder-document-editor .ProseMirror td {
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.dark .folder-document-editor .ProseMirror th {
+  background: var(--muted);
+}
+
+.dark .folder-document-editor .ProseMirror hr {
+  border-top-color: var(--border);
+}
+
+.dark .folder-document-editor .ProseMirror ul[data-type="taskList"] li > label input {
+  accent-color: var(--primary);
+}
+
+.dark .auto-recap-document .ProseMirror h2 {
+  color: var(--foreground);
+}
+
+.dark .auto-recap-document .ProseMirror h2 .recap-overview-range {
+  color: var(--muted-foreground);
+}
+
+.dark .auto-recap-document .ProseMirror h3 {
+  color: var(--muted-foreground);
+}
+
+.dark .auto-recap-document .ProseMirror ul.recap-bullets li {
+  color: var(--foreground);
+}
+
+.dark .auto-recap-document .ProseMirror p > em:only-child {
+  color: var(--muted-foreground);
+}
+
+.dark .auto-recap-document .ProseMirror blockquote {
+  border-left-color: var(--border);
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+
+.dark .auto-recap-document .ProseMirror hr {
+  border-top-color: var(--border);
+}
+
+.dark .folder-document-editor .ProseMirror h1.doc-outline-flash,
+.dark .folder-document-editor .ProseMirror h2.doc-outline-flash,
+.dark .folder-document-editor .ProseMirror h3.doc-outline-flash,
+.dark .folder-document-editor .ProseMirror pre.doc-outline-flash,
+.dark .folder-document-editor .ProseMirror blockquote.doc-outline-flash,
+.dark .folder-document-editor .ProseMirror [data-recap-entry].doc-outline-flash {
+  outline-color: rgba(212, 115, 74, 0.45);
 }
 

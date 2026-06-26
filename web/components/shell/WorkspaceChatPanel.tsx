@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Volume2,
   VolumeX,
-  Clock,
   X,
   MoreHorizontal,
   Maximize2,
@@ -42,10 +41,53 @@ import {
   type WorkspaceChatSession,
 } from '@/lib/workspace-chat-sessions'
 import { SourceCardRow, type ChatSource } from '@/components/shell/SourceCard'
+import { extractCitationRefs } from '@/lib/ai/rag/citations'
+
+function citedSourcesForMessage(sources: ChatSource[] | undefined, content: string): ChatSource[] {
+  if (!sources?.length || !content.trim()) return []
+  const refs = extractCitationRefs(content)
+  if (refs.size === 0) return []
+  return sources.filter(s => refs.has(s.ref))
+}
 
 const EASE = [0.22, 1, 0.36, 1] as const
-const PANEL_DURATION = 0.38
+const PANEL_OPEN_DURATION = 0.38
+const PANEL_CLOSE_DURATION = 0.44
+const PANEL_CLOSE_EASE = [0.4, 0, 0.2, 1] as const
+const PILL_DURATION = 0.3
 const THINKING_MESSAGE = 'Putting together the best answer — one moment, Inline…'
+
+const panelMotion = {
+  initial: { opacity: 0, y: 20, scale: 0.97 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: PANEL_OPEN_DURATION, ease: EASE },
+  },
+  exit: {
+    opacity: 0,
+    y: 22,
+    scale: 0.96,
+    transition: { duration: PANEL_CLOSE_DURATION, ease: PANEL_CLOSE_EASE },
+  },
+}
+
+const pillMotion = {
+  initial: { opacity: 0, y: 10, scale: 0.96 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: PILL_DURATION, ease: EASE },
+  },
+  exit: {
+    opacity: 0,
+    y: 8,
+    scale: 0.97,
+    transition: { duration: 0.22, ease: EASE },
+  },
+}
 
 /** Collapse noisy citation clusters like [1, 2, 3, 4, 5] into [1–5]. */
 function formatCitations(text: string): string {
@@ -464,10 +506,9 @@ export default function WorkspaceChatPanel() {
     if (open) setTimeout(() => inputRef.current?.focus(), 100)
   }, [open])
 
-  // Backfill workspace embeddings in the background so RAG can use semantic search
-  // for captures that existed before indexing ran (or before the pgvector migration).
+  // Backfill workspace embeddings in the background so RAG can use semantic search.
   useEffect(() => {
-    if (!open || !wsId) return
+    if (!wsId) return
     let cancelled = false
 
     async function backfill() {
@@ -477,7 +518,7 @@ export default function WorkspaceChatPanel() {
           const res = await fetch('/api/ai/index', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ workspaceId: wsId, batchSize: 25 }),
+            body: JSON.stringify({ workspaceId: wsId, batchSize: 30 }),
           })
           if (!res.ok) break
           const data = (await res.json()) as { remaining?: number }
@@ -490,7 +531,7 @@ export default function WorkspaceChatPanel() {
 
     void backfill()
     return () => { cancelled = true }
-  }, [open, wsId])
+  }, [wsId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -639,18 +680,18 @@ export default function WorkspaceChatPanel() {
     <div
       data-chat-panel
       className="fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-0 pb-5"
-      style={{ width: open ? 'min(760px, calc(100vw - 48px))' : 'auto' }}
     >
-      <AnimatePresence initial={false}>
-        {open && (
+      <AnimatePresence mode="wait" initial={false}>
+        {open ? (
           <motion.div
             key="chat-panel"
-            initial={{ opacity: 0, y: 18, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.97 }}
-            transition={{ duration: PANEL_DURATION, ease: EASE }}
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_22px_70px_-42px_rgba(28,30,38,0.38)]"
-            style={{ height: 'min(720px, calc(100vh - 96px))', willChange: 'transform, opacity' }}
+            {...panelMotion}
+            className="flex w-[min(760px,calc(100vw-48px))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_22px_70px_-42px_rgba(28,30,38,0.38)]"
+            style={{
+              height: 'min(720px, calc(100vh - 96px))',
+              willChange: 'transform, opacity',
+              transformOrigin: 'bottom center',
+            }}
           >
             <div className="flex h-14 items-center justify-between bg-card px-5">
               <DropdownMenu>
@@ -853,15 +894,12 @@ export default function WorkspaceChatPanel() {
                         error={m.error}
                       />
                     )}
-                    {m.role === 'assistant' && m.mode === 'recency' && m.content && (
-                      <p className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground/80">
-                        <Clock className="h-2.5 w-2.5" />
-                        Workspace not indexed yet - answering from recent captures only.
-                      </p>
-                    )}
-                    {m.role === 'assistant' && !loading && m.sources && m.sources.length > 0 && (
-                      <SourceCardRow sources={m.sources} workspaceId={wsId} />
-                    )}
+                    {m.role === 'assistant' && !loading && (() => {
+                      const cited = citedSourcesForMessage(m.sources, m.content)
+                      return cited.length > 0 ? (
+                        <SourceCardRow sources={cited} workspaceId={wsId} />
+                      ) : null
+                    })()}
                     {m.role === 'assistant' && m.content && !loading && (
                       <button
                         type="button"
@@ -971,28 +1009,24 @@ export default function WorkspaceChatPanel() {
               </div>
             </div>
           </motion.div>
+        ) : (
+          <motion.button
+            type="button"
+            key="chat-pill"
+            {...pillMotion}
+            style={{ transformOrigin: 'bottom center' }}
+            onClick={() => setOpen(true)}
+            title={usesMetaShortcut ? 'Open Inline (Cmd+Shift+L)' : 'Open Inline (Ctrl+Shift+L)'}
+            className="flex h-11 w-[210px] cursor-pointer items-center justify-start overflow-hidden rounded-full border border-border bg-card/95 px-3 text-left shadow-[0_14px_40px_-8px_rgba(28,30,38,0.34),0_6px_18px_-4px_rgba(28,30,38,0.2)] backdrop-blur-md"
+            aria-label="Open Inline chat"
+          >
+            <InlineChatIcon variant="badge" />
+            <span className="ml-2 whitespace-nowrap text-xs font-medium text-foreground">
+              {pillLabel}
+            </span>
+          </motion.button>
         )}
       </AnimatePresence>
-
-      {!open && (
-        <motion.button
-          type="button"
-          key="chat-pill"
-          initial={{ opacity: 0, y: 8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.96 }}
-          transition={{ duration: 0.22, ease: EASE }}
-          onClick={() => setOpen(true)}
-          title={usesMetaShortcut ? 'Open Inline (Cmd+Shift+L)' : 'Open Inline (Ctrl+Shift+L)'}
-          className="flex h-11 w-[210px] cursor-pointer items-center justify-start overflow-hidden rounded-full border border-border bg-card/95 px-3 text-left shadow-[0_14px_40px_-8px_rgba(28,30,38,0.34),0_6px_18px_-4px_rgba(28,30,38,0.2)] backdrop-blur-md"
-          aria-label="Open Inline chat"
-        >
-          <InlineChatIcon variant="badge" />
-          <span className="ml-2 whitespace-nowrap text-xs font-medium text-foreground">
-            {pillLabel}
-          </span>
-        </motion.button>
-      )}
     </div>
   )
 }

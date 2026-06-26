@@ -24,15 +24,24 @@ type ExtensionDockMockProps = {
   className?: string
   showNotebook?: boolean
   activeIndex?: number
+  orientation?: 'vertical' | 'horizontal'
 }
 
 export default function ExtensionDockMock({
   className,
   showNotebook = true,
   activeIndex = 0,
+  orientation = 'vertical',
 }: ExtensionDockMockProps) {
+  const isHorizontal = orientation === 'horizontal'
+
   return (
-    <div className={cn('flex flex-col items-center gap-1.5', className)}>
+    <div
+      className={cn(
+        isHorizontal ? 'flex flex-row items-center gap-1.5' : 'flex flex-col items-center gap-1.5',
+        className,
+      )}
+    >
       <div
         className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[13px] border border-[rgba(17,24,39,0.18)]"
         style={{
@@ -41,7 +50,12 @@ export default function ExtensionDockMock({
       >
         <InlineBrandGlyph tile={false} />
       </div>
-      <div className="flex flex-col gap-0.5 rounded-[17px] border border-border bg-card p-1.5">
+      <div
+        className={cn(
+          'flex gap-0.5 rounded-[17px] border border-border bg-card p-1.5',
+          isHorizontal ? 'flex-row' : 'flex-col',
+        )}
+      >
         {DOCK_TOOLS.map((tool, i) => (
           <div
             key={tool.id}
@@ -55,7 +69,7 @@ export default function ExtensionDockMock({
         ))}
         {showNotebook && (
           <>
-            <div className="mx-1 my-0.5 h-px bg-border" />
+            <div className={cn(isHorizontal ? 'mx-0.5 h-6 w-px bg-border' : 'mx-1 my-0.5 h-px bg-border')} />
             <div className="flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-muted-foreground">
               <IconNotebook size={16} />
             </div>

@@ -53,7 +53,7 @@ export default function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={toggle}
       title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className={`flex items-center justify-center w-7 h-7 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-[#9BBCE5] dark:hover:text-white dark:hover:bg-[#17296B] ${className ?? ''}`}
+      className={`flex items-center justify-center w-7 h-7 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-sidebar-accent ${className ?? ''}`}
     >
       {dark ? <IcSun /> : <IcMoon />}
     </button>

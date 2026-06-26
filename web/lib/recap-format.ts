@@ -338,10 +338,9 @@ export function buildOverviewHtml(
   const insightBullets = ai?.bullets?.length ? ai.bullets : collectInsightBullets(notes)
 
   let html =
-    `<h2>Overview</h2>` +
+    `<h2>Overview <span class="recap-overview-range">${formatRecapMinute(first)} – ${formatRecapMinute(last)}</span></h2>` +
     `<p>${totalCount} capture${totalCount === 1 ? '' : 's'} from ` +
-    `<strong>${htmlEscape(pageTitle)}</strong> (${htmlEscape(domain)}). ` +
-    `${formatRecapMinute(first)} – ${formatRecapMinute(last)}.</p>`
+    `<strong>${htmlEscape(pageTitle)}</strong> (${htmlEscape(domain)}).</p>`
 
   if (ai?.paragraph?.trim()) {
     html += `<p>${htmlEscape(ai.paragraph.trim())}</p>`

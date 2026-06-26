@@ -150,7 +150,6 @@ export default function WorkspaceFolderLibraryPage() {
       <PageHeader
         crumbs={crumbs}
         title={folder.name}
-        subtitle="Documents in this workspace folder — like your personal writing library."
         action={(
           <Button size="sm" className="cursor-pointer gap-1.5" onClick={handleNew}>
             <Plus className="w-4 h-4" /> New document

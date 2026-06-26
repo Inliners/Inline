@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client'
 import ContentShell from './ContentShell'
 import { enableReaderMode, disableReaderMode } from '../lib/readerMode'
 import { loadLayers, type LayerVisibility } from '../lib/layerState'
+import { applyHighlightLayerVisibility, applyLayerVisibility } from './layerVisibility'
 import { speakWithElevenLabs, stopSpeaking } from '../lib/elevenLabsTts'
 import { readPrivacyAccepted } from '../lib/privacyConsent'
 import cssText from './content.css?inline'
@@ -132,29 +133,25 @@ import { FONT_FACE_CSS } from '../lib/extensionFonts'
       }
     })
 
-    const LAYER_SELECTORS: Record<keyof LayerVisibility, string[]> = {
-      highlights: ['[data-inline-highlight]'],
-      drawings: ['#inline-draw-canvas', '#inline-handwriting-canvas'],
-      stickies: ['[data-inline-sticky]', '[data-inline-anchor]'],
-      stamps: ['[data-inline-stamp]'],
+    let currentLayers: LayerVisibility | null = null
+
+    function syncLayerVisibility(layers: LayerVisibility): void {
+      currentLayers = layers
+      applyLayerVisibility(layers)
     }
 
-    function applyLayerVisibility(layers: LayerVisibility): void {
-      (Object.keys(LAYER_SELECTORS) as (keyof LayerVisibility)[]).forEach((key) => {
-        const visible = layers[key]
-        for (const sel of LAYER_SELECTORS[key]) {
-          document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
-            el.style.display = visible ? '' : 'none'
-          })
-        }
-      })
-    }
-
-    loadLayers().then(applyLayerVisibility).catch(() => {})
+    loadLayers().then(syncLayerVisibility).catch(() => {})
 
     document.addEventListener('inline:layerToggle', ((e: CustomEvent<LayerVisibility>) => {
-      if (e.detail) applyLayerVisibility(e.detail)
+      if (e.detail) syncLayerVisibility(e.detail)
     }) as EventListener)
+
+    document.addEventListener('inline:highlightsRestored', reapplyHighlightLayer)
+    document.addEventListener('inline:highlightAdded', reapplyHighlightLayer)
+
+    function reapplyHighlightLayer(): void {
+      if (currentLayers) applyHighlightLayerVisibility(currentLayers.highlights)
+    }
 
     interface PlacedStamp {
       id: string
