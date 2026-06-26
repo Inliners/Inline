@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import type { Note } from '@/lib/types'
-import { Star, Globe } from 'lucide-react'
+import { Chrome, Star, Globe } from 'lucide-react'
 import { cn, formatDisplayTitle } from '@/lib/utils'
 import {
   getPinnedNoteIds,
@@ -12,6 +11,7 @@ import {
 } from '@/lib/dashboard-favorites'
 import { prettyNotePreviewTruncated } from '@/lib/note-preview'
 import { workspacePath } from '@/lib/workspace-routes'
+import type { Note } from '@/lib/types'
 
 const PASTEL_BGS = [
   'bg-card',
@@ -135,9 +135,16 @@ export default function PinnedCapturesRow({
   if (!displayNotes.length) {
     return (
       <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          No web captures yet. Use the browser extension to save pages, then star your favorites here.
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          No captures yet. Install the extension, highlight an article, and your first save will show up here.
         </p>
+        <Link
+          href="/install"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          <Chrome className="h-4 w-4" aria-hidden />
+          Install extension
+        </Link>
       </div>
     )
   }

@@ -1,13 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
+import { copyExtensionAssets } from "./vite.extensionCopy";
 
 // Content script build: produces a single self-contained IIFE at dist/content.js
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), copyExtensionAssets(mode)],
   define: {
-    "process.env.NODE_ENV": '"production"',
+    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
   },
-  plugins: [react()],
   build: {
     lib: {
       entry: resolve(__dirname, "src/content/content.tsx"),
@@ -24,4 +25,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

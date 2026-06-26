@@ -5,11 +5,13 @@
   "version": "1.1",
   "permissions": ["storage", "activeTab", "contextMenus", "alarms"],
   "host_permissions": [
-    "https://useinline.vercel.app/*"
+    "http://localhost:3000/*", "http://127.0.0.1:3000/*",
+    "http://localhost:3030/*", "http://127.0.0.1:3030/*"
   ],
   "externally_connectable": {
     "matches": [
-      "https://useinline.vercel.app/*"
+      "http://localhost:3000/*", "http://127.0.0.1:3000/*",
+      "http://localhost:3030/*", "http://127.0.0.1:3030/*"
     ]
   },
   "background": {

@@ -17,11 +17,11 @@ export default function ReviewLoopSection() {
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <Reveal className="max-w-2xl lg:max-w-none">
           <h2 className="text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-            You always stay in the loop
+            Nothing saves without your say-so
           </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground lg:mt-0">
-            Inline drafts recap updates in the extension. You approve in the same Ask panel — then
-            captures and recaps show up as library documents in your workspace.
+            Inline drafts recap updates as you read. You approve in the extension — then captures and
+            briefs show up as library documents you can search and build on.
           </p>
           <Link href={WORKSPACE_HOME} className={`mt-6 inline-flex items-center gap-1 ${mktBtnSecondary}`}>
             Open workspace

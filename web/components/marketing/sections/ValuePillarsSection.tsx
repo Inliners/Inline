@@ -14,9 +14,9 @@ import { mktBtnGhost } from '@/components/marketing/marketingSurfaces'
 
 const PILLARS = [
   {
-    label: 'Capture context',
+    label: 'Stop hoarding',
     labelColor: 'text-[#B45309]',
-    title: 'Single source of truth for what you read',
+    title: 'Captures that stay attached to where you found them',
     cta: 'Explore captures',
     href: '/#extension',
     mockSlot: 'min-h-[200px] md:min-h-[220px]',
@@ -28,9 +28,9 @@ const PILLARS = [
     ),
   },
   {
-    label: 'Keep connected',
+    label: 'Start synthesizing',
     labelColor: 'text-[#C2410C]',
-    title: 'Web memory goes stale. Yours doesn\u2019t.',
+    title: 'Scattered reading becomes a brief you can actually use',
     cta: 'See auto-recaps',
     href: '/#workspace',
     mockSlot: 'min-h-[300px] flex-1 md:min-h-[340px]',
@@ -45,9 +45,9 @@ const PILLARS = [
     ),
   },
   {
-    label: 'Find answers',
+    label: 'Get answers',
     labelColor: 'text-[#2563EB]',
-    title: 'Ask AI across your saved web memory',
+    title: 'Ask questions grounded in what you saved — not what the model guessed',
     cta: 'See it search',
     href: '/#rag',
     mockSlot: 'min-h-[280px] md:min-h-[300px]',
@@ -62,7 +62,7 @@ const PILLARS = [
           scenario={{
             userMessage: 'How do these two articles compare?',
             assistantMessage:
-              'Your highlights emphasize the core claim in paragraph two [1].',
+              'Your highlights on the pricing page [1] and the product blog [2] point to the same tension — here\u2019s how they differ.',
             assistantMessageLgLines: [
               'Your highlights emphasize the core claim in',
               'paragraph two [1].',
@@ -80,8 +80,8 @@ export default function ValuePillarsSection() {
     <section id="product" className="scroll-mt-24 bg-[#FDFBF7] py-16 sm:py-20 md:py-28 lg:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <SectionHeading
-          eyebrow="Capture on the page. Search in the workspace."
-          title="Finally, a web memory layer that does its job"
+          eyebrow="The quiet problem"
+          title="More tabs isn\u2019t more progress"
         />
 
         <div className="mt-14 grid min-w-0 gap-5 xl:grid-cols-3">

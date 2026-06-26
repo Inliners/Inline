@@ -20,11 +20,11 @@ export default function StaleResearchSection() {
               className="mx-auto mb-6 h-12 w-12 rounded-2xl lg:mx-0 [&_svg]:h-5 [&_svg]:w-5"
             />
             <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-              Inline detects when your research goes stale
+              Research goes stale the moment you stop reading
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground lg:mx-0">
-              The extension watches pages you annotate. When a source changes, it drafts an updated
-              recap in the same Ask panel you already use — then routes it back for approval.
+              You meant to come back. Inline watches pages you annotate and drafts an updated brief
+              when the source changes — so your notes reflect reality, not a snapshot from last week.
             </p>
             <SectionLink href="/#workspace" className={`mt-8 inline-flex items-center gap-1 ${mktBtnSecondary}`}>
               See how it works

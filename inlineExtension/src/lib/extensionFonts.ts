@@ -48,7 +48,11 @@ export function injectExtensionFonts(root: Document | ShadowRoot | null) {
     const style = document.createElement('style')
     style.setAttribute('data-inline-fonts', 'geist')
     style.textContent = FONT_FACE_CSS
-    ;(root as ShadowRoot).appendChild?.(style) ?? (root as Document).head?.appendChild(style)
+    if (root instanceof ShadowRoot) {
+      root.appendChild(style)
+    } else {
+      root.head?.appendChild(style)
+    }
     fontsInjected = true
   } catch {
     /* ignore */

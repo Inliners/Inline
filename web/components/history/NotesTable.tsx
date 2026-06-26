@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   useReactTable,
@@ -15,7 +16,7 @@ import {
 } from '@tanstack/react-table'
 import {
   ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink,
-  Trash2, ChevronLeft, ChevronRight, Loader2,
+  Trash2, ChevronLeft, ChevronRight, Loader2, Chrome,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import type { Note, NoteType } from '@/lib/types'
@@ -187,6 +188,24 @@ export default function NotesTable({ notes, workspaceId, highlightNoteId: _ }: N
     initialState: { pagination: { pageSize: 15 } },
   })
 
+  if (notes.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card/40 px-8 py-14 text-center">
+        <p className="text-base font-medium text-foreground">No captures yet</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          Highlights and notes from the extension land here. Install Inline, save your first page, and this table fills automatically.
+        </p>
+        <Link
+          href="/install"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          <Chrome className="h-4 w-4" aria-hidden />
+          Install extension
+        </Link>
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Toolbar */}
@@ -264,7 +283,7 @@ export default function NotesTable({ notes, workspaceId, highlightNoteId: _ }: N
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="py-16 text-center text-sm text-muted-foreground">
-                  No notes match your filters.
+                  {notes.length === 0 ? 'No captures yet.' : 'No notes match your filters.'}
                 </td>
               </tr>
             ) : (

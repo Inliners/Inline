@@ -12,9 +12,9 @@ import FaqSection from '@/components/marketing/sections/FaqSection'
 import ClosingCta from '@/components/marketing/sections/ClosingCta'
 
 export const metadata: Metadata = {
-  title: 'Inline — Your memory layer for the web',
+  title: 'Inline — Turn tab hoarding into something you can use',
   description:
-    'Capture context directly on the web. Turn highlights, notes, drawings, rewrites, and page recaps into a searchable AI workspace.',
+    'More tabs feels like progress — until you close them and realize nothing compounded. Inline turns your highlights and notes into source-backed briefs you can search, ask about, and actually remember.',
 }
 
 export default function HomePage() {

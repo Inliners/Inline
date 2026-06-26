@@ -12,6 +12,7 @@ import TopDomainsChart from '@/components/dashboard/TopDomainsChart'
 import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap'
 import PinnedCapturesRow from '@/components/dashboard/PinnedCapturesRow'
 import LibraryDocumentsSection from '@/components/dashboard/LibraryDocumentsSection'
+import DashboardOnboarding from '@/components/dashboard/DashboardOnboarding'
 import { KpiSkeleton, ChartSkeleton, HeatmapSkeleton } from '@/components/dashboard/DashboardSkeleton'
 import { fetchDashboardStats, fetchNotes } from '@/lib/data'
 import { getWorkspaceName } from '@/lib/workspaces'
@@ -57,7 +58,13 @@ async function StatsSection({ workspaceId }: { workspaceId: string }) {
 
 async function CapturesSection({ workspaceId }: { workspaceId: string }) {
   const notes = await fetchNotes(workspaceId)
-  return <PinnedCapturesRow workspaceId={workspaceId} initialNotes={notes} />
+  return (
+    <>
+      <DashboardOnboarding workspaceId={workspaceId} captureCount={notes.length} />
+      <h2 className="mb-4 mt-6 text-sm font-semibold text-[#37352F]">Web Captures</h2>
+      <PinnedCapturesRow workspaceId={workspaceId} initialNotes={notes} />
+    </>
+  )
 }
 
 export default async function WorkspaceDashboardPage({
@@ -96,7 +103,6 @@ export default async function WorkspaceDashboardPage({
 
         {/* ── Web Captures ── */}
         <section>
-          <h2 className="text-sm font-semibold text-[#37352F] mb-4">Web Captures</h2>
           <Suspense fallback={
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (

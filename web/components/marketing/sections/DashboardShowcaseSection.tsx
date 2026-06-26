@@ -8,11 +8,11 @@ export default function DashboardShowcaseSection() {
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <Reveal className="text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-            One workspace for everything you capture on the web
+            Turn fifty tabs into one brief you trust
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Pinned captures, auto-recap library docs, analytics, and Ask Inline — the same dashboard
-            chrome, navigation, and activity feed you get in the app.
+            You already read the pages. Inline pulls your highlights into a source-backed Auto-Recap
+            — so research compounds instead of evaporating when you close the window.
           </p>
         </Reveal>
 

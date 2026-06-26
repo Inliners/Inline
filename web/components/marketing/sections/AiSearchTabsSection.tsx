@@ -56,11 +56,11 @@ export default function AiSearchTabsSection() {
             <FileSearch className="h-5 w-5 text-foreground" aria-hidden />
           </div>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-            The real workspace chat — grounded in your captures
+            Answers that cite your captures — not the internet
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Same panel, bubbles, and source cards you get in the app. Every answer cites what was
-            actually retrieved from your workspace.
+            Ask in plain language. Every response points back to the highlights and notes that
+            grounded it — so you can trust what you read.
           </p>
         </Reveal>
 

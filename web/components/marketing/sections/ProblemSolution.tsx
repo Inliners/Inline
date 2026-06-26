@@ -42,7 +42,7 @@ const PROBLEMS = [
 
 const SOLUTIONS = [
   { icon: Highlighter,       label: 'Capture directly on the web',     detail: 'Highlights, sticky notes, drawings, and clips live on the page itself — and restore when you return.' },
-  { icon: Layers,            label: 'Everything lands in a workspace', detail: 'Every capture syncs into a searchable workspace with history, analytics, a map, and a knowledge graph.' },
+  { icon: Layers,            label: 'Everything lands in a workspace', detail: 'Every capture syncs into a searchable workspace with history, analytics, and source-backed briefs.' },
   { icon: MessageCircle, label: 'Ask AI over your own captures',   detail: 'Semantic retrieval finds the right notes and documents, and every answer points back to its sources.' },
   { icon: FileText,          label: 'Recaps write themselves',         detail: 'Inline composes a living recap document per page as you annotate — no manual summarizing.' },
   { icon: PenLine,           label: 'Rewrite and summarize in place',  detail: 'Select text on any page to rewrite, shorten, or summarize it without leaving the tab.' },

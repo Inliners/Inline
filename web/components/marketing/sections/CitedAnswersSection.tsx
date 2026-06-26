@@ -55,7 +55,7 @@ const CARDS: {
   {
     label: 'Source citations',
     labelColor: 'text-[#2563EB]',
-    title: 'Real source cards from retrieval',
+    title: 'Citations from your captures — not the open web',
     cta: 'See citations',
     href: '/#rag',
     height: 'medium',
@@ -159,7 +159,7 @@ export default function CitedAnswersSection() {
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <Reveal className="text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-            Your captures, cited the same way in the workspace chat.
+            Every answer points back to a source you saved
           </h2>
         </Reveal>
 

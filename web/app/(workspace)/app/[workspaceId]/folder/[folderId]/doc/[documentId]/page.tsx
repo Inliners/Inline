@@ -21,6 +21,7 @@ import { buildRecapHeaderTags } from '@/lib/recap-meta'
 import { useRecapNotes } from '@/lib/use-recap-notes'
 import RecapContextPanel from '@/components/documents/RecapContextPanel'
 import RecapFooterActions from '@/components/documents/RecapFooterActions'
+import RecapDocEnhancements from '@/components/documents/RecapDocEnhancements'
 import { useConfirm, useToast } from '@/components/ui/notifications'
 import {
   DropdownMenu,
@@ -395,6 +396,15 @@ export default function FolderDocumentEditorPage() {
               className={isAutoRecap ? 'auto-recap-document' : undefined}
               recapMode={isAutoRecap}
             />
+
+            {isAutoRecap && !notesLoading && pageNotes.length > 0 && (
+              <RecapDocEnhancements
+                workspaceId={workspaceId}
+                docId={documentId}
+                notes={pageNotes}
+                recapHtml={editorContent}
+              />
+            )}
 
             {isAutoRecap && (
               <RecapFooterActions

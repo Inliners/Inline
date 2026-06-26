@@ -4,17 +4,17 @@ Inline is a workspace and Chrome extension for capturing, annotating, rewriting,
 
 ## What Is In This Repo
 
-- `web/` - Next.js workspace app, marketing site, dashboard, document editor, library, map, graph, history, settings, and AI API routes.
+- `web/` - Next.js workspace app, marketing site, dashboard, document editor, library, history, analytics, settings, and AI API routes.
 - `backend/` - Express API used by the extension for annotation persistence.
 - `inlineExtension/` - Chrome extension built with React and Vite. It injects the Inline dock, selection tools, AI panels, notes, drawings, handwriting, stamps, search, layers, sharing, and browser-page overlays.
 - `supabase/` - Database migrations for extension persistence, workspace data, and RAG/search support.
 
 ## Core Features
 
-- Chrome extension dock with AI, rewrite, search, annotation, drawing, handwriting, screenshot, layers, share, and settings workflows.
+- Chrome extension dock with AI, rewrite, search, annotation, drawing, handwriting, screenshot, layers, share, and settings.
 - Persistent webpage annotations including highlights, sticky notes, paper notes, drawings, handwriting, stamps, and AI replacements.
-- Workspace dashboard for activity, library documents, notes, maps, graphs, workflows, settings, and captured web sources.
-- AI workflows for page recap, rewrite, insight generation, page risk, RAG indexing, search, and text-to-speech.
+- Workspace dashboard for activity, library documents, captures, analytics, settings, and source-backed briefs.
+- AI capabilities for page recap, rewrite, insight generation, page risk, RAG indexing, search, and text-to-speech.
 - Supabase-backed persistence and workspace synchronization.
 
 ## Local Development

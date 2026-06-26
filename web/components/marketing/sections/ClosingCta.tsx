@@ -11,11 +11,11 @@ export default function ClosingCta() {
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <Reveal>
           <h2 className="text-3xl font-semibold leading-[1.12] tracking-tight text-[#1C1E26] md:text-5xl">
-            Start remembering the web.
+            Stop collecting tabs. Start compounding what you learn.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#78716c] md:text-lg">
-            Install the extension, open your workspace, and every page you read becomes part of a
-            memory you can ask.
+            Install the extension, highlight what matters, and build a workspace you can actually
+            return to — with briefs, answers, and sources you trust.
           </p>
         </Reveal>
         <Reveal delay={0.1} className="mt-8 flex w-full max-w-sm flex-col items-center justify-center gap-3 sm:max-w-none sm:flex-row">

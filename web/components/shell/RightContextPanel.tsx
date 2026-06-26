@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Sparkles, Clock, Globe, BrainCircuit, TrendingUp, Activity, FileText, Loader2 } from 'lucide-react'
+import InsightsSummary, { type InsightsStats } from '@/components/insights/InsightsSummary'
+import { Clock, Globe, BrainCircuit, TrendingUp, Activity, FileText, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /* ─── types ─── */
@@ -66,6 +67,7 @@ export default function RightContextPanel() {
 
   /* ─── insights ─── */
   const [insightText,    setInsightText]    = useState<string | null>(null)
+  const [insightStats,   setInsightStats]   = useState<InsightsStats | null>(null)
   const [insightLoading, setInsightLoading] = useState(false)
 
   const loadInsights = useCallback(async () => {
@@ -78,8 +80,9 @@ export default function RightContextPanel() {
         body: JSON.stringify({ workspaceId: wsId }),
       })
       if (res.ok) {
-        const json = await res.json() as { narrative?: string }
+        const json = await res.json() as { narrative?: string; stats?: InsightsStats }
         setInsightText(json.narrative ?? null)
+        setInsightStats(json.stats ?? null)
       }
     } catch { /* ignore */ }
     finally { setInsightLoading(false) }
@@ -171,29 +174,12 @@ export default function RightContextPanel() {
 
         {/* ── Insights tab ── */}
         {tab === 'insights' && (
-          <>
-            <div className="mb-3 flex items-center gap-1.5 px-1">
-              <Sparkles className="h-3.5 w-3.5 text-foreground" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                AI Insights
-              </p>
-            </div>
-            {insightLoading && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {!insightLoading && insightText && (
-              <div className="rounded-xl border border-border bg-muted/50 p-3">
-                <p className="text-[11.5px] leading-relaxed text-foreground/90">{insightText}</p>
-              </div>
-            )}
-            {!insightLoading && !insightText && (
-              <p className="px-1 text-[11px] text-muted-foreground/80">
-                No AI insights available yet.
-              </p>
-            )}
-          </>
+          <InsightsSummary
+            narrative={insightText}
+            stats={insightStats}
+            loading={insightLoading}
+            compact
+          />
         )}
       </div>
 

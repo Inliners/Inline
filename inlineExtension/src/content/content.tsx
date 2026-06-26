@@ -4,7 +4,7 @@
  * Creates an isolated Shadow DOM container, injects scoped CSS,
  * and mounts ContentShell (privacy gate + capture UI) inside it.
  */
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import ContentShell from './ContentShell'
 import { enableReaderMode, disableReaderMode } from '../lib/readerMode'
 import { loadLayers, type LayerVisibility } from '../lib/layerState'
@@ -14,48 +14,55 @@ import { readPrivacyAccepted } from '../lib/privacyConsent'
 import cssText from './content.css?inline'
 import { FONT_FACE_CSS } from '../lib/extensionFonts'
 
-;(async () => {
-  const stored = await new Promise<Record<string, unknown>>(resolve =>
-    chrome.storage.local.get(['inlineBlockedDomains', 'inlineFocusMode'], r => resolve(r)),
-  )
+const HOST_ID = 'inline-extension-root'
+let uiRoot: Root | null = null
 
-  let blockedDomains: string[] = []
-  try {
-    const raw = stored.inlineBlockedDomains
-    if (typeof raw === 'string') blockedDomains = JSON.parse(raw)
-  } catch { /* keep default */ }
+function waitForBody(): Promise<HTMLElement> {
+  if (document.body) return Promise.resolve(document.body)
+  return new Promise(resolve => {
+    const done = () => {
+      if (document.body) {
+        observer.disconnect()
+        resolve(document.body)
+      }
+    }
+    const observer = new MutationObserver(done)
+    observer.observe(document.documentElement, { childList: true, subtree: true })
+    done()
+  })
+}
 
-  const hostname = window.location.hostname
-  if (Array.isArray(blockedDomains) && blockedDomains.some(d => hostname === d || hostname.endsWith(`.${d}`))) {
-    return
+function ensureMountPoint(shadow: ShadowRoot): HTMLDivElement {
+  const existing = shadow.getElementById('inline-mount')
+  const mountPoint = document.createElement('div')
+  mountPoint.id = 'inline-mount'
+  mountPoint.style.cssText =
+    'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none;'
+  if (existing) existing.replaceWith(mountPoint)
+  else shadow.appendChild(mountPoint)
+  return mountPoint
+}
+
+function mountContentShell(focusMode: boolean): void {
+  let host = document.getElementById(HOST_ID) as HTMLDivElement | null
+
+  if (host && !host.shadowRoot) {
+    host.remove()
+    host = null
   }
 
-  const focusMode = stored.inlineFocusMode === 'true' || stored.inlineFocusMode === true
-  if (focusMode) enableReaderMode()
-
-  let privacyAccepted = await readPrivacyAccepted()
-  let postConsentInitialized = false
-
-  const HOST_ID = 'inline-extension-root'
-  if (!document.getElementById(HOST_ID)) {
-    const host = document.createElement('div')
+  if (!host) {
+    host = document.createElement('div')
     host.id = HOST_ID
     host.style.cssText =
       'position:fixed; top:0; left:0; width:0; height:0; z-index:2147483647; pointer-events:none;'
     if (focusMode) host.dataset.inlineFocus = 'true'
-    document.body.appendChild(host)
 
     const shadow = host.attachShadow({ mode: 'open' })
 
     const style = document.createElement('style')
     style.textContent = FONT_FACE_CSS + '\n' + cssText
     shadow.appendChild(style)
-
-    const mountPoint = document.createElement('div')
-    mountPoint.id = 'inline-mount'
-    mountPoint.style.cssText =
-      'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none;'
-    shadow.appendChild(mountPoint)
 
     const extraStyle = document.createElement('style')
     extraStyle.textContent = `
@@ -92,9 +99,43 @@ import { FONT_FACE_CSS } from '../lib/extensionFonts'
     window.addEventListener('online', hideBadge)
     if (!navigator.onLine) showBadge()
 
-    const root = createRoot(mountPoint)
-    root.render(<ContentShell />)
+    document.body.appendChild(host)
   }
+
+  const mountPoint = ensureMountPoint(host.shadowRoot!)
+  try { uiRoot?.unmount() } catch { /* stale after extension reload */ }
+  uiRoot = createRoot(mountPoint)
+  uiRoot.render(<ContentShell />)
+}
+
+;(async () => {
+  if (!chrome.runtime?.id) return
+
+  const body = await waitForBody().catch(() => null)
+  if (!body) return
+
+  const stored = await new Promise<Record<string, unknown>>(resolve =>
+    chrome.storage.local.get(['inlineBlockedDomains', 'inlineFocusMode'], r => resolve(r)),
+  )
+
+  let blockedDomains: string[] = []
+  try {
+    const raw = stored.inlineBlockedDomains
+    if (typeof raw === 'string') blockedDomains = JSON.parse(raw)
+  } catch { /* keep default */ }
+
+  const hostname = window.location.hostname
+  if (Array.isArray(blockedDomains) && blockedDomains.some(d => hostname === d || hostname.endsWith(`.${d}`))) {
+    return
+  }
+
+  const focusMode = stored.inlineFocusMode === 'true' || stored.inlineFocusMode === true
+  if (focusMode) enableReaderMode()
+
+  let privacyAccepted = await readPrivacyAccepted()
+  let postConsentInitialized = false
+
+  mountContentShell(focusMode)
 
   function initAfterPrivacyConsent(): void {
     if (!privacyAccepted || postConsentInitialized) return

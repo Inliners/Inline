@@ -20,6 +20,8 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      // Utility modules export helpers alongside components by design.
+      'react-refresh/only-export-components': 'warn',
       // React Compiler strictness rules flag mount-time restore patterns
       // (loading saved annotations into state) that are intentional here.
       'react-hooks/set-state-in-effect': 'warn',

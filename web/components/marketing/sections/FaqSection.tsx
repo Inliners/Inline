@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils'
 
 const FAQS: { q: string; a: string }[] = [
   {
-    q: 'What can Inline do for me?',
-    a: 'Inline lets you save what matters while you read—highlights, notes, drawings, rewrites, and quick summaries—right on the page. Everything lands in one place so you can come back later, search it, and ask questions about what you saved.',
+    q: 'What problem does Inline actually solve?',
+    a: 'Most of us confuse opening tabs with making progress. Inline helps you turn what you read into source-backed briefs you can search, ask about, and return to — instead of losing it the moment you close the window.',
   },
   {
     q: 'Does it work on the pages I read every day?',
@@ -18,7 +18,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Can I ask questions about what I\u2019ve saved?',
-    a: 'Yes. Open chat in your workspace and ask in everyday language—like \u201cWhat did I highlight about bridges?\u201d Inline answers from your saved pages and notes, and points you back to where each answer came from.',
+    a: 'Yes. Ask in everyday language — like \u201cWhat did I highlight about pricing?\u201d Inline answers from your saved pages and notes, and points you back to where each answer came from.',
   },
   {
     q: 'What happens to my highlights and notes?',
@@ -26,11 +26,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Can Inline read pages aloud?',
-    a: 'Yes. You can have a page or a selection read out loud while you work. It\u2019s handled securely on our side—nothing you need to set up or worry about.',
+    a: 'Yes. You can have a page or a selection read out loud while you work. It\u2019s handled securely on our side — nothing you need to set up or worry about.',
   },
   {
     q: 'What if something stops working?',
-    a: 'Inline tells you plainly when a feature isn\u2019t available—no silent failures. If read-aloud can\u2019t connect, it switches to your computer\u2019s built-in voice and lets you know.',
+    a: 'Inline tells you plainly when a feature isn\u2019t available — no silent failures. If read-aloud can\u2019t connect, it switches to your computer\u2019s built-in voice and lets you know.',
   },
   {
     q: 'Can I use Inline without the Chrome extension?',

@@ -5,10 +5,11 @@ import { copyExtensionAssets } from "./vite.extensionCopy";
 
 // Popup build: bundles index.html + React popup UI into dist/
 export default defineConfig(({ mode }) => ({
-  define: {
-    "process.env.NODE_ENV": '"production"',
-  },
+  base: './',
   plugins: [react(), copyExtensionAssets(mode)],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

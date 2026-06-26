@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --config vite.content.config.ts && vite build --config vite.background.config.ts",
-    "build:dev": "tsc -b && vite build --mode development && vite build --mode development --config vite.content.config.ts && vite build --mode development --config vite.background.config.ts",
+    "build:dev": "tsc -b && vite build --mode development && vite build --mode development --config vite.content.config.ts && vite build --mode development --config vite.background.config.ts && node -e \"require('fs').copyFileSync('manifest.dev.json','dist/manifest.json')\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },

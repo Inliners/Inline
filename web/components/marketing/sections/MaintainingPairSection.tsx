@@ -59,10 +59,11 @@ export default function MaintainingPairSection() {
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <Reveal className="text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-[#1C1E26] md:text-[2.75rem] md:leading-[1.1]">
-            Recaps that maintain themselves
+            Briefs that update themselves as you read
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Every page recap uses the same extension panel — updated as you add highlights and notes.
+            Every highlight feeds back into your page recap — so synthesis happens while you research,
+            not after you&apos;ve forgotten why you cared.
           </p>
         </Reveal>
 
@@ -70,7 +71,7 @@ export default function MaintainingPairSection() {
           <Reveal className="h-full">
             <PairCard
               title="Self-updating recap"
-              description="Highlights and notes on the page feed back into your recap — so the summary always reflects what you captured."
+              description="New highlights and notes flow into your brief automatically — the summary always reflects what you actually captured."
               bottomColor={mkt.burntRed}
               visualContainerClassName="pt-5 sm:pt-6"
               visualClassName="translate-y-1 sm:translate-y-2"
@@ -81,8 +82,8 @@ export default function MaintainingPairSection() {
 
           <Reveal delay={0.08} className="h-full">
             <PairCard
-              title="Run refresh routines on your captures"
-              description="Review suggested recap changes in the extension before anything saves to your workspace."
+              title="You approve what saves"
+              description="Review suggested recap changes before they land in your workspace — you stay in control of what compounds."
               visualClassName="translate-y-0 sm:translate-y-1"
             >
               <ExtensionRefreshRoutineMockAnimated className="w-full" />

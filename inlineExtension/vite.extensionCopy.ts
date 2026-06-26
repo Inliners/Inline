@@ -6,7 +6,9 @@ import type { Plugin } from 'vite'
 export function copyExtensionAssets(mode: string): Plugin {
   return {
     name: 'copy-extension-files',
-    closeBundle() {
+    enforce: 'post',
+    // Run after Vite copies `public/` so dev manifest is not overwritten.
+    buildEnd() {
       const outDir = resolve(__dirname, 'dist')
       mkdirSync(outDir, { recursive: true })
 

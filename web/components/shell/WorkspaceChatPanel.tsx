@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
   Check,
-  ArrowUp,
   Loader2,
   User,
   ChevronDown,
@@ -15,13 +14,11 @@ import {
   X,
   MoreHorizontal,
   Maximize2,
-  Paperclip,
-  Globe2,
-  Mic2,
   PencilLine,
   PanelRight,
 } from 'lucide-react'
 import { InlineChatIcon } from '@/components/ui/inline-chat-icon'
+import AiFeedbackBar from '@/components/ai/AiFeedbackBar'
 import { cn, formatDisplayTitle } from '@/lib/utils'
 import { useChatPanel } from '@/lib/chat-panel-context'
 import { loadFolderDocuments } from '@/lib/workspace-library'
@@ -42,6 +39,10 @@ import {
 } from '@/lib/workspace-chat-sessions'
 import { SourceCardRow, type ChatSource } from '@/components/shell/SourceCard'
 import { extractCitationRefs } from '@/lib/ai/rag/citations'
+import { getChatGreeting } from '@/lib/chat-format'
+import { AssistantMessageContent, UserMessageBubble } from '@/components/chat/ChatMessageParts'
+import WorkspaceChatComposer from '@/components/chat/WorkspaceChatComposer'
+import { chatEmptyFadeContainer, chatEmptyFadeItem, CHAT_EASE } from '@/components/chat/chat-motion'
 
 function citedSourcesForMessage(sources: ChatSource[] | undefined, content: string): ChatSource[] {
   if (!sources?.length || !content.trim()) return []
@@ -50,12 +51,11 @@ function citedSourcesForMessage(sources: ChatSource[] | undefined, content: stri
   return sources.filter(s => refs.has(s.ref))
 }
 
-const EASE = [0.22, 1, 0.36, 1] as const
+const EASE = CHAT_EASE
 const PANEL_OPEN_DURATION = 0.38
 const PANEL_CLOSE_DURATION = 0.44
 const PANEL_CLOSE_EASE = [0.4, 0, 0.2, 1] as const
 const PILL_DURATION = 0.3
-const THINKING_MESSAGE = 'Putting together the best answer — one moment, Inline…'
 
 const panelMotion = {
   initial: { opacity: 0, y: 20, scale: 0.97 },
@@ -89,155 +89,8 @@ const pillMotion = {
   },
 }
 
-/** Collapse noisy citation clusters like [1, 2, 3, 4, 5] into [1–5]. */
-function formatCitations(text: string): string {
-  return text.replace(/\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g, (_, numsStr: string) => {
-    const nums = numsStr
-      .split(',')
-      .map(s => parseInt(s.trim(), 10))
-      .filter(n => !Number.isNaN(n))
-    if (nums.length === 0) return ''
-    if (nums.length === 1) return `[${nums[0]}]`
-    nums.sort((a, b) => a - b)
-    const consecutive = nums.every((n, i) => i === 0 || n === nums[i - 1]! + 1)
-    if (consecutive || nums.length > 3) {
-      return `[${nums[0]}–${nums[nums.length - 1]}]`
-    }
-    return `[${nums.join(', ')}]`
-  })
-}
-
-function stripInlineMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/__(.+?)__/g, '$1')
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/^#{1,6}\s+/gm, '')
-}
-
-function normalizeAssistantText(text: string): string {
-  return reflowDomainList(formatCitations(stripInlineMarkdown(text)))
-}
-
-/** Turn run-on "site [1,2] site [3,4]" answers into a bullet list. */
-function reflowDomainList(text: string): string {
-  const host = '(?:localhost|[a-z0-9][\\w.-]*\\.[a-z]{2,})'
-  const citation = '\\[(?:\\d+\\s*[,–-]\\s*)*\\d+\\]'
-  const runOn = new RegExp(`(${host})\\s*(?:${citation})?`, 'gi')
-  const matches = [...text.matchAll(runOn)]
-  if (matches.length < 2) return text
-
-  const firstIdx = matches[0]!.index ?? 0
-  const intro = text.slice(0, firstIdx).trim()
-
-  const seen = new Set<string>()
-  const bullets: string[] = []
-  for (const match of matches) {
-    const domain = match[1]!.toLowerCase()
-    if (seen.has(domain)) continue
-    seen.add(domain)
-    bullets.push(`- ${match[1]}`)
-  }
-
-  if (bullets.length < 2) return text
-  return intro ? `${intro}\n\n${bullets.join('\n')}` : bullets.join('\n')
-}
-
-const emptyFadeContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.14, delayChildren: 0.1 } },
-}
-const emptyFadeItem = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
-}
-
-function AssistantMessageContent({
-  content,
-  thinking,
-  error,
-}: {
-  content: string
-  thinking?: boolean
-  error?: boolean
-}) {
-  if (thinking && !content.trim()) {
-    return (
-      <p className="text-sm italic text-muted-foreground" role="status">
-        {THINKING_MESSAGE}
-      </p>
-    )
-  }
-
-  if (!content.trim()) return null
-
-  const plain = normalizeAssistantText(content)
-  const blocks = plain.split(/\n\n+/)
-
-  return (
-    <div className={cn('space-y-3', error && 'text-destructive')}>
-      {blocks.map((block, i) => {
-        const trimmed = block.trim()
-        if (!trimmed) return null
-
-        const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean)
-        const bulletLines = lines.filter(l => /^[-*•]\s/.test(l))
-        const proseLines = lines.filter(l => !/^[-*•]\s/.test(l) && !/^\d+[.)]\s/.test(l))
-
-        if (bulletLines.length > 0 && proseLines.length > 0) {
-          return (
-            <div key={i} className="space-y-2">
-              <p className="text-sm leading-relaxed text-foreground">{proseLines.join(' ')}</p>
-              <ul className="list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
-                {bulletLines.map((l, j) => (
-                  <li key={j}>{l.replace(/^[-*•]\s+/, '')}</li>
-                ))}
-              </ul>
-            </div>
-          )
-        }
-
-        if (lines.every(l => /^[-*•]\s/.test(l))) {
-          return (
-            <ul key={i} className="list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
-              {lines.map((l, j) => (
-                <li key={j}>{l.replace(/^[-*•]\s+/, '')}</li>
-              ))}
-            </ul>
-          )
-        }
-
-        if (lines.every(l => /^\d+[.)]\s/.test(l))) {
-          return (
-            <ol key={i} className="list-decimal space-y-1.5 pl-4 text-sm leading-relaxed text-foreground">
-              {lines.map((l, j) => (
-                <li key={j}>{l.replace(/^\d+[.)]\s+/, '')}</li>
-              ))}
-            </ol>
-          )
-        }
-
-        if (lines.every(l => l.startsWith('>'))) {
-          return (
-            <blockquote
-              key={i}
-              className="border-l-2 border-border pl-3 text-sm leading-relaxed text-muted-foreground"
-            >
-              {lines.map(l => l.replace(/^>\s?/, '')).join(' ')}
-            </blockquote>
-          )
-        }
-
-        return (
-          <p key={i} className="text-sm leading-relaxed text-foreground">
-            {trimmed.replace(/\n/g, ' ')}
-          </p>
-        )
-      })}
-    </div>
-  )
-}
+const emptyFadeContainer = chatEmptyFadeContainer
+const emptyFadeItem = chatEmptyFadeItem
 
 type RetrievalMode = 'semantic' | 'recency' | 'none'
 
@@ -247,44 +100,6 @@ interface Message {
   sources?: ChatSource[]
   mode?: RetrievalMode
   error?: boolean
-}
-
-function UserMessageBubble({ content }: { content: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [multiline, setMultiline] = useState(() => /\n/.test(content))
-
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    const measure = () => {
-      if (/\n/.test(content)) {
-        setMultiline(true)
-        return
-      }
-      const style = window.getComputedStyle(el)
-      const lineHeight = parseFloat(style.lineHeight) || 20
-      const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
-      setMultiline(el.scrollHeight > lineHeight + paddingY + 2)
-    }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [content])
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'ml-auto inline-block max-w-[82%] bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground wrap-anywhere',
-        multiline ? 'rounded-2xl' : 'rounded-full',
-      )}
-    >
-      {content}
-    </div>
-  )
 }
 
 let currentChatAudio: HTMLAudioElement | null = null
@@ -404,6 +219,7 @@ function useUsesMetaShortcut() {
 
 export default function WorkspaceChatPanel() {
   const pathname = usePathname()
+  const hideOnAnalytics = pathname.includes('/analytics')
   const wsId = getWsId(pathname)
   const { open, setOpen, toggle } = useChatPanel()
   const usesMetaShortcut = useUsesMetaShortcut()
@@ -660,21 +476,15 @@ export default function WorkspaceChatPanel() {
     }
   }, [input, loading, wsId, voiceMode, messages.length, patchActiveMessages])
 
-  function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      void send()
-    }
-  }
-
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'
+  const greeting = getChatGreeting()
   const pillLabel = isDashboard ? `${greeting}. Ask Inline` : 'Ask Inline'
   const quickPrompts = [
     'What needs my attention today?',
     'How do I use Inline?',
     'Summarize recent captures',
   ]
+
+  if (hideOnAnalytics) return null
 
   return (
     <div
@@ -900,6 +710,14 @@ export default function WorkspaceChatPanel() {
                         <SourceCardRow sources={cited} workspaceId={wsId} />
                       ) : null
                     })()}
+                    {m.role === 'assistant' && m.content && !loading && !(loading && i === messages.length - 1) && (
+                      <AiFeedbackBar
+                        workspaceId={wsId}
+                        surface="chat"
+                        targetId={`${activeSessionId}-${i}`}
+                        className="mt-2"
+                      />
+                    )}
                     {m.role === 'assistant' && m.content && !loading && (
                       <button
                         type="button"
@@ -936,78 +754,13 @@ export default function WorkspaceChatPanel() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="bg-card/95 p-4">
-              <div className="overflow-hidden rounded-lg border border-primary/25 bg-background shadow-[0_0_0_3px_rgba(75,131,196,0.10)]">
-                {input.trim() && (
-                  <div className="flex items-center justify-between border-b border-primary/10 bg-primary/5 px-4 py-2 text-xs text-primary">
-                    <span className="truncate">{input.trim()}</span>
-                    <button
-                      type="button"
-                      onClick={() => setInput('')}
-                      className="ml-3 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/10"
-                      aria-label="Clear current prompt"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex min-h-[78px] flex-col px-4 py-3">
-                  <input
-                    ref={inputRef}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKey}
-                    placeholder="Ask about your captures, documents, or recent activity…"
-                    className="min-w-0 w-full border-none bg-transparent pt-0 pb-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
-                    disabled={loading}
-                    aria-label="Message Inline"
-                  />
-                  <div className="mt-auto flex shrink-0 items-center justify-end gap-1.5">
-                    <button
-                      type="button"
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Attach context"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="hidden cursor-pointer items-center gap-1 rounded-md bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/80 sm:flex"
-                    >
-                      <InlineChatIcon size="sm" iconClassName="text-primary" />
-                      Smart mode
-                    </button>
-                    <button
-                      type="button"
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Browse web context"
-                    >
-                      <Globe2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Voice input"
-                    >
-                      <Mic2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void send()}
-                      disabled={loading || !input.trim()}
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#2f80ed] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
-                      aria-label="Send message"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <WorkspaceChatComposer
+              input={input}
+              setInput={setInput}
+              onSend={() => void send()}
+              loading={loading}
+              inputRef={inputRef}
+            />
           </motion.div>
         ) : (
           <motion.button

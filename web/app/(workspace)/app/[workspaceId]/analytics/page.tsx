@@ -5,6 +5,7 @@ import { getWorkspaceName } from '@/lib/workspaces'
 import { resolveWorkspaceId, workspacePath } from '@/lib/workspace-routes'
 import { fetchDashboardStats, fetchCaptureTimeSeries } from '@/lib/data'
 import AnalyticsCharts from '@/components/analytics/AnalyticsCharts'
+import AnalyticsPageClient from '@/components/analytics/AnalyticsPageClient'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const metadata: Metadata = { title: 'Analytics' }
@@ -36,14 +37,14 @@ export default async function AnalyticsPage({
   const workspaceName   = getWorkspaceName(workspaceId)
 
   return (
-    <div className="min-h-full bg-background">
+    <div className="flex h-full min-h-0 flex-col bg-background">
       <PageHeader
         crumbs={[
           { label: workspaceName, href: workspacePath(workspaceId, 'dashboard') },
           { label: 'Analytics' },
         ]}
       />
-      <div className="w-full min-w-0 p-6">
+      <div className="min-h-0 flex-1 p-6">
         <Suspense fallback={
           <div className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -56,7 +57,10 @@ export default async function AnalyticsPage({
             </div>
           </div>
         }>
-          <AnalyticsData workspaceId={workspaceId} />
+          <AnalyticsPageClient
+            workspaceId={workspaceId}
+            charts={<AnalyticsData workspaceId={workspaceId} />}
+          />
         </Suspense>
       </div>
     </div>

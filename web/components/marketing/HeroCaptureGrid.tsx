@@ -4,12 +4,11 @@ import {
   renderHeroToolIcon,
   type HeroToolIconId,
 } from '@/components/marketing/extensionToolIcons'
-import InlineBrandGlyph from '@/components/marketing/InlineBrandGlyph'
+import InlineBrandGlyph, { INLINE_BRAND_GRADIENT } from '@/components/marketing/InlineBrandGlyph'
 import {
   mktHeroTileBackdrop,
   mktHeroTileBorder,
   mktHeroTileGlass,
-  mktLogoTileShadow,
   mktTileShadow,
   mktTileShadowEmphasis,
 } from '@/components/marketing/marketingSurfaces'
@@ -65,6 +64,27 @@ const glassTileStyle = {
   boxShadow:
     'inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(255, 255, 255, 0.12)',
 } as const
+
+function BrandTile() {
+  const keycapInset =
+    'inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(0, 0, 0, 0.22)'
+
+  return (
+    <div
+      className="relative isolate flex shrink-0 items-center justify-center overflow-hidden"
+      style={{
+        width: TILE_PX,
+        height: TILE_PX,
+        borderRadius: 18,
+        background: INLINE_BRAND_GRADIENT,
+        border: '1px solid rgba(255, 255, 255, 0.14)',
+        boxShadow: `${keycapInset}, ${mktTileShadowEmphasis}`,
+      }}
+    >
+      <InlineBrandGlyph tile={false} />
+    </div>
+  )
+}
 
 function ToolTile({
   tool,
@@ -130,18 +150,7 @@ export default function HeroCaptureGrid() {
           >
             {row.map((tile, colIndex) =>
               tile.center ? (
-                <div
-                  key="logo"
-                  className="shrink-0 overflow-hidden"
-                  style={{
-                    ...glassTileStyle,
-                    background: 'transparent',
-                    border: '2px solid transparent',
-                    boxShadow: mktLogoTileShadow,
-                  }}
-                >
-                  <InlineBrandGlyph />
-                </div>
+                <BrandTile key="logo" />
               ) : tile.tool ? (
                 <ToolTile
                   key={`${rowIndex}-${colIndex}-${tile.tool}`}

@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
 import { PANEL as C } from '../lib/extensionTheme'
 
-const BULLET_RE = /^[*•\-]\s+/
+const BULLET_RE = /^[*•-]\s+/
 const NUMBER_RE = /^\d+[.)]\s+/
 
 function stripMarker(line: string): string {
-  return line.replace(/^[*•\-]\s+/, '').replace(/^\d+[.)]\s+/, '')
+  return line.replace(/^[*•-]\s+/, '').replace(/^\d+[.)]\s+/, '')
 }
 
 interface FormattedAiTextProps {
