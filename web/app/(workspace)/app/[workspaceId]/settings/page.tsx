@@ -17,6 +17,7 @@ import {
   getChildFolders,
   type WorkspaceFolder,
 } from '@/lib/workspace-folders'
+import { restartInlineGuide } from '@/lib/inline-guide-context'
 import {
   Check, Download, Loader2, AlertTriangle,
   Crown, ArrowRight, Folder, ArchiveRestore,
@@ -107,6 +108,23 @@ function IdentityTab({ workspaceId, initialName, initialColor }: { workspaceId: 
             Save Changes
           </Button>
         </div>
+      </SettingsSection>
+
+      <SettingsSection title="Product tour" description="Replay the workspace walkthrough anytime.">
+        <SettingsRow
+          label="Walkthrough"
+          hint="A short guided tour of sidebar features, documents, and Ask Inline chat."
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => restartInlineGuide()}
+          >
+            Restart product tour
+          </Button>
+        </SettingsRow>
       </SettingsSection>
     </div>
   )

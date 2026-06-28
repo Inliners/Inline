@@ -775,6 +775,7 @@ export default function WorkspaceChatPanel() {
             type="button"
             key="chat-pill"
             {...pillMotion}
+            data-inline-guide="ask-inline"
             style={{ transformOrigin: 'bottom center' }}
             onClick={() => setOpen(true)}
             title={usesMetaShortcut ? 'Open Inline (Cmd+Shift+L)' : 'Open Inline (Ctrl+Shift+L)'}

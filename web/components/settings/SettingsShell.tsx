@@ -102,7 +102,10 @@ export default function SettingsShell({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 md:px-6">
+      <header
+        data-inline-guide="settings-page"
+        className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 md:px-6"
+      >
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href={exitHref}

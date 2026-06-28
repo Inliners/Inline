@@ -389,7 +389,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
 
   if (readOnly) {
     return (
-      <div className={cn('relative folder-document-editor folder-document-editor--readonly', className)}>
+      <div className={cn('relative folder-document-editor folder-document-editor--readonly', className)} data-inline-guide="document-editor">
         <EditorContent editor={editor} />
       </div>
     )
@@ -399,6 +399,7 @@ export default function FolderDocumentEditor({ content, onChange, className, rea
     <div
       ref={wrapperRef}
       className={cn('relative folder-document-editor', className)}
+      data-inline-guide="document-editor"
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >

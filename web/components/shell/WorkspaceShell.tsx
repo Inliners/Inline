@@ -6,6 +6,8 @@ import { useSidebar } from '@/lib/sidebar-context'
 import { isDocumentEditorPath } from '@/lib/document-editor-view'
 import { isStandaloneSettingsPath } from '@/lib/workspace-chrome'
 import { ChatPanelProvider } from '@/lib/chat-panel-context'
+import { InlineGuideProvider } from '@/lib/inline-guide-context'
+import InlineGuideOverlay, { InlineGuideResumeChip } from '@/components/guide/InlineGuideOverlay'
 import Sidebar from './Sidebar'
 import WorkspaceMainContent from './WorkspaceMainContent'
 import CommandPalette from './CommandPalette'
@@ -23,6 +25,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
 
   return (
     <ChatPanelProvider>
+      <InlineGuideProvider>
       <div className="flex h-screen overflow-hidden bg-background">
         {showWorkspaceChrome && <Sidebar />}
         <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -46,8 +49,11 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
 
         {showWorkspaceChrome && <CommandPalette />}
         {showWorkspaceChrome && <WorkspaceChatPanel />}
+        <InlineGuideOverlay />
+        <InlineGuideResumeChip />
         <ExtensionAuthSync />
       </div>
+      </InlineGuideProvider>
     </ChatPanelProvider>
   )
 }

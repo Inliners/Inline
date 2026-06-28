@@ -58,10 +58,10 @@ const DEFAULT_ICON_KEYS = ['Megaphone', 'Package', 'TrendingUp', 'FolderKanban',
 const DEFAULT_COLORS    = ['#f43f5e', '#6C91C2', '#f59e0b', '#5FA8A1', '#a855f7']
 
 const FEATURES = [
-  { href: (ws: WorkspaceItem) => workspacePath(ws, 'dashboard'), icon: LayoutDashboard, label: 'Home' },
-  { href: (ws: WorkspaceItem) => workspacePath(ws, 'history'), icon: Clock, label: 'Captures' },
-  { href: (ws: WorkspaceItem) => workspacePath(ws, 'analytics'), icon: BarChart2, label: 'Analytics' },
-  { href: (ws: WorkspaceItem) => workspacePath(ws, 'settings'), icon: Settings, label: 'Settings' },
+  { href: (ws: WorkspaceItem) => workspacePath(ws, 'dashboard'), icon: LayoutDashboard, label: 'Home', guideId: 'nav-home' },
+  { href: (ws: WorkspaceItem) => workspacePath(ws, 'history'), icon: Clock, label: 'Captures', guideId: 'nav-captures' },
+  { href: (ws: WorkspaceItem) => workspacePath(ws, 'analytics'), icon: BarChart2, label: 'Analytics', guideId: 'nav-analytics' },
+  { href: (ws: WorkspaceItem) => workspacePath(ws, 'settings'), icon: Settings, label: 'Settings', guideId: 'nav-settings' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -117,15 +117,16 @@ function WorkspaceIcon({ ws, size = 'md' }: { ws: WorkspaceItem; size?: 'sm' | '
 // ---------------------------------------------------------------------------
 // NavRow
 // ---------------------------------------------------------------------------
-function NavRow({ href, icon: Icon, label, collapsed, active, dotColor, onStar, starred, onGear }: {
+function NavRow({ href, icon: Icon, label, collapsed, active, dotColor, onStar, starred, onGear, guideId }: {
   href: string; icon: React.ElementType; label: string; collapsed: boolean; active: boolean
-  dotColor?: string; onStar?: () => void; starred?: boolean; onGear?: () => void
+  dotColor?: string; onStar?: () => void; starred?: boolean; onGear?: () => void; guideId?: string
 }) {
   return (
     <div className="group/row relative flex items-center">
       <Link
         href={href}
         title={collapsed ? label : undefined}
+        data-inline-guide={guideId}
         className={cn(
           collapsed
             ? 'w-10 h-10 aspect-square rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0'
@@ -173,12 +174,15 @@ function NavRow({ href, icon: Icon, label, collapsed, active, dotColor, onStar, 
 // ---------------------------------------------------------------------------
 // Collapsible section label
 // ---------------------------------------------------------------------------
-function SectionLabel({ label, collapsed, expanded, onToggle, action }: {
-  label: string; collapsed: boolean; expanded: boolean; onToggle: () => void; action?: React.ReactNode
+function SectionLabel({ label, collapsed, expanded, onToggle, action, guideId }: {
+  label: string; collapsed: boolean; expanded: boolean; onToggle: () => void; action?: React.ReactNode; guideId?: string
 }) {
   if (collapsed) return null
   return (
-    <div className="flex items-center justify-between px-2.5 pt-4 pb-1">
+    <div
+      className="flex items-center justify-between px-2.5 pt-4 pb-1"
+      data-inline-guide={guideId}
+    >
       <button onClick={onToggle} className="flex items-center gap-1 cursor-pointer hover:text-stone-700 transition-colors dark:hover:text-foreground">
         <span className="text-[10.5px] font-semibold uppercase tracking-wider text-stone-400 select-none dark:text-muted-foreground">
           {label}
@@ -824,12 +828,16 @@ export default function Sidebar() {
 
           {/* Features — collapsible */}
           <SectionLabel label="Features" collapsed={collapsed} expanded={expandedSections.features} onToggle={() => toggleSection('features')} />
-          <nav className="flex flex-col gap-0.5 mt-0.5 overflow-hidden transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
-            style={{ maxHeight: (collapsed || expandedSections.features) ? 400 : 0, opacity: (collapsed || expandedSections.features) ? 1 : 0 }}>
+          <nav
+            data-inline-guide="nav-features"
+            className="flex flex-col gap-0.5 mt-0.5 overflow-hidden transition-[max-height,opacity] duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{ maxHeight: (collapsed || expandedSections.features) ? 400 : 0, opacity: (collapsed || expandedSections.features) ? 1 : 0 }}
+          >
             {FEATURES.map(item => {
               const href = activeWorkspace ? item.href(activeWorkspace) : '#'
               return (
                 <NavRow key={item.label} href={href} icon={item.icon} label={item.label}
+                  guideId={item.guideId}
                   collapsed={collapsed} active={pathname === href || pathname.startsWith(href + '/')} />
               )
             })}
@@ -841,6 +849,7 @@ export default function Sidebar() {
             collapsed={collapsed}
             expanded={expandedSections.folders}
             onToggle={() => toggleSection('folders')}
+            guideId="nav-folders"
             action={
               !collapsed ? (
                 <button

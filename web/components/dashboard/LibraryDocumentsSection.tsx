@@ -99,7 +99,7 @@ export default function LibraryDocumentsSection({ workspaceId }: { workspaceId: 
   }
 
   return (
-    <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal">
+    <div className="overflow-x-auto overflow-y-hidden pb-2 scrollbar-minimal" data-inline-guide="library-documents">
       <div className="flex w-max min-w-full snap-x snap-mandatory gap-4 pr-4">
         {orderedDocs.map((doc, i) => (
           <DocLibraryCard
